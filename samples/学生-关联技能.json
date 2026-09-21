@@ -1,0 +1,22 @@
+{
+  "major": "软件工程",
+  "skills": [
+    {
+      "tag_id": "javascript",
+      "label": "JavaScript",
+      "level": 2,
+      "evidence": "JavaScript课程练习",
+      "confirmed": true
+    }
+  ],
+  "certificates": [],
+  "qualities": [],
+  "experiences": "虚构课程项目，仅用于演示",
+  "intention": {
+    "target_job_id": "java",
+    "city": ""
+  },
+  "confirmed": true,
+  "advantages": [],
+  "improvements": []
+}

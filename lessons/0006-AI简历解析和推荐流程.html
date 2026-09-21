@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 6 课：AI、简历解析和推荐流程</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0006 · 项目整体认识</p>
+    <h1>AI 在系统里负责什么？</h1>
+    <p class="lead">AI 主要负责整理语言和提出行动建议；程序负责验证证据、计算匹配和控制流程。</p>
+
+    <section class="card">
+      <h2>第一段：简历解析</h2>
+      <p>用户上传 PDF、DOCX 或 TXT 后，前端调用 <code>POST /api/resume/parse</code>。后端先由 <a href="../backend/app/resume.py">resume.py</a> 提取文字，再由 <a href="../backend/app/llm.py">llm.py</a> 让 AI 从原文中提取专业、经历、技能、证书和素质。</p>
+      <p>解析结果会以“原文证据”形式预填回能力画像。能力等级暂时设为基础值，所有标签默认为未确认，用户必须逐项核对。</p>
+      <p>如果 AI 推断了简历没有明确写出的能力，或返回的证据无法在原文中找到，后端会拦截结果。</p>
+    </section>
+
+    <section class="card">
+      <h2>第二段：能力画像整理</h2>
+      <p>用户填写或修正能力后，前端调用 <code>POST /api/student/profile</code>。AI 可以根据已经确认且有证据的标签整理优势和改进方向，但不能新增用户没有确认的技能，也不能改变用户字段。</p>
+      <p>画像生成完成后，系统仍会把整份画像标记为未确认，用户要再次检查并点击确认。这一步把 AI 的整理结果交还给用户审核。</p>
+    </section>
+
+    <section class="card">
+      <h2>第三段：程序推荐岗位</h2>
+      <p>用户确认画像后，前端调用 <code>POST /api/recommendations</code>。这个流程由程序根据岗位匹配分、城市、薪资周期和技能筛选进行排序，最多返回规定数量的岗位。</p>
+      <p>推荐不是 AI 自由发挥的列表。岗位是否入选、分数是多少、同分如何排序，都由 <a href="../backend/app/matching.py">matching.py</a> 的确定性规则处理。</p>
+    </section>
+
+    <section class="card">
+      <h2>第四段：AI 生成学习建议</h2>
+      <p>用户选择一个岗位并点击生成建议后，前端调用 <code>POST /api/reports</code>。后端先重新计算匹配事实，再把岗位要求和匹配状态交给 AI。</p>
+      <p>AI 只能从程序提供的候选标签中选择学习重点，并生成未来活动，例如补充证据、加强实践或持续深化。它不能修改匹配分，不能把相关基础说成已经掌握，也不能承诺录用或薪资。</p>
+    </section>
+
+    <section class="card callout">
+      <h2>AI 和程序的边界</h2>
+      <div class="flow">
+        <div><strong>AI：</strong>从文字中整理候选信息，生成优势表达和学习活动。</div>
+        <div><strong>程序：</strong>校验证据是否存在，判断确认状态，计算匹配分和推荐排序。</div>
+        <div><strong>用户：</strong>确认能力是否真实，决定是否采纳学习建议。</div>
+      </div>
+      <p><strong>简历解析给出候选画像，用户确认后才能匹配，程序算事实，AI写建议。</strong></p>
+    </section>
+
+    <footer>
+      主要依据：<a href="../backend/app/llm.py">AI 模块</a>、<a href="../backend/app/main.py">API 入口</a>、<a href="../frontend/src/components/ProfileTab.tsx">画像页面</a>、<a href="../frontend/src/components/MatchesTab.tsx">匹配页面</a>。下一课：如何测试、验收和启动这个项目？
+    </footer>
+  </main>
+</body>
+</html>

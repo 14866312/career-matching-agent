@@ -1,0 +1,29 @@
+{
+  "major": "软件工程",
+  "skills": [
+    {
+      "tag_id": "java",
+      "label": "Java",
+      "level": 3,
+      "evidence": "独立实现Java课程服务",
+      "confirmed": true
+    },
+    {
+      "tag_id": "sql",
+      "label": "SQL",
+      "level": 1,
+      "evidence": "SQL查询课程作业",
+      "confirmed": true
+    }
+  ],
+  "certificates": [],
+  "qualities": [],
+  "experiences": "虚构课程项目，仅用于演示",
+  "intention": {
+    "target_job_id": "java",
+    "city": ""
+  },
+  "confirmed": true,
+  "advantages": [],
+  "improvements": []
+}

@@ -1,0 +1,99 @@
+{
+ "version": "career-1.3",
+ "profiles": 6,
+ "supporting_samples": 240,
+ "records_per_profile": {
+  "frontend": 40,
+  "java": 40,
+  "cpp": 40,
+  "testing": 40,
+  "implementation": 40,
+  "support": 40
+ },
+ "path_nodes": 18,
+ "path_edges": 24,
+ "transitions_per_profile": {
+  "frontend": [
+   "java",
+   "testing"
+  ],
+  "java": [
+   "frontend",
+   "implementation"
+  ],
+  "cpp": [
+   "java",
+   "support"
+  ],
+  "testing": [
+   "implementation",
+   "support"
+  ],
+  "implementation": [
+   "support",
+   "testing"
+  ],
+  "support": [
+   "implementation",
+   "testing"
+  ]
+ },
+ "salary_periods": {
+  "day": 36,
+  "month": 201,
+  "negotiable": 3
+ },
+ "salary_parsed": 236,
+ "salary_with_extra_months": 63,
+ "certificate_status": {
+  "frontend": {
+   "unmentioned": 7
+  },
+  "java": {
+   "preferred": 1,
+   "unmentioned": 6
+  },
+  "cpp": {
+   "preferred": 1,
+   "unmentioned": 6
+  },
+  "testing": {
+   "preferred": 2,
+   "required": 1,
+   "unmentioned": 4
+  },
+  "implementation": {
+   "preferred": 2,
+   "unmentioned": 5
+  },
+  "support": {
+   "preferred": 1,
+   "unmentioned": 6
+  }
+ },
+ "level_sources": {
+  "binary_requirement": 1,
+  "default_baseline": 15,
+  "level_rule": 20
+ },
+ "levels_used": {
+  "1": 2,
+  "2": 26,
+  "3": 8
+ },
+ "evidence_levels_observed": {
+  "1": 4,
+  "2": 18,
+  "3": 12
+ },
+ "preferred_dimensions": {
+  "certificates": 7,
+  "skills": 17
+ },
+ "version_index": {
+  "codes_indexed": 240,
+  "versions_total": 252
+ },
+ "checks_failed": [],
+ "file": "C:\\Users\\Administrator\\Desktop\\ÖÇÄÜÌå\\backend\\data\\career-data.json"
+}

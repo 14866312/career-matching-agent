@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 8 课：项目风险和维护重点</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0008 · 项目整体认识</p>
+    <h1>以后维护这个项目，最需要盯住什么？</h1>
+    <p class="lead">项目已经有完整演示链路，但它仍然是一个依赖样本数据、外部模型和明确规则的职业规划演示系统。</p>
+
+    <section class="card">
+      <h2>风险一：岗位数据不是实时招聘市场</h2>
+      <p>岗位和招聘记录来自赛题样本。它们适合做岗位画像、筛选和匹配演示，不代表当前仍在招聘，也不能证明公司、薪资或岗位要求仍然有效。</p>
+      <p>维护数据时，要同时更新原始资料、scripts/build_data.py 的规则、生成后的 career-data.json、数据版本和数据审核文档。</p>
+    </section>
+
+    <section class="card">
+      <h2>风险二：匹配规则和数据契约必须同步</h2>
+      <p><a href="../backend/app/models.py">models.py</a> 定义字段含义，<a href="../backend/app/matching.py">matching.py</a> 定义评分规则，前端组件又依赖这些字段展示结果。任意一处改变 confirmed、level、evidence 或版本字段，都可能改变分数和页面解释。</p>
+      <p>修改匹配算法时，必须同步测试、数据字典、AI 接口契约和验收材料，避免“代码算一种含义，页面解释另一种含义”。</p>
+    </section>
+
+    <section class="card">
+      <h2>风险三：AI 不是稳定的事实来源</h2>
+      <p>AI 可能误读简历、返回不符合格式的内容、超时，或受到供应商限流。项目已经用结构化校验、证据检查、重试和用户确认降低影响，但 AI 输出仍然需要被当作候选整理和建议。</p>
+      <p>维护 AI 流程时，重点检查 <a href="../backend/app/llm.py">llm.py</a> 的输出模型、证据校验、错误码和模型配置；不能让 AI 绕过匹配程序直接修改分数。</p>
+    </section>
+
+    <section class="card">
+      <h2>风险四：隐私和模型供应商边界</h2>
+      <p>学生资料主要保存在会话内存，刷新页面会清空；服务器解析后释放文件。但调用真实模型时，相关输入会发送给 .env 配置的供应商。</p>
+      <p>维护时要避免记录简历正文、身份信息和密钥；发现密钥泄露要立即轮换，并确认 .env 没有进入版本库。</p>
+    </section>
+
+    <section class="card">
+      <h2>风险五：样例和环境依赖可能影响验收</h2>
+      <p>样例生成脚本依赖 Node 的 docx 和 Python 的 reportlab。当前项目已有样例和测试结果，但重新生成 DOCX/PDF 时仍要确认这些可选依赖已经安装。</p>
+      <p>维护时应优先保留可复现的安装、数据构建、测试和启动命令，并把新的验收结果保存到 docs/验收产物。</p>
+    </section>
+
+    <section class="card callout">
+      <h2>后续维护顺序</h2>
+      <div class="flow">
+        <div>先确认数据版本和数据构建结果</div>
+        <div>再确认 models.py 与 matching.py 的规则一致</div>
+        <div>再跑后端、前端和浏览器测试</div>
+        <div>最后用真实模型配置执行 smoke_live.py</div>
+      </div>
+      <p><strong>维护的核心，是保持“数据、规则、AI边界、测试证据”四者一致。</strong></p>
+    </section>
+
+    <footer>
+      主要依据：<a href="../项目说明.md">项目说明</a>、<a href="../backend/app/models.py">数据模型</a>、<a href="../backend/app/matching.py">匹配模块</a>、<a href="../backend/app/llm.py">AI 模块</a>、<a href="../docs/验收产物">验收产物</a>。
+    </footer>
+  </main>
+</body>
+</html>

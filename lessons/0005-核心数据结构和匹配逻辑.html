@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 5 课：核心数据结构和匹配逻辑</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0005 · 项目整体认识</p>
+    <h1>系统到底拿什么来计算匹配？</h1>
+    <p class="lead">匹配的本质是比较两份结构化画像：岗位需要什么，学生已经确认具备什么。</p>
+
+    <section class="card">
+      <h2>第一份核心数据：学生能力画像</h2>
+      <p><a href="../backend/app/models.py">models.py</a> 中的 StudentProfile 表示学生。它包含专业、技能、证书、通用素质、经历、意向和整份画像是否确认。</p>
+      <p>其中每一项 Ability 都包含标签、等级、是否确认和证据。例如“Python、等级 2、已确认、有课程项目证据”。</p>
+      <div class="flow">
+        <div>标签：是什么能力</div>
+        <div>等级：掌握到什么程度</div>
+        <div>confirmed：用户是否确认</div>
+        <div>evidence：凭什么说明自己具备</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>第二份核心数据：岗位画像</h2>
+      <p>岗位画像保存在 <code>backend/data/career-data.json</code> 中。一个岗位会有名称、要求、优先项、标签维度、技能关联和招聘样本。</p>
+      <p>岗位要求也有标签、维度和要求等级。系统会区分“必需要求”和“优先项”：必需要求进入主要匹配计算，优先项用于补充说明。</p>
+    </section>
+
+    <section class="card">
+      <h2>系统怎样判断一项能力</h2>
+      <p>匹配模块会先把标签名称和别名归一为规范标签 ID，避免“Python”“python”或其他别名被当成不同能力。</p>
+      <p>然后对每个岗位要求判断三种状态：</p>
+      <ul>
+        <li><strong>已满足：</strong>用户确认掌握、等级大于 0，并且有证据。</li>
+        <li><strong>明确差距：</strong>用户确认自己没有掌握，或等级为 0。</li>
+        <li><strong>待确认：</strong>用户可能有相关能力，但没有确认或缺少证据。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>匹配分怎样理解</h2>
+      <p>基础匹配度可以简单理解为：已满足的必需要求，占全部必需要求的比例。岗位没有必需要求时，该维度会标记为“不适用”，不会随意显示 0% 或 100%。</p>
+      <p>增强匹配度还会考虑技能等级和相关技能贡献。例如用户具备相关基础，可以获得有限的相关贡献，但系统会把它标记为“相关基础”，不会把它冒充成已经掌握。</p>
+      <p>具体规则集中在 <a href="../backend/app/matching.py">matching.py</a>，其中还处理标签别名、重复标签、岗位等级、城市和薪资筛选。</p>
+    </section>
+
+    <section class="card callout">
+      <h2>为什么这套结构重要</h2>
+      <p>系统不是把简历文字直接交给模型，让模型随意给一个分数。它先把学生和岗位转换成统一标签，再由程序逐项判断，最后把判断结果交给 AI 做解释和学习建议。</p>
+      <p><strong>程序负责判断事实，AI 负责解释和规划。</strong></p>
+    </section>
+
+    <footer>
+      主要依据：<a href="../backend/app/models.py">数据模型</a>、<a href="../backend/app/matching.py">匹配模块</a>、<a href="../backend/data/career-data.json">运行时数据集</a>。下一课：AI、简历解析和推荐流程如何协作？
+    </footer>
+  </main>
+</body>
+</html>

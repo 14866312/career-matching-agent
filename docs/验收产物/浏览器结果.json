@@ -1,0 +1,73 @@
+{
+  "tested_at": "2026-09-16T01:21:30.966Z",
+  "ai": "MOCK ONLY — not real API acceptance",
+  "base": "http://127.0.0.1:8011",
+  "results": [
+    {
+      "name": "Six jobs, evidence detail and career paths",
+      "status": "passed",
+      "ms": 1127
+    },
+    {
+      "name": "Canonical aliases deduplicate and binary absence differs from missing evidence",
+      "status": "passed",
+      "ms": 424
+    },
+    {
+      "name": "Manual profile, evidence confirmation and independent expected scores",
+      "status": "passed",
+      "ms": 649
+    },
+    {
+      "name": "Editing revokes confirmation and invalidates report/export",
+      "status": "passed",
+      "ms": 60
+    },
+    {
+      "name": "Delayed profile response never overwrites newer input",
+      "status": "passed",
+      "ms": 43
+    },
+    {
+      "name": "Delayed report discarded after selecting another job",
+      "status": "passed",
+      "ms": 106
+    },
+    {
+      "name": "Delayed recommendations discarded after profile edit",
+      "status": "passed",
+      "ms": 84
+    },
+    {
+      "name": "PDF, DOCX and TXT prefill preserve manual level and require confirmation",
+      "status": "passed",
+      "ms": 478
+    },
+    {
+      "name": "Delayed resume merges into newest manual values without escalation",
+      "status": "passed",
+      "ms": 30
+    },
+    {
+      "name": "Invalid upload and upstream error preserve editable input",
+      "status": "passed",
+      "ms": 121
+    },
+    {
+      "name": "Resume route, filters with actual samples, sort and new target report",
+      "status": "passed",
+      "ms": 735
+    },
+    {
+      "name": "Health version change invalidates existing match and report",
+      "status": "passed",
+      "ms": 56
+    },
+    {
+      "name": "Zero skills, target outside top five and narrow viewport",
+      "status": "passed",
+      "ms": 473
+    }
+  ],
+  "page_errors": []
+}

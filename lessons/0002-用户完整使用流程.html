@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 2 课：用户完整使用流程</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0002 · 项目整体认识</p>
+    <h1>用户从打开页面到拿到报告，经历了什么？</h1>
+    <p class="lead">把一次操作想成一条流水线：先选岗位，再准备能力画像，确认后计算匹配，最后生成建议报告。</p>
+
+    <section class="card">
+      <h2>第一步：浏览岗位并选择目标</h2>
+      <p>用户进入“岗位浏览”，前端通过 <code>GET /api/jobs</code> 获取岗位摘要。用户可以查看岗位画像和要求，并把某个岗位设为目标岗位。</p>
+      <p>这一步只是在回答：“我想拿哪个岗位作为参照？”此时还没有开始计算个人匹配度。</p>
+    </section>
+
+    <section class="card">
+      <h2>第二步：准备自己的能力画像</h2>
+      <p>用户进入“我的能力”，填写专业、技能、证书、素质和相关证据。也可以上传简历，由 <code>POST /api/resume/parse</code> 解析出候选信息，再由用户检查。</p>
+      <p>前端在确认前会把它当作“待检查的画像”。后端的 <code>require_confirmed</code> 会阻止未确认的画像直接进入匹配和建议。</p>
+    </section>
+
+    <section class="card">
+      <h2>第三步：确认画像</h2>
+      <p>用户确认技能是否真的掌握、证据是否准确、熟练度是否合适。确认动作的意义是把“系统猜到的内容”变成“用户认可的输入”。</p>
+      <p>前端会提示“画像已确认，可前往匹配与建议”，这说明系统已经具备计算条件。</p>
+    </section>
+
+    <section class="card">
+      <h2>第四步：查看匹配结果</h2>
+      <p>前端向 <code>POST /api/matches</code> 提交目标岗位和已确认的能力画像。后端调用匹配模块，返回匹配分、已满足项目、明确差距和待确认项目。</p>
+      <div class="flow">
+        <div>输入：目标岗位 + 已确认能力画像</div>
+        <div>程序：按岗位标签和能力标签计算</div>
+        <div>输出：分数 + 满足项 + 差距项 + 待确认项</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>第五步：生成建议报告</h2>
+      <p>用户请求报告时，后端的 <code>POST /api/reports</code> 会先重新计算匹配结果，再调用 AI 生成契合度评价、学习方向和具体学习活动。</p>
+      <p>最后，后端把岗位名称、匹配结果、AI 建议、版本信息和可导出的文本一起返回。报告的基本结构就是：我现在满足什么、还缺什么、接下来做什么。</p>
+    </section>
+
+    <section class="card callout">
+      <h2>一条完整链路</h2>
+      <p><strong>岗位浏览 → 设定目标 → 填写或解析简历 → 用户确认 → 程序匹配 → AI 生成建议 → 查看或导出报告。</strong></p>
+    </section>
+
+    <footer>
+      主要依据：<a href="../frontend/src/App.tsx">前端应用入口</a>、<a href="../backend/app/main.py">后端 API 入口</a>。下一课：这些步骤分别由哪些目录和模块负责？
+    </footer>
+  </main>
+</body>
+</html>

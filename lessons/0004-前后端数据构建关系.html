@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 4 课：前端、后端和数据构建的关系</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0004 · 项目整体认识</p>
+    <h1>三条线是怎样接起来的？</h1>
+    <p class="lead">前端负责提出问题和展示答案，后端负责处理问题，数据构建负责提前准备后端要使用的事实。</p>
+
+    <section class="card">
+      <h2>先看整体关系</h2>
+      <div class="flow">
+        <div>原始岗位资料、标签和招聘样本</div>
+        <div><strong>scripts/build_data.py：</strong>清洗、规范化、去重并构建结构化数据</div>
+        <div><strong>backend/data/career-data.json：</strong>后端运行时读取的数据集</div>
+        <div><strong>backend/app：</strong>读取数据并执行 API、匹配、解析和 AI 流程</div>
+        <div><strong>frontend/src：</strong>向用户展示岗位、画像、匹配结果和报告</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>前端做什么</h2>
+      <p>前端页面由 <a href="../frontend/src/App.tsx">App.tsx</a> 和各个页面组件组成。用户点击按钮、填写能力或上传简历后，前端把输入整理成请求，通过 <code>api.ts</code> 发给后端。</p>
+      <p>前端本身不决定匹配分。它主要负责收集输入、显示后端返回的结果，并把结果整理成用户能看懂的报告。</p>
+    </section>
+
+    <section class="card">
+      <h2>后端做什么</h2>
+      <p><a href="../backend/app/main.py">main.py</a> 接收前端请求。例如岗位列表由 <code>GET /api/jobs</code> 提供，匹配由 <code>POST /api/matches</code> 提供，完整报告由 <code>POST /api/reports</code> 提供。</p>
+      <p>后端会把请求交给对应模块：岗位请求进入数据模块，匹配请求进入 <code>matching.py</code>，简历请求进入 <code>resume.py</code>，AI 请求进入 <code>llm.py</code>。</p>
+    </section>
+
+    <section class="card">
+      <h2>数据构建做什么</h2>
+      <p><a href="../scripts/build_data.py">build_data.py</a> 负责把原始资料变成统一的数据格式。它处理岗位名称、标签、岗位要求、优先项、关联技能和招聘样本，让运行时不必每次重新理解原始材料。</p>
+      <p>生成后的 <code>career-data.json</code> 是运行时的事实来源。修改原始资料后，如果没有重新构建数据，后端仍然会读取旧数据。</p>
+    </section>
+
+    <section class="card callout">
+      <h2>用一次匹配请求串起来</h2>
+      <p>用户在前端选择岗位并确认能力后，前端调用 <code>/api/matches</code>；后端入口接收请求；数据模块提供岗位画像；<code>matching.py</code> 计算结果；后端把结果返回前端；前端再展示满足项、差距和分数。</p>
+      <p><strong>前端是入口，后端是处理中心，结构化数据是事实底座，数据脚本负责生产这个底座。</strong></p>
+    </section>
+
+    <footer>
+      主要依据：<a href="../scripts/build_data.py">数据构建脚本</a>、<a href="../backend/app/main.py">后端 API 入口</a>、<a href="../backend/data/career-data.json">运行时数据集</a>、<a href="../frontend/src/App.tsx">前端应用入口</a>。下一课：核心数据结构和匹配逻辑是怎样计算的？
+    </footer>
+  </main>
+</body>
+</html>
