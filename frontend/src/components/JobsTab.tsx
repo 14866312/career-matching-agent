@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { apiGet } from '../api';
 import type { JobDetail, JobSummary, Requirement } from '../types';
 import { EmptyState, ErrorBox, JobModal, Loading } from './ui';
@@ -101,7 +101,21 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   const [detail, setDetail] = useState<JobDetail | null>(null);
   const [detailError, setDetailError] = useState<unknown>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [query, setQuery] = useState('');
   const openIdRef = useRef<string | null>(null);
+
+  const visibleJobs = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return jobs;
+    return jobs.filter(job =>
+      [job.name, job.family, job.level, job.summary, ...job.requirements.map(x => x.label)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalized)
+    );
+  }, [jobs, query]);
+
+  const requirementCount = jobs.reduce((total, job) => total + job.requirements.length, 0);
 
   async function openJob(id: string) {
     openIdRef.current = id;
@@ -122,41 +136,69 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   const openJobName = jobs.find(j => j.id === openId)?.name ?? '';
 
   return (
-    <>
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">ROLE ATLAS</p>
-          <h2>六种起点，六条能力基线</h2>
+    <div className="jobs-stitch">
+      <section className="jobs-stitch-hero">
+        <div className="jobs-stitch-kicker">CURATED POSITIONS · ROLE ATLAS</div>
+        <h2>精选适合你的<br /><span>职业岗位</span></h2>
+        <p>基于岗位样本整理出的能力基线，先看清岗位需要什么，再决定下一步如何准备。</p>
+        <div className="jobs-stitch-stats" aria-label="岗位数据概览">
+          <div><strong>{jobs.length}</strong><span>岗位画像</span></div>
+          <div><strong>{requirementCount}</strong><span>要求标签</span></div>
+          <div><strong>{targetJobId ? '已设定' : '未设定'}</strong><span>目标岗位</span></div>
         </div>
-        <span className="count-badge">{jobs.length} ROLES</span>
-      </div>
-      <p className="soft-note">
-        岗位画像整理自赛题历史招聘样本：「要求等级」来自样本原文措辞统计或画像整理默认，二元证书要求只看具备与否，并非每条招聘广告的统一硬门槛。点击卡片查看技能、证书、通用素质与来源样本。
-      </p>
+      </section>
+
+      <section className="jobs-stitch-section">
+        <div className="jobs-stitch-section-head">
+          <div>
+            <div className="jobs-stitch-kicker">BROWSE THE BASELINE</div>
+            <h3>推荐岗位详情</h3>
+            <p>点击岗位卡片，查看核心技能、证书要求、通用素质和来源样本。</p>
+          </div>
+          <label className="jobs-stitch-search">
+            <span className="sr-only">搜索岗位</span>
+            <span aria-hidden="true">⌕</span>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="搜索岗位、方向或技能" />
+          </label>
+        </div>
+        <p className="jobs-stitch-note">
+          数据来自当前项目岗位样本。要求等级用于能力基线整理，不代表每条招聘广告的统一硬门槛。
+        </p>
       {error != null ? (
         <ErrorBox error={error} onRetry={onRetry} retryLabel="重新加载岗位" />
       ) : loading ? (
         <Loading text="正在加载岗位画像…" />
       ) : jobs.length === 0 ? (
         <EmptyState symbol="◌" title="暂无岗位数据">后端返回了空列表，请检查数据文件后刷新。</EmptyState>
+      ) : visibleJobs.length === 0 ? (
+        <EmptyState symbol="⌕" title="没有找到匹配岗位">换一个岗位名称、方向或技能关键词试试。</EmptyState>
       ) : (
-        <div className="job-grid">
-          {jobs.map(j => (
-            <button type="button" className="job-card" key={j.id} onClick={() => openJob(j.id)} aria-label={'查看 ' + j.name + ' 详情'}>
-              <div className="job-top">
-                <span className="monogram" style={{ background: j.color }}>{j.monogram}</span>
-                <span className="mono">{j.level}</span>
+        <div className="jobs-stitch-grid">
+          {visibleJobs.map(j => (
+            <button type="button" className={'jobs-stitch-card' + (j.id === targetJobId ? ' is-target' : '')} key={j.id} onClick={() => openJob(j.id)} aria-label={'查看 ' + j.name + ' 详情'}>
+              <div className="jobs-stitch-card-top">
+                <span className="jobs-stitch-family">{j.family}</span>
+                <span className="jobs-stitch-level">{j.level}</span>
               </div>
-              <h3>{j.name}{j.id === targetJobId && <span className="target-flag">已设为目标</span>}</h3>
+              <div className="jobs-stitch-title-row">
+                <span className="jobs-stitch-monogram" style={{ background: j.color }}>{j.monogram}</span>
+                <h4>{j.name}</h4>
+              </div>
               <p>{j.summary}</p>
-              <div className="pills">
-                {j.requirements.slice(0, 4).map(r => <span className="pill" key={r.tag_id}>{r.label}</span>)}
-                {j.requirements.length > 4 && <span className="pill">+{j.requirements.length - 4}</span>}
+              <div className="jobs-stitch-divider" />
+              <div className="jobs-stitch-card-bottom">
+                <span>{j.requirements.length} 项能力要求</span>
+                <span>{j.id === targetJobId ? '目标岗位 ✓' : '查看详情  ↗'}</span>
+              </div>
+              <div className="jobs-stitch-pills">
+                {j.requirements.slice(0, 3).map(r => <span key={r.tag_id}>{r.label}</span>)}
+                {j.requirements.length > 3 && <span>+{j.requirements.length - 3}</span>}
               </div>
             </button>
           ))}
         </div>
       )}
+      </section>
       <JobModal open={openId != null} onClose={() => setOpenId(null)} title={openJobName}>
         {detailLoading ? (
           <Loading text="正在加载岗位详情…" />
@@ -166,7 +208,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
           <JobDetailBody job={detail} onSetTarget={(id, name) => { onSetTarget(id, name); setOpenId(null); }} />
         ) : null}
       </JobModal>
-    </>
+    </div>
   );
 }
 

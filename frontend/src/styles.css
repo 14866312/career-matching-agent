@@ -768,3 +768,174 @@ button { font-family: inherit; }
   .filter-actions { flex-direction: column; align-items: stretch; }
   .filter-actions .primary-button, .filter-actions .ghost-button { width: 100%; }
 }
+
+/* Stitch-inspired jobs page. The data and interactions remain owned by JobsTab. */
+.jobs-stitch {
+  --stitch-bg: #111113;
+  --stitch-card: #18181b;
+  --stitch-card-hover: #202024;
+  --stitch-line: rgba(255, 255, 255, 0.1);
+  --stitch-text: #f5f5f5;
+  --stitch-muted: #929298;
+  --stitch-accent: #d9ff55;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+  border-radius: 18px;
+  min-height: 720px;
+  margin: -20px -12px;
+  padding: 74px clamp(22px, 5vw, 78px) 90px;
+  overflow: hidden;
+  position: relative;
+}
+
+.jobs-stitch::before {
+  content: "";
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  top: -300px;
+  right: -170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 255, 85, 0.11), transparent 68%);
+  pointer-events: none;
+}
+
+.jobs-stitch-hero,
+.jobs-stitch-section { max-width: 980px; margin: 0 auto; position: relative; }
+
+.jobs-stitch-hero { text-align: center; padding: 15px 0 76px; }
+
+.jobs-stitch-kicker {
+  color: var(--stitch-muted);
+  font: 500 10px "DM Mono", Consolas, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.jobs-stitch-hero h2 {
+  color: var(--stitch-text);
+  font-size: clamp(42px, 7vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.07em;
+  font-weight: 300;
+  margin: 22px 0 20px;
+}
+
+.jobs-stitch-hero h2 span {
+  background: linear-gradient(180deg, #fff, #747479);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.jobs-stitch-hero > p {
+  color: var(--stitch-muted);
+  max-width: 520px;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.jobs-stitch-stats {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(100px, 1fr));
+  margin-top: 38px;
+  border: 1px solid var(--stitch-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+  text-align: left;
+}
+
+.jobs-stitch-stats div { min-width: 120px; padding: 18px 23px; }
+.jobs-stitch-stats div + div { border-left: 1px solid var(--stitch-line); }
+.jobs-stitch-stats strong { display: block; color: var(--stitch-text); font-size: 25px; font-weight: 300; letter-spacing: -0.04em; }
+.jobs-stitch-stats span { color: var(--stitch-muted); font: 10px "DM Mono", Consolas, monospace; }
+
+.jobs-stitch-section { border-top: 1px solid var(--stitch-line); padding-top: 68px; }
+
+.jobs-stitch-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.jobs-stitch-section h3 { color: var(--stitch-text); font-size: 30px; font-weight: 300; letter-spacing: -0.05em; margin: 8px 0 5px; }
+.jobs-stitch-section-head p, .jobs-stitch-note { color: var(--stitch-muted); font-size: 13px; margin: 0; }
+.jobs-stitch-note { border-bottom: 1px solid var(--stitch-line); padding-bottom: 20px; margin-bottom: 22px; }
+
+.jobs-stitch-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(300px, 100%);
+  border: 1px solid var(--stitch-line);
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: var(--stitch-muted);
+  flex: none;
+}
+
+.jobs-stitch-search input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  background: transparent;
+  color: var(--stitch-text);
+  font: 12px Manrope, system-ui, sans-serif;
+}
+
+.jobs-stitch-search input::placeholder { color: #6d6d73; }
+
+.jobs-stitch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+
+.jobs-stitch-card {
+  position: relative;
+  min-height: 255px;
+  border: 1px solid var(--stitch-line);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+  color: var(--stitch-text);
+  cursor: pointer;
+  padding: 20px;
+  text-align: left;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.jobs-stitch-card:hover, .jobs-stitch-card:focus-visible { border-color: rgba(217, 255, 85, 0.55); background: var(--stitch-card-hover); transform: translateY(-3px); }
+.jobs-stitch-card.is-target { border-color: rgba(217, 255, 85, 0.65); box-shadow: 0 0 0 1px rgba(217, 255, 85, 0.14); }
+.jobs-stitch-card-top, .jobs-stitch-card-bottom { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.jobs-stitch-family, .jobs-stitch-level, .jobs-stitch-card-bottom { color: var(--stitch-muted); font: 10px "DM Mono", Consolas, monospace; }
+.jobs-stitch-level { color: var(--stitch-accent); }
+.jobs-stitch-title-row { display: flex; align-items: center; gap: 12px; margin-top: 30px; }
+.jobs-stitch-monogram { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: #fff; font: 12px "DM Mono", Consolas, monospace; flex: none; }
+.jobs-stitch-card h4 { color: var(--stitch-text); font-size: 17px; font-weight: 500; letter-spacing: -0.035em; margin: 0; }
+.jobs-stitch-card p { color: var(--stitch-muted); font-size: 12px; line-height: 1.65; min-height: 58px; margin: 17px 0 12px; }
+.jobs-stitch-divider { border-top: 1px solid var(--stitch-line); margin-bottom: 13px; }
+.jobs-stitch-card-bottom span:last-child { color: var(--stitch-text); }
+.jobs-stitch-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; }
+.jobs-stitch-pills span { color: #bfc0c5; border: 1px solid var(--stitch-line); border-radius: 999px; padding: 4px 7px; font: 9px "DM Mono", Consolas, monospace; }
+
+.jobs-stitch .loading, .jobs-stitch .empty-state { color: var(--stitch-muted); }
+.jobs-stitch .empty-state h3 { color: var(--stitch-text); }
+.jobs-stitch .error-box { background: rgba(180, 70, 70, 0.15); border-color: rgba(255, 150, 150, 0.35); color: #ffbdbd; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 800px) {
+  .jobs-stitch-section-head { align-items: stretch; flex-direction: column; }
+  .jobs-stitch-search { width: 100%; }
+  .jobs-stitch-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .jobs-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+  .jobs-stitch-hero { padding-bottom: 55px; }
+  .jobs-stitch-hero h2 { font-size: 46px; }
+  .jobs-stitch-stats { width: 100%; }
+  .jobs-stitch-stats div { min-width: 0; padding: 14px 10px; }
+  .jobs-stitch-stats strong { font-size: 20px; }
+  .jobs-stitch-grid { grid-template-columns: 1fr; }
+}
