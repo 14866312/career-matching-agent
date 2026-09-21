@@ -924,6 +924,99 @@ button { font-family: inherit; }
 .jobs-stitch .error-box { background: rgba(180, 70, 70, 0.15); border-color: rgba(255, 150, 150, 0.35); color: #ffbdbd; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
+/* Stitch-inspired profile page. Existing form state, API calls and validation stay in ProfileTab. */
+.profile-stitch {
+  --stitch-bg: #111113;
+  --stitch-card: #18181b;
+  --stitch-card-hover: #202024;
+  --stitch-line: rgba(255, 255, 255, 0.1);
+  --stitch-text: #f5f5f5;
+  --stitch-muted: #929298;
+  --stitch-accent: #d9ff55;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+  border-radius: 18px;
+  min-height: 720px;
+  margin: -20px -12px;
+  padding: 74px clamp(22px, 5vw, 78px) 90px;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-stitch::before {
+  content: "";
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  top: -300px;
+  left: -180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 255, 85, 0.09), transparent 68%);
+  pointer-events: none;
+}
+
+.profile-stitch-hero, .profile-stitch-layout { max-width: 980px; margin: 0 auto; position: relative; }
+.profile-stitch-hero { text-align: center; padding: 15px 0 58px; }
+.profile-stitch-kicker { color: var(--stitch-muted); font: 500 10px "DM Mono", Consolas, monospace; letter-spacing: 0.2em; text-transform: uppercase; margin: 0; }
+.profile-stitch-hero h2 { color: var(--stitch-text); font-size: clamp(42px, 7vw, 72px); line-height: 1.02; letter-spacing: -0.07em; font-weight: 300; margin: 22px 0 20px; }
+.profile-stitch-hero h2 span { background: linear-gradient(180deg, #fff, #747479); background-clip: text; -webkit-background-clip: text; color: transparent; }
+.profile-stitch-hero > p { color: var(--stitch-muted); max-width: 560px; margin: 0 auto; font-size: 14px; line-height: 1.8; }
+.profile-stitch-progress { display: inline-grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); margin-top: 34px; border: 1px solid var(--stitch-line); border-radius: 16px; background: rgba(255,255,255,.035); overflow: hidden; text-align: left; }
+.profile-stitch-progress div { min-width: 110px; padding: 15px 18px; display: flex; flex-direction: column; gap: 3px; }
+.profile-stitch-progress div + div { border-left: 1px solid var(--stitch-line); }
+.profile-stitch-progress b { color: var(--stitch-muted); font: 10px "DM Mono", Consolas, monospace; }
+.profile-stitch-progress span { color: var(--stitch-muted); font-size: 12px; }
+.profile-stitch-progress .is-current b, .profile-stitch-progress .is-current span { color: var(--stitch-accent); }
+.profile-stitch-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(290px, .85fr); gap: 18px; align-items: start; border-top: 1px solid var(--stitch-line); padding-top: 58px; }
+.profile-stitch-form, .profile-stitch .profile-preview { background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)); border: 1px solid var(--stitch-line); border-radius: 14px; color: var(--stitch-text); box-shadow: none; }
+.profile-stitch-form { padding: 24px; }
+.profile-stitch-form-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--stitch-line); }
+.profile-stitch-form-head h3 { color: var(--stitch-text); font-size: 24px; font-weight: 400; letter-spacing: -.05em; margin: 8px 0 0; }
+.profile-stitch-counter { color: var(--stitch-accent); font: 10px "DM Mono", Consolas, monospace; padding-top: 4px; }
+.profile-stitch .form-card label { color: #d0d0d3; }
+.profile-stitch .form-card input, .profile-stitch .form-card textarea, .profile-stitch .form-card select { background: rgba(255,255,255,.045); border-color: var(--stitch-line); color: var(--stitch-text); }
+.profile-stitch .form-card input::placeholder, .profile-stitch .form-card textarea::placeholder { color: #6d6d73; }
+.profile-stitch .form-card input:focus, .profile-stitch .form-card textarea:focus, .profile-stitch .form-card select:focus { border-color: rgba(217,255,85,.6); box-shadow: 0 0 0 3px rgba(217,255,85,.09); }
+.profile-stitch .upload-zone { background: rgba(217,255,85,.055); border-color: rgba(217,255,85,.3); }
+.profile-stitch .upload-zone span, .profile-stitch .soft-note, .profile-stitch .form-message { color: var(--stitch-muted); }
+.profile-stitch .tag-editor { border-top: 1px solid var(--stitch-line); padding-top: 18px; }
+.profile-stitch .editor-title { color: var(--stitch-text); }
+.profile-stitch .tag-input button, .profile-stitch .tag-evidence-toggle { color: var(--stitch-accent); border-color: rgba(217,255,85,.35); }
+.profile-stitch .tag-list { gap: 8px; }
+.profile-stitch .editable-tag { background: rgba(217,255,85,.08); border-color: rgba(217,255,85,.25); color: #e8f6b0; }
+.profile-stitch .editable-tag.has-evidence { background: rgba(217,255,85,.14); border-color: rgba(217,255,85,.55); }
+.profile-stitch .editable-tag select { background: #222226; color: var(--stitch-text); border-color: var(--stitch-line); }
+.profile-stitch .tag-empty { color: var(--stitch-muted); }
+.profile-stitch .confirm-row { background: rgba(255,255,255,.035); border-color: var(--stitch-line); }
+.profile-stitch .confirm-badge { color: #f5d58e; background: rgba(241,197,110,.15); }
+.profile-stitch .confirm-badge.ok { color: var(--stitch-accent); background: rgba(217,255,85,.12); }
+.profile-stitch .profile-preview { padding: 24px; min-height: 380px; }
+.profile-stitch .profile-summary h3 { color: var(--stitch-text); font-size: 25px; font-weight: 400; letter-spacing: -.05em; }
+.profile-stitch .profile-summary p { color: var(--stitch-muted); }
+.profile-stitch .stat { background: rgba(255,255,255,.055); border: 1px solid var(--stitch-line); }
+.profile-stitch .stat strong { color: var(--stitch-accent); font-weight: 300; }
+.profile-stitch .stat span { color: var(--stitch-muted); }
+.profile-stitch .item-block { border-top-color: var(--stitch-line); }
+.profile-stitch .item, .profile-stitch .req-item { background: rgba(255,255,255,.035); border-color: var(--stitch-line); color: #d0d0d3; }
+.profile-stitch .req-item summary { color: var(--stitch-text); }
+.profile-stitch .req-quote { background: rgba(255,255,255,.035); border-left-color: var(--stitch-accent); color: var(--stitch-muted); }
+.profile-stitch .primary-button { background: var(--stitch-accent); color: #111113; }
+.profile-stitch .ghost-button { color: var(--stitch-accent); border-color: rgba(217,255,85,.4); background: transparent; }
+.profile-stitch .error-box { background: rgba(180,70,70,.15); border-color: rgba(255,150,150,.35); color: #ffbdbd; }
+
+@media (max-width: 800px) {
+  .profile-stitch-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .profile-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+  .profile-stitch-hero { padding-bottom: 45px; }
+  .profile-stitch-hero h2 { font-size: 46px; }
+  .profile-stitch-progress { width: 100%; }
+  .profile-stitch-progress div { min-width: 0; padding: 13px 10px; }
+  .profile-stitch-form, .profile-stitch .profile-preview { padding: 18px; }
+}
+
 @media (max-width: 800px) {
   .jobs-stitch-section-head { align-items: stretch; flex-direction: column; }
   .jobs-stitch-search { width: 100%; }

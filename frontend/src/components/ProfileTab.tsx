@@ -304,16 +304,26 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
     student.qualities.filter(x => x.confirmed && x.level > 0 && x.evidence.trim().length > 0).length;
 
   return (
-    <>
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">YOUR SIGNALS</p>
-          <h2>把经历翻译成能力</h2>
+    <div className="profile-stitch">
+      <section className="profile-stitch-hero">
+        <div className="profile-stitch-kicker">PROFILE CALIBRATION · YOUR SIGNALS</div>
+        <h2>把经历翻译成<br /><span>可验证的能力。</span></h2>
+        <p>先导入或填写你的经历，再逐项确认技能、证书和通用素质。只有带有真实证据的确认项，才会进入岗位匹配。</p>
+        <div className="profile-stitch-progress" aria-label="能力画像流程">
+          <div className="is-current"><b>01</b><span>导入资料</span></div>
+          <div><b>02</b><span>确认能力</span></div>
+          <div><b>03</b><span>生成画像</span></div>
         </div>
-        <span className="soft-note">只有勾选「已确认」且填写证据的标签才计入基础匹配分</span>
-      </div>
-      <div className="profile-layout">
-        <form className="card form-card" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
+      </section>
+      <div className="profile-stitch-layout">
+        <form className="card form-card profile-stitch-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
+          <div className="profile-stitch-form-head">
+            <div>
+              <p className="profile-stitch-kicker">STEP 01 · SOURCE MATERIAL</p>
+              <h3>你的基础资料</h3>
+            </div>
+            <span className="profile-stitch-counter">{total} 项能力</span>
+          </div>
           <label>
             专业
             <input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" aria-label="专业"
@@ -438,6 +448,6 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
           )}
         </aside>
       </div>
-    </>
+    </div>
   );
 }
