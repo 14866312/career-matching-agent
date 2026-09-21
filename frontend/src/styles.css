@@ -1082,6 +1082,63 @@ button { font-family: inherit; }
   .matches-stitch-hero h2 { font-size: 46px; }
 }
 
+/* Stitch-inspired career path page. The SVG layout and path interactions remain unchanged. */
+.paths-stitch {
+  --stitch-bg: #111113;
+  --stitch-line: rgba(255,255,255,.1);
+  --stitch-text: #f5f5f5;
+  --stitch-muted: #929298;
+  --stitch-accent: #d9ff55;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+  border-radius: 18px;
+  min-height: 720px;
+  margin: -20px -12px;
+  padding: 74px clamp(22px, 5vw, 78px) 90px;
+  overflow: hidden;
+  position: relative;
+}
+.paths-stitch::before { content: ""; position: absolute; width: 520px; height: 520px; left: -220px; bottom: -330px; border-radius: 50%; background: radial-gradient(circle, rgba(217,255,85,.08), transparent 68%); pointer-events: none; }
+.paths-stitch .section-head, .paths-stitch .path-legend, .paths-stitch .path-card, .paths-stitch .transition-card { max-width: 980px; margin-left: auto; margin-right: auto; position: relative; }
+.paths-stitch .section-head { border-bottom: 1px solid var(--stitch-line); padding-bottom: 24px; align-items: end; }
+.paths-stitch .eyebrow { color: var(--stitch-muted); }
+.paths-stitch .section-head h2 { color: var(--stitch-text); font-size: clamp(38px, 6vw, 64px); font-weight: 300; letter-spacing: -.07em; }
+.paths-stitch .count-badge { color: var(--stitch-accent); border-color: rgba(217,255,85,.35); background: rgba(217,255,85,.08); }
+.paths-stitch .path-legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--stitch-muted); padding: 18px 0; font-size: 12px; }
+.paths-stitch .legend-dot { background: var(--stitch-accent); }
+.paths-stitch .legend-dot.transition { background: #f3a46f; }
+.paths-stitch .path-card, .paths-stitch .transition-card { background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)); border: 1px solid var(--stitch-line); border-radius: 14px; box-shadow: none; }
+.paths-stitch .path-card { padding: 24px; overflow-x: auto; }
+.paths-stitch .path-stage-label { fill: var(--stitch-muted); }
+.paths-stitch .path-edge.promotion { stroke: var(--stitch-accent); }
+.paths-stitch .path-edge.transition { stroke: #f3a46f; }
+.paths-stitch .path-edge.selected { filter: drop-shadow(0 2px 4px rgba(217,255,85,.25)); }
+.paths-stitch .path-rect { fill: #202024; stroke: var(--stitch-line); }
+.paths-stitch .path-rect.base { fill: rgba(217,255,85,.12); stroke: rgba(217,255,85,.45); }
+.paths-stitch .path-rect.senior { fill: rgba(243,164,111,.12); stroke: rgba(243,164,111,.45); }
+.paths-stitch .path-node-title { fill: var(--stitch-text); }
+.paths-stitch .path-node-sub { fill: var(--stitch-muted); }
+.paths-stitch .path-detail { background: rgba(217,255,85,.07); border-color: rgba(217,255,85,.3); color: #d0d0d3; }
+.paths-stitch .path-detail h4, .paths-stitch .path-detail b { color: var(--stitch-text); }
+.paths-stitch .path-detail p { color: var(--stitch-muted); }
+.paths-stitch .transition-card { margin-top: 18px; padding: 22px; }
+.paths-stitch .transition-card h4 { color: var(--stitch-text); }
+.paths-stitch .transition-card .soft-note { color: var(--stitch-muted); }
+.paths-stitch .transition-item { color: var(--stitch-text); border-color: var(--stitch-line); background: rgba(255,255,255,.035); }
+.paths-stitch .transition-item:hover, .paths-stitch .transition-item.selected { background: rgba(217,255,85,.08); border-color: rgba(217,255,85,.45); }
+.paths-stitch .transition-item span { color: var(--stitch-muted); }
+.paths-stitch .empty-state, .paths-stitch .loading { color: var(--stitch-muted); }
+.paths-stitch .empty-state h3 { color: var(--stitch-text); }
+.paths-stitch .error-box { background: rgba(180,70,70,.15); border-color: rgba(255,150,150,.35); color: #ffbdbd; }
+.paths-stitch .ghost-button { color: var(--stitch-accent); border-color: rgba(217,255,85,.4); background: transparent; }
+
+@media (max-width: 560px) {
+  .paths-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+  .paths-stitch .section-head { align-items: flex-start; flex-direction: column; }
+  .paths-stitch .section-head h2 { font-size: 46px; }
+  .paths-stitch .path-card { padding: 14px; }
+}
+
 @media (max-width: 800px) {
   .jobs-stitch-section-head { align-items: stretch; flex-direction: column; }
   .jobs-stitch-search { width: 100%; }

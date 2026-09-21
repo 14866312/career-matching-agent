@@ -74,18 +74,18 @@ export default function PathsTab({ active, jobs, showToast }: {
   if (!active && data) return null;
   if (error != null) {
     return (
-      <div className="panel-section">
+      <div className="panel-section paths-stitch">
         <div className="section-head"><div><p className="eyebrow">CAREER MAP</p><h2>路径与换岗</h2></div></div>
         <ErrorBox error={error} onRetry={load} retryLabel="重新加载路径" />
       </div>
     );
   }
   if (loading) {
-    return <div className="panel-section"><Loading text="正在加载职业路径…" /></div>;
+    return <div className="panel-section paths-stitch"><Loading text="正在加载职业路径…" /></div>;
   }
   if (!data) {
     return (
-      <div className="panel-section">
+      <div className="panel-section paths-stitch">
         <div className="section-head"><div><p className="eyebrow">CAREER MAP</p><h2>路径与换岗</h2></div></div>
         <EmptyState symbol="↝" title="路径图尚未加载">
           <button className="ghost-button" type="button" onClick={load}>加载职业路径</button>
@@ -104,7 +104,7 @@ export default function PathsTab({ active, jobs, showToast }: {
   const promotions = data.edges.filter(e => e.type === 'promotion');
 
   return (
-    <div className="panel-section">
+    <div className="panel-section paths-stitch">
       <div className="section-head">
         <div>
           <p className="eyebrow">CAREER MAP</p>
