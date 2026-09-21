@@ -322,30 +322,31 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
 
   if (notConfirmed && meta == null && !loading && loadError == null) {
     return (
-      <>
-        <div className="section-head"><div><p className="eyebrow">MATCH ENGINE</p><h2>看见你与岗位的距离</h2></div></div>
+      <div className="matches-stitch matches-stitch-empty">
+        <div className="matches-stitch-hero"><p className="matches-stitch-kicker">MATCH ENGINE · REPORT BUILDER</p><h2>看见你与岗位的<br /><span>距离与下一步。</span></h2><p>先确认能力画像，系统会按岗位要求计算匹配度，并把差距转成可执行的学习建议。</p></div>
         <div className="card match-list">
           <EmptyState symbol="↗" title="先完成并确认能力画像">
             <p>到「我的能力」填写并点击「确认完整画像」后，这里会展示最多 5 个岗位推荐。零技能画像也可以确认，结果会展示为 0 分或待确认。</p>
             <button className="ghost-button" type="button" aria-label="去填写能力画像" onClick={onGoProfile}>去填写能力画像</button>
           </EmptyState>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="section-head">
+    <div className="matches-stitch">
+      <div className="matches-stitch-hero matches-stitch-hero-compact">
         <div>
-          <p className="eyebrow">MATCH ENGINE</p>
-          <h2>看见你与岗位的距离</h2>
+          <p className="matches-stitch-kicker">MATCH ENGINE · REPORT BUILDER</p>
+          <h2>看见你与岗位的<br /><span>距离与下一步。</span></h2>
+          <p>匹配结果来自当前确认画像与岗位基线。选中岗位后，可以查看满足项、差距项和职业建议。</p>
         </div>
         <div className="toolbar">
           <button className="ghost-button" type="button" aria-label="刷新推荐" onClick={load} disabled={loading || notConfirmed}>刷新推荐</button>
         </div>
       </div>
-      <div className="card filter-bar">
+      <div className="card filter-bar matches-stitch-filter">
         <label>城市筛选
           <input value={city} maxLength={80} placeholder="留空则不筛选" aria-label="城市筛选" onChange={e => setCity(e.target.value)} />
         </label>
@@ -384,7 +385,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       <p className="soft-note">
         招聘样本为赛题历史数据，仅用于条件筛选与来源展示；日薪与月薪分别筛选、不做换算；筛选过严会整体排除无匹配样本的岗位。
       </p>
-      <div className="match-layout">
+      <div className="match-layout matches-stitch-layout">
         <div className="card match-list">
           {loading ? (
             <Loading text="正在计算推荐…" />
@@ -497,7 +498,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
           )}
         </aside>
       </div>
-    </>
+    </div>
   );
 }
 
