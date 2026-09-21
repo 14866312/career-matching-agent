@@ -5,6 +5,7 @@ import JobsTab from './components/JobsTab';
 import ProfileTab from './components/ProfileTab';
 import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
+import SingularityIntro from './components/SingularityIntro';
 
 const EMPTY_STUDENT: StudentProfile = {
   major: '',
@@ -28,6 +29,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
 ];
 
 export default function App() {
+  const [stage, setStage] = useState<'singularity' | 'exploration'>('singularity');
   const [tab, setTab] = useState<TabId>('jobs');
   const [health, setHealth] = useState<HealthResp | null>(null);
   const [healthError, setHealthError] = useState<unknown>(null);
@@ -127,13 +129,17 @@ export default function App() {
     ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，岗位浏览不受影响')
     : null;
 
+  if (stage === 'singularity') {
+    return <SingularityIntro onComplete={() => setStage('exploration')} />;
+  }
+
   return (
-    <div className="shell">
+    <div className="shell exploration-shell">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">◈</span>
-          职业罗盘
-          <small>CAREER COMPASS · 计算机类岗位</small>
+          <span className="brand-mark">✦</span>
+          <span>职业探索</span>
+          <small>CAREER EXPLORATION · FROM SINGULARITY TO DIRECTION</small>
         </div>
         <div className="status" role="status" aria-live="polite">
           <span className={'status-dot' + (health?.status === 'ok' ? ' ok' : '')} />
@@ -146,31 +152,22 @@ export default function App() {
           </span>
         </div>
       </header>
-      <section className="hero">
+      <section className="exploration-intro-bar">
         <div>
-          <p className="eyebrow">COMPUTER CAREERS · SAMPLE-BASED</p>
-          <h1>看清<em>岗位</em>，<br />也看清自己。</h1>
-          <p className="hero-sub">
-            岗位画像整理自历史招聘样本，匹配分由程序按标签重合度计算。确认你的技能、证书和素质，得到可执行的学习建议。
-          </p>
+          <p className="eyebrow">THE UNIVERSE OF YOUR CAREER</p>
+          <h1>从奇点出发，探索你的职业轨道。</h1>
+          <p>这里的每一步都连接到真实的岗位样本、能力证据和匹配结果。自由切换模块，逐步收敛你的方向。</p>
         </div>
-        <div className="hero-orbit" aria-hidden="true">
-          <span className="orbit-ring" />
-          <span className="orbit-ring ring-two" />
-          <span className="orbit-core">◈<span>6 ROLES · 3 STAGES</span></span>
-          <span className="orbit-label label-a"><b>能力基线</b><br />技能 / 证书 / 素质</span>
-          <span className="orbit-label label-b"><b>匹配建议</b><br />满足 / 差距 / 待确认</span>
-          <span className="orbit-label label-c"><b>路径参考</b><br />晋升 / 换岗</span>
-        </div>
+        <div className="exploration-orbit-mark" aria-hidden="true"><i /><span>EXPLORE</span></div>
       </section>
-      <nav className="tabs" role="tablist" aria-label="功能页签">
+      <nav className="tabs exploration-nav" role="tablist" aria-label="职业探索导航">
         {TABS.map(t => (
           <button
             key={t.id}
             type="button"
             role="tab"
             aria-selected={tab === t.id}
-            className={'tab' + (tab === t.id ? ' active' : '')}
+            className={'tab exploration-nav-item' + (tab === t.id ? ' active' : '')}
             onClick={() => setTab(t.id)}
           >
             {t.label}
