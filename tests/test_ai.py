@@ -20,6 +20,7 @@ def fake_http(monkeypatch):
     monkeypatch.setenv('LLM_BASE_URL', 'https://example.invalid/v1')
     monkeypatch.setenv('LLM_MODEL', 'test-model')
     monkeypatch.setenv('LLM_API_KEY', 'test-only-key')
+    monkeypatch.setenv('LLM_ADAPTER', 'chat-completions')
     async def no_sleep(_):
         pass
     monkeypatch.setattr(llm.asyncio, 'sleep', no_sleep)
@@ -40,6 +41,17 @@ def fake_http(monkeypatch):
         monkeypatch.setattr(llm.httpx, 'AsyncClient', lambda **kw: original(transport=httpx.MockTransport(handler), **kw))
         return calls
     return install
+
+
+@pytest.mark.asyncio
+async def test_responses_adapter_uses_responses_contract(fake_http, monkeypatch):
+    monkeypatch.setenv('LLM_ADAPTER', 'openai-responses')
+    calls = fake_http([httpx.Response(200, json={'output_text': '{"ok": true}'})])
+    assert await llm.call_json('test', {'value': 1}) == {'ok': True}
+    assert calls[0]['model'] == 'test-model'
+    assert calls[0]['max_output_tokens'] == 3500
+    assert calls[0]['input'] == '{"value": 1}'
+    assert 'instructions' in calls[0]
 
 
 @pytest.mark.asyncio

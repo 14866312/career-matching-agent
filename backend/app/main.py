@@ -34,6 +34,7 @@ app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173', 'http
 
 class LLMConfigUpdate(BaseModel):
     provider: str = Field(default='openai', max_length=40)
+    adapter: str = Field(default='chat-completions', max_length=80)
     base_url: str = Field(min_length=1, max_length=500)
     model: str = Field(min_length=1, max_length=160)
     api_key: str | None = Field(default=None, max_length=1000)
@@ -105,7 +106,7 @@ def llm_config():
 
 @app.post('/api/llm/config')
 def save_llm_config(payload: LLMConfigUpdate):
-    return update_config(payload.base_url, payload.model, payload.api_key)
+    return update_config(payload.base_url, payload.model, payload.api_key, payload.adapter)
 
 
 @app.get('/api/tags')

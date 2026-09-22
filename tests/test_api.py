@@ -51,26 +51,31 @@ def test_llm_config_api_never_returns_api_key(client, monkeypatch):
     empty = client.get('/api/llm/config')
     assert empty.status_code == 200
     assert empty.json()['configured'] is False
+    assert empty.json()['adapter'] == 'chat-completions'
     assert 'LLM_API_KEY' not in empty.text
 
     saved = client.post('/api/llm/config', json={
         'provider': 'deepseek',
+        'adapter': 'chat-completions',
         'base_url': 'https://api.deepseek.com',
         'model': 'deepseek-chat',
         'api_key': 'test-secret-key'
     })
     assert saved.status_code == 200
     assert saved.json()['provider'] == 'deepseek'
+    assert saved.json()['adapter'] == 'chat-completions'
     assert saved.json()['configured'] is True
     assert saved.json()['has_api_key'] is True
     assert 'test-secret-key' not in saved.text
 
     retained = client.post('/api/llm/config', json={
         'provider': 'openai',
+        'adapter': 'openai-responses',
         'base_url': 'https://api.openai.com/v1',
         'model': 'gpt-4o-mini'
     })
     assert retained.status_code == 200
+    assert retained.json()['adapter'] == 'openai-responses'
     assert retained.json()['has_api_key'] is True
     assert 'test-secret-key' not in retained.text
 
@@ -80,6 +85,19 @@ def test_llm_config_rejects_insecure_remote_url(client):
         'provider': 'openai',
         'base_url': 'http://example.com/v1',
         'model': 'test-model',
+        'api_key': 'secret'
+    })
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'LLM_CONFIG'
+    assert 'secret' not in response.text
+
+
+def test_llm_config_rejects_unknown_adapter(client):
+    response = client.post('/api/llm/config', json={
+        'provider': 'openai',
+        'adapter': 'unknown-adapter',
+        'base_url': 'https://api.openai.com/v1',
+        'model': 'gpt-4o-mini',
         'api_key': 'secret'
     })
     assert response.status_code == 400

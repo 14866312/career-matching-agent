@@ -12,6 +12,8 @@ from .data import dataset
 from .matching import canonical
 from .models import Ability, StudentProfile
 
+LLM_ADAPTERS = {'openai-responses', 'chat-completions'}
+
 
 class AIError(Exception):
     def __init__(self, code, message, retryable=False):
@@ -31,6 +33,8 @@ def config_snapshot():
     provider = 'deepseek' if 'deepseek' in (base_url + ' ' + model).lower() else 'openai'
     return {
         'provider': provider,
+        # Keep legacy .env deployments on the existing protocol until they opt in.
+        'adapter': os.environ.get('LLM_ADAPTER', 'chat-completions').strip() or 'chat-completions',
         'base_url': base_url,
         'model': model,
         'configured': configured(),
@@ -38,16 +42,21 @@ def config_snapshot():
     }
 
 
-def update_config(base_url: str, model: str, api_key: str | None = None):
+def update_config(base_url: str, model: str, api_key: str | None = None, adapter: str = 'chat-completions'):
     base_url = base_url.strip().rstrip('/')
     model = model.strip()
+    adapter = adapter.strip()
     if not base_url or not model:
         raise AIError('LLM_CONFIG', '接口地址和模型名称不能为空。')
-    probe = base_url if base_url.endswith('/chat/completions') else base_url + '/chat/completions'
+    if adapter not in LLM_ADAPTERS:
+        raise AIError('LLM_CONFIG', '暂不支持该模型适配器。')
+    endpoint = 'responses' if adapter == 'openai-responses' else 'chat/completions'
+    probe = base_url if base_url.endswith('/' + endpoint) else base_url + '/' + endpoint
     if not probe.startswith(('https://', 'http://127.0.0.1:', 'http://localhost:')):
         raise AIError('LLM_CONFIG', '模型地址需使用 HTTPS，或本机回环 HTTP 地址。')
     os.environ['LLM_BASE_URL'] = base_url
     os.environ['LLM_MODEL'] = model
+    os.environ['LLM_ADAPTER'] = adapter
     if api_key and api_key.strip():
         os.environ['LLM_API_KEY'] = api_key.strip()
     return config_snapshot()
@@ -61,10 +70,22 @@ async def call_json(instruction, payload):
     if not configured():
         raise AIError('LLM_NOT_CONFIGURED', '请在本机 .env 配置模型接口、模型名和密钥，然后重启服务。')
     base = os.environ['LLM_BASE_URL'].rstrip('/')
-    url = base if base.endswith('/chat/completions') else base + '/chat/completions'
+    adapter = os.environ.get('LLM_ADAPTER', 'chat-completions').strip() or 'chat-completions'
+    if adapter not in LLM_ADAPTERS:
+        raise AIError('LLM_CONFIG', '暂不支持该模型适配器。')
+    endpoint = 'responses' if adapter == 'openai-responses' else 'chat/completions'
+    url = base if base.endswith('/' + endpoint) else base + '/' + endpoint
     if not url.startswith(('https://', 'http://127.0.0.1:', 'http://localhost:')):
         raise AIError('LLM_CONFIG', '模型地址需使用 HTTPS，或本机回环 HTTP 地址。')
-    body = {'model': os.environ['LLM_MODEL'], 'messages': [{'role': 'system', 'content': SYSTEM + chr(10) + instruction}, {'role': 'user', 'content': json.dumps(payload, ensure_ascii=False)}], 'temperature': 0.2, 'max_tokens': 3500}
+    if adapter == 'openai-responses':
+        body = {
+            'model': os.environ['LLM_MODEL'],
+            'instructions': SYSTEM + chr(10) + instruction,
+            'input': json.dumps(payload, ensure_ascii=False),
+            'max_output_tokens': 3500,
+        }
+    else:
+        body = {'model': os.environ['LLM_MODEL'], 'messages': [{'role': 'system', 'content': SYSTEM + chr(10) + instruction}, {'role': 'user', 'content': json.dumps(payload, ensure_ascii=False)}], 'temperature': 0.2, 'max_tokens': 3500}
     headers = {'Authorization': 'Bearer ' + os.environ['LLM_API_KEY'], 'Content-Type': 'application/json'}
     async with httpx.AsyncClient(timeout=httpx.Timeout(45), follow_redirects=False) as client:
         for attempt in range(2):
@@ -98,13 +119,27 @@ async def call_json(instruction, payload):
                 envelope = response.json()
                 if not isinstance(envelope, dict):
                     raise ValueError()
-                choices = envelope.get('choices')
-                if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
-                    raise ValueError()
-                choice = choices[0]
-                if choice.get('finish_reason') == 'length':
-                    raise ValueError()
-                content = choice['message']['content']
+                if adapter == 'openai-responses':
+                    if envelope.get('status') == 'incomplete':
+                        raise ValueError()
+                    content = envelope.get('output_text')
+                    if not isinstance(content, str):
+                        parts = []
+                        for item in envelope.get('output', []):
+                            if not isinstance(item, dict):
+                                continue
+                            for part in item.get('content', []):
+                                if isinstance(part, dict) and isinstance(part.get('text'), str):
+                                    parts.append(part['text'])
+                        content = ''.join(parts)
+                else:
+                    choices = envelope.get('choices')
+                    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                        raise ValueError()
+                    choice = choices[0]
+                    if choice.get('finish_reason') == 'length':
+                        raise ValueError()
+                    content = choice['message']['content']
                 if not isinstance(content, str) or len(content) > 50000:
                     raise ValueError()
                 fence = chr(96) * 3

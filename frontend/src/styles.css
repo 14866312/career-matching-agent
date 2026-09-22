@@ -1602,8 +1602,8 @@ button { font-family: inherit; }
   --stitch-line: rgba(255,255,255,.08);
   --stitch-line-strong: rgba(255,255,255,.15);
   --stitch-text: #f5f5f7;
-  --stitch-muted: #89898f;
-  --stitch-dim: #626268;
+  --stitch-muted: #b8bec8;
+  --stitch-dim: #aab1bb;
   background: var(--stitch-bg);
   color: var(--stitch-text);
   font-family: "Plus Jakarta Sans", Inter, Manrope, system-ui, sans-serif;
@@ -2080,6 +2080,9 @@ button { font-family: inherit; }
 .ai-config-panel input { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid rgba(255,255,255,.13); border-radius: 9px; color: #f5f5f7; background: rgba(255,255,255,.05); }
 .ai-config-panel input:focus { outline: none; border-color: rgba(217,255,85,.65); box-shadow: 0 0 0 3px rgba(217,255,85,.08); }
 .ai-config-panel input::placeholder { color: #aeb4be; opacity: 1; }
+.ai-config-panel select { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid rgba(255,255,255,.13); border-radius: 9px; color: #f5f5f7; background: rgba(255,255,255,.05); }
+.ai-config-panel select:focus { outline: none; border-color: rgba(217,255,85,.65); box-shadow: 0 0 0 3px rgba(217,255,85,.08); }
+.ai-config-panel select option { color: #f5f5f7; background: #19191e; }
 .ai-config-state { margin: 20px 0 0; color: #d4d8df; font-size: 11px; }
 .ai-config-state.ready { color: #d9ff55; }
 .ai-config-state i { width: 7px; height: 7px; display: inline-block; margin-right: 8px; border-radius: 50%; background: #aeb4be; }
@@ -2289,6 +2292,56 @@ button { font-family: inherit; }
 .jobs-stitch .sample-row { color: #d0d0d4; border-bottom-color: var(--stitch-line); }
 .jobs-stitch .sample-row span { color: #85858b; }
 .jobs-stitch .detail-actions { padding-top: 4px; }
+
+/* Keep supporting copy readable on near-black surfaces. */
+.exploration-shell { --stitch-muted: #c4c8d0; --stitch-dim: #aeb5bf; }
+.jobs-stitch-kicker,
+.jobs-stitch-section-head p,
+.jobs-stitch-note,
+.profile-meta-line,
+.profile-score-column > span,
+.profile-score-column > p,
+.profile-action-dock > div small,
+.matches-target,
+.matches-stitch-hero > p:not(.matches-target),
+.report-section > header span,
+.diagnosis-grid article > p,
+.diagnosis-facts span,
+.path-section > header span,
+.paths-hero > p,
+.path-job-select,
+.timeline-copy span,
+.timeline-copy p,
+.path-action-hub span,
+.path-action-hub p,
+.jobs-card-main > p,
+.detail-meta,
+.detail-summary,
+.req-basis,
+.soft-note,
+.jobs-stitch .detail-meta,
+.jobs-stitch .detail-summary,
+.jobs-stitch .req-basis,
+.jobs-stitch .soft-note { color: #b8bec8; }
+.jobs-stitch-stats span,
+.jobs-stitch-stats em,
+.jobs-card-score span,
+.jobs-card-metrics,
+.profile-radar > span,
+.match-filter-panel summary span,
+.matches-stitch-filter label,
+.matrix-row small,
+.matrix-row > span,
+.matrix-row > em,
+.path-overview small,
+.path-overview > span,
+.path-branch-grid small,
+.path-selected-detail small,
+.sprint-list small,
+.alternative-grid span,
+.alternative-grid p,
+.path-branch-grid span,
+.path-branch-grid p { color: #aab1bb; }
 
 @media (max-width: 680px) {
   .jobs-stitch-hero h2,

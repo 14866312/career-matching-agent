@@ -201,8 +201,11 @@ export interface HealthResp {
   source_file: string;
 }
 
+export type LLMAdapter = 'openai-responses' | 'chat-completions';
+
 export interface LLMConfig {
   provider: 'deepseek' | 'openai';
+  adapter: LLMAdapter;
   base_url: string;
   model: string;
   configured: boolean;

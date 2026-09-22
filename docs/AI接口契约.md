@@ -2,11 +2,18 @@
 
 本文记录 backend/app/llm.py 的实际行为；公共输入模型仍由 backend/app/models.py 定义。模型与供应商由本机服务端配置，不由本模块选择。测试均使用模拟传输，不能作为真实 API 验收证据。
 
+## 模型适配器
+
+- `LLM_ADAPTER` 可选 `chat-completions` 或 `openai-responses`，未配置时保持旧行为，默认使用 `chat-completions`。
+- `chat-completions` 请求地址在基础地址后追加 `/chat/completions`，发送一条 system 消息和一条 JSON 序列化的 user 消息，使用 `temperature=0.2`、`max_tokens=3500`。
+- `openai-responses` 请求地址在基础地址后追加 `/responses`，使用 Responses API 的 `instructions`、`input` 和 `max_output_tokens=3500` 字段。响应优先读取 `output_text`，没有该字段时拼接 `output[].content[].text`。
+- 配置接口会返回适配器名称，但不会返回 API 密钥。DeepSeek 预设使用 `chat-completions`，OpenAI 预设使用 `openai-responses`；用户可以在配置页切换适配器。
+
 ## 请求、总时限与重试
 
 - 必需环境变量：LLM_BASE_URL、LLM_MODEL、LLM_API_KEY。空值或已知示例密钥返回 LLM_NOT_CONFIGURED；不读取额外的 LLM_TIMEOUT 配置，时限固定为45秒。
-- 地址使用 HTTPS，或带端口的 localhost/127.0.0.1 HTTP。末尾不是 /chat/completions 时追加该路径；不跟随重定向。
-- Authorization 密钥只进入服务端 HTTP 请求头。请求为 temperature=0.2、max_tokens=3500，包含一条 system 消息与一条 JSON 序列化的 user 数据消息。没有生产 mock 回退。
+- 地址使用 HTTPS，或带端口的 localhost/127.0.0.1 HTTP。末尾不是当前适配器对应的接口路径时追加该路径；不跟随重定向。
+- Authorization 密钥只进入服务端 HTTP 请求头。没有生产 mock 回退。
 - 每次 client.post 均由 asyncio.timeout(45) 包裹，覆盖连接、发送、响应头及完整响应体读取；HTTPX 的45秒阶段时限同时保留。持续分段返回字节也不会延长总预算。
 - 一次业务调用最多发起两次上游请求。仅 httpx.ConnectError、httpx.ConnectTimeout、HTTP 429、HTTP 500—599 会在首次失败后等待0.5秒并自动重试一次；混合故障也共用一次重试额度。ConnectTimeout 属于契约允许重试的临时连接故障，第二次仍失败时返回 LLM_CONNECTION。
 - 总时限到期，以及 ReadTimeout、WriteTimeout、PoolTimeout 等其他阶段超时，均立即返回 LLM_TIMEOUT，绝不自动重试。外部任务取消继续向上传播，不转为模型错误，也不重试。
