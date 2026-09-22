@@ -124,10 +124,6 @@ function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove }: {
                     <option value={0}>0 · 不具备</option>
                   </select>
                 )}
-                <label className="tag-confirm">
-                  <input type="checkbox" checked={x.confirmed} aria-label={'确认 ' + x.label} onChange={e => onPatch(i, { confirmed: e.target.checked })} />
-                  已确认
-                </label>
                 <button
                   type="button"
                   className={'tag-evidence-toggle' + (open ? ' open' : '')}
@@ -172,13 +168,14 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
   showToast: (msg: string, kind?: 'ok' | 'err') => void;
   onGoMatches: () => void;
 }) {
-  const [resumeStatus, setResumeStatus] = useState('支持文本型 PDF / DOCX / TXT（≤5MB）；导入后请逐项确认并补充证据，确认且带证据才计分');
+  const [resumeStatus, setResumeStatus] = useState('支持文本型 PDF / DOCX / TXT（≤5MB）；导入后请整理能力标签与证据，带证据的能力才计分');
   const [resumeError, setResumeError] = useState<unknown>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
   const [submitMsg, setSubmitMsg] = useState('');
   const [tags, setTags] = useState<TagDef[]>([]);
+  const [sourceMode, setSourceMode] = useState<'resume' | 'manual'>('resume');
 
   useEffect(() => {
     let alive = true;
@@ -222,7 +219,7 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
       const noteParts = [d.notice + '（解析 ' + d.text_length + ' 字符）'];
       if (notes.length) noteParts.push('已保留你填写的内容：' + notes.join('、'));
       setResumeStatus(noteParts.join(' '));
-      showToast('简历已预填，请逐项确认标签与证据');
+      showToast('简历已预填，请整理能力标签与证据');
     } catch (e) {
       setResumeError(e);
       setResumeStatus('解析失败：' + errMessage(e) + '（已填写内容保持不变，可重试或手动录入）');
@@ -248,8 +245,8 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
       if (list.length >= cfg.max) return { next: s, notes: ['max'] };
       if (list.some(x => x.tag_id.toLowerCase() === normKey)) return { next: s, notes: ['dup'] };
       const entry: Ability = hit
-        ? { tag_id: hit.id, label: hit.label, level: dim === 'skills' ? 2 : 1, confirmed: false, evidence: '' }
-        : { tag_id: key.slice(0, 80), label: text.slice(0, 100), level: dim === 'skills' ? 2 : 1, confirmed: false, evidence: '' };
+        ? { tag_id: hit.id, label: hit.label, level: dim === 'skills' ? 2 : 1, confirmed: true, evidence: '' }
+        : { tag_id: key.slice(0, 80), label: text.slice(0, 100), level: dim === 'skills' ? 2 : 1, confirmed: true, evidence: '' };
       return { next: { ...s, [dim]: [...list, entry] } };
     });
     if (notes.includes('max')) showToast(cfg.label + '已达上限 ' + cfg.max + ' 项', 'err');
@@ -315,30 +312,38 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
         </div>
         <div className="profile-stitch-progress" aria-label="能力画像流程">
           <div className="is-current"><b>01</b><span>导入简历</span></div>
-          <div className={total > 0 ? 'is-current' : ''}><b>02</b><span>确认技能项</span></div>
+          <div className={total > 0 ? 'is-current' : ''}><b>02</b><span>整理能力</span></div>
           <div className={analysis ? 'is-current' : ''}><b>03</b><span>完成能力画像</span></div>
         </div>
       </section>
       <form className="profile-flow" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
         <section className="profile-step profile-source-step">
           <header><p>第 1 步 · 导入简历与项目经历</p><h3>导入简历与项目经历</h3></header>
-          <div className="profile-source-actions"><button className="is-active" type="button" onClick={() => document.getElementById('resumeFile')?.click()}>导入现有简历</button><span>或手动录入资料</span></div>
-          <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
-          <button type="button" className="profile-upload-card" disabled={resumeBusy || submitBusy} onClick={() => document.getElementById('resumeFile')?.click()}>
-            <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '点击此区域选择简历文件'}</strong><small>支持 PDF、DOCX、TXT 格式（≤5MB）。系统会提取可识别的经历、技能、证书与通用素质。</small><i>{resumeBusy ? '处理中' : '选择文件解析'}</i>
-          </button>
-          <p className="profile-resume-status">{resumeStatus}</p>
-          {resumeError != null && <ErrorBox error={resumeError} />}
-          <div className="profile-basic-grid">
-            <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value }))} /></label>
-            <label>意向城市<input value={student.intention.city} maxLength={80} placeholder="例如：上海" onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} /></label>
-            <label>目标岗位<select value={student.intention.target_job_id} onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: e.target.value } }))}><option value="">先浏览岗位</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
-            <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value }))} /></label>
+          <div className="profile-source-actions" role="tablist" aria-label="资料录入方式">
+            <button className={sourceMode === 'resume' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'resume'} onClick={() => setSourceMode('resume')}>导入现有简历</button>
+            <button className={sourceMode === 'manual' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'manual'} onClick={() => setSourceMode('manual')}>手动录入资料</button>
           </div>
+          <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
+          {sourceMode === 'resume' ? <>
+            <button type="button" className="profile-upload-card" disabled={resumeBusy || submitBusy} onClick={() => document.getElementById('resumeFile')?.click()}>
+              <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '点击此区域选择简历文件'}</strong><small>支持 PDF、DOCX、TXT 格式（≤5MB）。系统会提取可识别的经历、技能、证书与通用素质。</small><i>{resumeBusy ? '处理中' : '选择文件解析'}</i>
+            </button>
+            <p className="profile-resume-status">{resumeStatus}</p>
+            {resumeError != null && <ErrorBox error={resumeError} />}
+            <p className="profile-source-hint">已导入的内容会保留在当前画像中；需要修改专业、城市或经历时，切换到“手动录入资料”即可继续编辑。</p>
+          </> : <div className="profile-manual-panel">
+            <p className="profile-source-hint">直接填写你的背景信息，完成后在下方整理能力标签。已导入的简历内容不会被清空。</p>
+            <div className="profile-basic-grid">
+              <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value }))} /></label>
+              <label>意向城市<input value={student.intention.city} maxLength={80} placeholder="例如：上海" onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} /></label>
+              <label>目标岗位<select value={student.intention.target_job_id} onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: e.target.value } }))}><option value="">先浏览岗位</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
+              <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value }))} /></label>
+            </div>
+          </div>}
         </section>
         <section className="profile-step profile-skill-step">
-          <header><p>第 2 步 · 确认技能</p><h3>确认已掌握的核心技能</h3><span>已确认 {confirmedCount} / {total} 项</span></header>
-          <p className="profile-step-copy">展开技能项补充等级与原文证据。只有“已确认、等级大于 0、证据非空”的能力会进入匹配分。</p>
+          <header><p>第 2 步 · 整理能力与证据</p><h3>选择你掌握的核心能力</h3><span>已纳入 {total} 项 · 有效证据 {confirmedCount} 项</span></header>
+          <p className="profile-step-copy">列表中的能力就是你准备纳入画像的内容；请补充熟练度和证据，最后统一确认整份画像。</p>
           <div className="profile-editor-stack">{DIM_CONFIGS.map(cfg => <TagEditor key={cfg.key} cfg={cfg} items={student[cfg.key]} dict={tags.filter(t => t.dimension === cfg.key)} onAdd={text => addAbility(cfg.key, text)} onPatch={(i, patch) => patchAbility(cfg.key, i, patch)} onRemove={i => removeAbility(cfg.key, i)} />)}</div>
           {tags.length === 0 && <p className="soft-note">标签字典未加载：新加标签可能无法与岗位要求对应，刷新页面可重试。</p>}
         </section>

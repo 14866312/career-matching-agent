@@ -6,6 +6,7 @@ import ProfileTab from './components/ProfileTab';
 import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
 import SingularityIntro from './components/SingularityIntro';
+import AIConfigPanel from './components/AIConfigPanel';
 
 const EMPTY_STUDENT: StudentProfile = {
   major: '',
@@ -37,7 +38,6 @@ export default function App() {
   const [stage, setStage] = useState<'singularity' | 'exploration'>('singularity');
   const [tab, setTab] = useState<TabId>(tabFromLocation);
   const [health, setHealth] = useState<HealthResp | null>(null);
-  const [healthError, setHealthError] = useState<unknown>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<unknown>(null);
@@ -45,6 +45,7 @@ export default function App() {
   const [studentRev, setStudentRev] = useState(0);
   const [analysis, setAnalysis] = useState<ProfileResp['analysis'] | null>(null);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
+  const [configOpen, setConfigOpen] = useState(false);
 
   // 所有画像修改都经由 applyStudent 同步进 studentRef / revRef：
   // 异步请求（画像生成、简历解析、匹配、报告）返回时用 rev 判断期间是否
@@ -103,16 +104,23 @@ export default function App() {
   }, [applyStudent]);
 
   const confirmProfile = useCallback(() => {
-    applyStudent({ ...studentRef.current, confirmed: true });
+    const current = studentRef.current;
+    const confirm = (items: typeof current.skills) => items.map(item => ({ ...item, confirmed: true }));
+    applyStudent({
+      ...current,
+      skills: confirm(current.skills),
+      certificates: confirm(current.certificates),
+      qualities: confirm(current.qualities),
+      confirmed: true
+    });
     showToast('画像已确认，可前往「匹配报告」查看匹配');
   }, [applyStudent, showToast]);
 
   const loadHealth = useCallback(async () => {
     try {
       setHealth(await apiGet<HealthResp>('/api/health'));
-      setHealthError(null);
-    } catch (e) {
-      setHealthError(e);
+    } catch {
+      // 页面仍可浏览；需要模型的操作会在实际请求时给出具体错误。
     }
   }, []);
 
@@ -143,10 +151,6 @@ export default function App() {
     showToast('目标岗位已设为 ' + name + '，到「能力档案」确认画像后即可匹配');
   }, [updateStudent, showToast]);
 
-  const llmNote = health
-    ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，职业探索不受影响')
-    : null;
-
   const enterExploration = useCallback(() => {
     window.history.replaceState(null, '', '#jobs');
     setTab('jobs');
@@ -161,10 +165,6 @@ export default function App() {
   return (
     <div className="exploration-shell">
       <header className="exploration-header">
-        <button className="exploration-brand" type="button" onClick={() => setStage('singularity')} aria-label="重新进入宇宙奇点首页">
-          <span className="exploration-brand-core"><i /></span>
-          <span><b>CareerAI</b><small>职业智能探索系统</small></span>
-        </button>
         <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
           {TABS.map(t => (
             <button
@@ -180,15 +180,9 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="exploration-utility">
-          <span className={'exploration-profile-state' + (student.confirmed ? ' confirmed' : '')}>
-            {student.confirmed ? '画像已确认' : '画像待确认'}
-          </span>
-          <div className="exploration-status" role="status" aria-live="polite" title={health ? '数据 ' + health.data_version + ' · 算法 ' + health.algorithm_version + ' · ' + (llmNote ?? '') : undefined}>
-            <i className={health?.status === 'ok' ? 'online' : ''} />
-            {healthError != null ? '服务未连接' : health ? '系统在线' : '连接中'}
-          </div>
-        </div>
+        <button className="model-config-trigger" type="button" onClick={() => setConfigOpen(true)}>
+          <span aria-hidden="true">✦</span> AI 模型配置
+        </button>
       </header>
       <main className="exploration-pages" data-active-page={tab}>
         <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
@@ -231,6 +225,7 @@ export default function App() {
           <PathsTab active={tab === 'paths'} jobs={jobs} showToast={showToast} />
         </div>
       </main>
+      {configOpen && <AIConfigPanel onClose={() => setConfigOpen(false)} onSaved={() => { setConfigOpen(false); void loadHealth(); showToast('AI 模型配置已更新'); }} />}
       {toast && <div className={'toast show ' + toast.kind} role="status">{toast.msg}</div>}
     </div>
   );

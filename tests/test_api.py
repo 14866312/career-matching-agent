@@ -44,6 +44,49 @@ def test_health_jobs_sources(client):
     assert client.get('/api/jobs/missing').status_code == 404
 
 
+def test_llm_config_api_never_returns_api_key(client, monkeypatch):
+    monkeypatch.setenv('LLM_BASE_URL', '')
+    monkeypatch.setenv('LLM_MODEL', '')
+    monkeypatch.setenv('LLM_API_KEY', '')
+    empty = client.get('/api/llm/config')
+    assert empty.status_code == 200
+    assert empty.json()['configured'] is False
+    assert 'LLM_API_KEY' not in empty.text
+
+    saved = client.post('/api/llm/config', json={
+        'provider': 'deepseek',
+        'base_url': 'https://api.deepseek.com',
+        'model': 'deepseek-chat',
+        'api_key': 'test-secret-key'
+    })
+    assert saved.status_code == 200
+    assert saved.json()['provider'] == 'deepseek'
+    assert saved.json()['configured'] is True
+    assert saved.json()['has_api_key'] is True
+    assert 'test-secret-key' not in saved.text
+
+    retained = client.post('/api/llm/config', json={
+        'provider': 'openai',
+        'base_url': 'https://api.openai.com/v1',
+        'model': 'gpt-4o-mini'
+    })
+    assert retained.status_code == 200
+    assert retained.json()['has_api_key'] is True
+    assert 'test-secret-key' not in retained.text
+
+
+def test_llm_config_rejects_insecure_remote_url(client):
+    response = client.post('/api/llm/config', json={
+        'provider': 'openai',
+        'base_url': 'http://example.com/v1',
+        'model': 'test-model',
+        'api_key': 'secret'
+    })
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'LLM_CONFIG'
+    assert 'secret' not in response.text
+
+
 def test_calculation_and_recommendation_consistent(client):
     r = client.post('/api/matches', json={'job_id': 'java', 'student': student()}).json()
     rec = client.post('/api/recommendations', json={'student': student()}).json()

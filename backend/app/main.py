@@ -14,9 +14,10 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartParser
 
 from .data import dataset, get_job
-from .llm import AIError, extract_resume, generate_advice, generate_profile, configured
+from .llm import AIError, config_snapshot, extract_resume, generate_advice, generate_profile, configured, update_config
 from .matching import ALGORITHM_VERSION, match_student, recommendations
 from .models import MatchRequest, RecommendationRequest, StudentProfile
+from pydantic import BaseModel, Field
 from .resume import MAX_BYTES, extract_text
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,6 +30,13 @@ UPLOAD_LIMIT = MAX_BYTES + 65536
 MultiPartParser.spool_max_size = UPLOAD_LIMIT + 1
 app = FastAPI(title='Career Compass', version='1.1.0')
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'], allow_methods=['GET', 'POST'], allow_headers=['Content-Type'])
+
+
+class LLMConfigUpdate(BaseModel):
+    provider: str = Field(default='openai', max_length=40)
+    base_url: str = Field(min_length=1, max_length=500)
+    model: str = Field(min_length=1, max_length=160)
+    api_key: str | None = Field(default=None, max_length=1000)
 
 
 def error(request, code, message, status=400, retryable=False):
@@ -88,6 +96,16 @@ def require_confirmed(student):
 @app.get('/api/health')
 def health():
     return {'status': 'ok', 'data_version': dataset()['version'], 'algorithm_version': ALGORITHM_VERSION, 'llm_configured': configured(), 'llm_model': os.environ.get('LLM_MODEL', ''), 'source_file': dataset()['source_file']}
+
+
+@app.get('/api/llm/config')
+def llm_config():
+    return config_snapshot()
+
+
+@app.post('/api/llm/config')
+def save_llm_config(payload: LLMConfigUpdate):
+    return update_config(payload.base_url, payload.model, payload.api_key)
 
 
 @app.get('/api/tags')

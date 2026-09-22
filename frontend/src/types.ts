@@ -201,6 +201,14 @@ export interface HealthResp {
   source_file: string;
 }
 
+export interface LLMConfig {
+  provider: 'deepseek' | 'openai';
+  base_url: string;
+  model: string;
+  configured: boolean;
+  has_api_key: boolean;
+}
+
 export interface ProfileAnalysis {
   summary: string[];
   evidence_quotes: string[];
