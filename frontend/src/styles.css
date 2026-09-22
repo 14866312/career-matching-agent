@@ -369,6 +369,7 @@ button { font-family: inherit; }
   place-items: center;
   padding: 20px;
   z-index: 60;
+  overscroll-behavior: contain;
 }
 
 .modal {
@@ -379,6 +380,7 @@ button { font-family: inherit; }
   width: 100%;
   max-height: 86vh;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 30px 30px 24px;
   position: relative;
 }
@@ -1447,9 +1449,9 @@ button { font-family: inherit; }
   pointer-events: none;
 }
 
-.singularity-intro.is-exploding .singularity-core-zone { animation: singularity-core-explode 1.1s ease-in forwards; }
-.singularity-intro.is-exploding .singularity-halo { animation: singularity-halo-explode 1.1s ease-out forwards; }
-.singularity-intro.is-exploding .singularity-whiteout { animation: singularity-whiteout 1.15s ease-in-out forwards; }
+.singularity-intro.is-exploding .singularity-core-zone { animation: singularity-core-explode .85s ease-in forwards; }
+.singularity-intro.is-exploding .singularity-halo { animation: singularity-halo-explode .85s ease-out forwards; }
+.singularity-intro.is-exploding .singularity-whiteout { animation: singularity-whiteout .9s ease-in-out forwards; }
 .singularity-intro.is-exploding .singularity-header,
 .singularity-intro.is-exploding .singularity-footer { animation: singularity-fade-away .45s ease forwards; }
 

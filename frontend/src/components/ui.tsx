@@ -34,12 +34,26 @@ export function JobModal({ open, onClose, title, children }: { open: boolean; on
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
+    const bodyStyle = document.body.style;
+    const documentStyle = document.documentElement.style;
+    const previousBodyOverflow = bodyStyle.overflow;
+    const previousDocumentOverflow = documentStyle.overflow;
+    const previousBodyPaddingRight = bodyStyle.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    documentStyle.overflow = 'hidden';
+    bodyStyle.overflow = 'hidden';
+    if (scrollbarWidth > 0) bodyStyle.paddingRight = scrollbarWidth + 'px';
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      documentStyle.overflow = previousDocumentOverflow;
+      bodyStyle.overflow = previousBodyOverflow;
+      bodyStyle.paddingRight = previousBodyPaddingRight;
+    };
   }, [open, onClose]);
   if (!open) return null;
   return (

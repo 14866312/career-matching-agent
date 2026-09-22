@@ -200,7 +200,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
       const elapsed = Math.min(80, now - last);
       last = now;
       if (chargingRef.current) {
-        chargeRef.current = Math.min(100, chargeRef.current + elapsed / 27);
+        chargeRef.current = Math.min(100, chargeRef.current + elapsed / 18);
       } else {
         chargeRef.current = Math.max(0, chargeRef.current - elapsed / 170);
       }
@@ -228,7 +228,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
     renderedChargeRef.current = 100;
     setCharge(100);
     setExploded(true);
-    window.setTimeout(onComplete, 1150);
+    window.setTimeout(onComplete, 900);
   }
 
   function startCharge(event?: ReactPointerEvent<HTMLButtonElement>) {
