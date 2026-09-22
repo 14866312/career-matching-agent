@@ -147,8 +147,15 @@ export default function App() {
     ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，职业探索不受影响')
     : null;
 
+  const enterExploration = useCallback(() => {
+    window.history.replaceState(null, '', '#jobs');
+    setTab('jobs');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    setStage('exploration');
+  }, []);
+
   if (stage === 'singularity') {
-    return <SingularityIntro onComplete={() => setStage('exploration')} />;
+    return <SingularityIntro onComplete={enterExploration} />;
   }
 
   return (

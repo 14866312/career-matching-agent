@@ -9,6 +9,7 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
+  phase: number;
   radius: number;
   alpha: number;
   color: string;
@@ -22,6 +23,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
   const chargingRef = useRef(false);
   const explodedRef = useRef(false);
   const chargeRef = useRef(0);
+  const renderedChargeRef = useRef(0);
   const explodedAtRef = useRef(0);
   const [charge, setCharge] = useState(0);
   const [exploded, setExploded] = useState(false);
@@ -37,6 +39,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
     let dpr = 1;
     let mouseX = -9999;
     let mouseY = -9999;
+    let lastDrawAt = performance.now();
     const particles: Particle[] = [];
 
     function resize() {
@@ -57,8 +60,9 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
         particles.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.18,
-          vy: (Math.random() - 0.5) * 0.18,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: (Math.random() - 0.5) * 0.6,
+          phase: Math.random() * Math.PI * 2,
           radius: Math.random() * 1.3 + 0.35,
           alpha: Math.random() * 0.7 + 0.15,
           color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)]
@@ -70,18 +74,30 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
       const centerX = width / 2;
       const centerY = height / 2;
       const chargeFactor = chargeRef.current / 100;
+      const frameScale = Math.min(2.5, Math.max(0.5, (now - lastDrawAt) / 16.67));
+      lastDrawAt = now;
       context!.clearRect(0, 0, width, height);
 
       for (const particle of particles) {
         if (explodedRef.current) {
           const elapsed = Math.min(1.4, (now - explodedAtRef.current) / 1000);
           const distance = Math.hypot(particle.x - centerX, particle.y - centerY) || 1;
-          particle.x += ((particle.x - centerX) / distance) * (1.5 + elapsed * 10);
-          particle.y += ((particle.y - centerY) / distance) * (1.5 + elapsed * 10);
-          particle.alpha = Math.max(0, particle.alpha - 0.012);
+          particle.x += ((particle.x - centerX) / distance) * (1.5 + elapsed * 10) * frameScale;
+          particle.y += ((particle.y - centerY) / distance) * (1.5 + elapsed * 10) * frameScale;
+          particle.alpha = Math.max(0, particle.alpha - 0.012 * frameScale);
         } else {
-          particle.x += particle.vx;
-          particle.y += particle.vy;
+          const thermalJitter = 0.055 * frameScale;
+          particle.vx += (Math.sin(now * 0.0017 + particle.phase) * 0.012 + (Math.random() - 0.5) * thermalJitter);
+          particle.vy += (Math.cos(now * 0.0013 + particle.phase * 1.37) * 0.012 + (Math.random() - 0.5) * thermalJitter);
+          const speed = Math.hypot(particle.vx, particle.vy);
+          if (speed > 1.8) {
+            particle.vx = (particle.vx / speed) * 1.8;
+            particle.vy = (particle.vy / speed) * 1.8;
+          }
+          particle.vx *= Math.pow(0.985, frameScale);
+          particle.vy *= Math.pow(0.985, frameScale);
+          particle.x += particle.vx * frameScale;
+          particle.y += particle.vy * frameScale;
           if (particle.x < -20) particle.x = width + 20;
           if (particle.x > width + 20) particle.x = -20;
           if (particle.y < -20) particle.y = height + 20;
@@ -93,8 +109,8 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
             const distance = Math.hypot(dx, dy);
             if (distance < 180 && distance > 1) {
               const force = (1 - distance / 180) * 0.45;
-              particle.x -= (dx / distance) * force;
-              particle.y -= (dy / distance) * force;
+              particle.x -= (dx / distance) * force * frameScale;
+              particle.y -= (dy / distance) * force * frameScale;
             }
           }
 
@@ -104,8 +120,8 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
             const distance = Math.hypot(dx, dy) || 1;
             const inward = chargeFactor * 1.9 + chargeFactor ** 2 * 4.6;
             const swirl = chargeFactor * 1.3;
-            particle.x += (dx / distance) * inward - (dy / distance) * swirl;
-            particle.y += (dy / distance) * inward + (dx / distance) * swirl;
+            particle.x += ((dx / distance) * inward - (dy / distance) * swirl) * frameScale;
+            particle.y += ((dy / distance) * inward + (dx / distance) * swirl) * frameScale;
           }
         }
 
@@ -188,7 +204,11 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
       } else {
         chargeRef.current = Math.max(0, chargeRef.current - elapsed / 170);
       }
-      setCharge(Math.round(chargeRef.current));
+      const roundedCharge = Math.round(chargeRef.current);
+      if (roundedCharge !== renderedChargeRef.current) {
+        renderedChargeRef.current = roundedCharge;
+        setCharge(roundedCharge);
+      }
       if (chargeRef.current >= 100) {
         triggerExplosion();
         return;
@@ -205,6 +225,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
     explodedAtRef.current = performance.now();
     chargingRef.current = false;
     chargeRef.current = 100;
+    renderedChargeRef.current = 100;
     setCharge(100);
     setExploded(true);
     window.setTimeout(onComplete, 1150);
