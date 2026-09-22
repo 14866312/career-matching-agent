@@ -27,7 +27,7 @@ def fake_http(monkeypatch):
     def install(events):
         calls = []
         async def handler(request):
-            calls.append(json.loads(request.content))
+            calls.append({'url': str(request.url), **json.loads(request.content)})
             event = events.pop(0)
             if callable(event):
                 return await event(request)
@@ -52,6 +52,23 @@ async def test_responses_adapter_uses_responses_contract(fake_http, monkeypatch)
     assert calls[0]['max_output_tokens'] == 3500
     assert calls[0]['input'] == '{"value": 1}'
     assert 'instructions' in calls[0]
+    assert calls[0]['url'].endswith('/v1/responses')
+
+
+@pytest.mark.asyncio
+async def test_chat_completions_adapter_uses_chat_endpoint(fake_http):
+    calls = fake_http([{'ok': True}])
+    assert await llm.call_json('test', {'value': 1}) == {'ok': True}
+    assert calls[0]['model'] == 'test-model'
+    assert calls[0]['url'].endswith('/v1/chat/completions')
+
+
+@pytest.mark.asyncio
+async def test_method_or_path_failure_explains_adapter_mismatch(fake_http):
+    fake_http([405])
+    with pytest.raises(llm.AIError, match='请求路径或方法') as exc:
+        await llm.call_json('test', {})
+    assert exc.value.code == 'LLM_REQUEST'
 
 
 @pytest.mark.asyncio

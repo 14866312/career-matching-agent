@@ -7,7 +7,7 @@
 - `LLM_ADAPTER` 可选 `chat-completions` 或 `openai-responses`，未配置时保持旧行为，默认使用 `chat-completions`。
 - `chat-completions` 请求地址在基础地址后追加 `/chat/completions`，发送一条 system 消息和一条 JSON 序列化的 user 消息，使用 `temperature=0.2`、`max_tokens=3500`。
 - `openai-responses` 请求地址在基础地址后追加 `/responses`，使用 Responses API 的 `instructions`、`input` 和 `max_output_tokens=3500` 字段。响应优先读取 `output_text`，没有该字段时拼接 `output[].content[].text`。
-- 配置接口会返回适配器名称，但不会返回 API 密钥。DeepSeek 预设使用 `chat-completions`，OpenAI 预设使用 `openai-responses`；用户可以在配置页切换适配器。
+- 配置接口会返回适配器名称，但不会返回 API 密钥。DeepSeek 和 OpenAI 兼容接口预设默认使用 `chat-completions`，因为大多数兼容服务实现的是该协议；用户可以在配置页切换到 `openai-responses`。
 
 ## 请求、总时限与重试
 

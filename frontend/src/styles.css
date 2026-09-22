@@ -2343,6 +2343,26 @@ button { font-family: inherit; }
 .path-branch-grid span,
 .path-branch-grid p { color: #aab1bb; }
 
+/* Job browsing needs readable secondary text on the near-black cards. */
+.jobs-stitch {
+  --stitch-muted: #c4c8d0;
+}
+.jobs-stitch-search,
+.jobs-stitch-search input::placeholder { color: #b9c0ca; }
+.jobs-stitch-family,
+.jobs-stitch-level,
+.jobs-card-score strong small,
+.jobs-card-score span,
+.jobs-card-metrics,
+.jobs-stitch-pills span,
+.jobs-card-link { color: #c3c8d1; }
+.jobs-card-main > p,
+.jobs-stitch-note { color: #c5cad2; }
+.jobs-card-metrics b { color: #f0f1f3; }
+
+/* Native menus may open on a light platform surface; keep their labels visible. */
+.profile-stitch .form-card select option { color: #17171a; background: #fff; }
+
 @media (max-width: 680px) {
   .jobs-stitch-hero h2,
   .profile-stitch-hero h2,

@@ -18,7 +18,7 @@ const PRESETS: Record<Provider, { label: string; description: string; baseUrl: s
     description: '支持 OpenAI 格式的自定义服务',
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
-    adapter: 'openai-responses'
+    adapter: 'chat-completions'
   }
 };
 
@@ -103,7 +103,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
         <button className="ai-config-close" type="button" aria-label="关闭 AI 模型配置" onClick={onClose} disabled={busy}>×</button>
         <p className="ai-config-kicker">MODEL CONNECTION</p>
         <h2 id="ai-config-title">AI 模型配置</h2>
-        <p className="ai-config-lead">配置用于简历解析、能力画像和成长建议的 Chat Completions 兼容接口。密钥只发送到本机后端，不会回显。</p>
+        <p className="ai-config-lead">配置用于简历解析、能力画像和成长建议的模型接口。可选择 Chat Completions 或 Responses 协议；密钥只发送到本机后端，不会回显。</p>
 
         <div className="ai-provider-grid" aria-label="模型服务预设">
           {(Object.keys(PRESETS) as Provider[]).map(key => (

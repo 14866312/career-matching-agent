@@ -114,6 +114,11 @@ async def call_json(instruction, payload):
             if response.status_code in (401, 403):
                 raise AIError('LLM_AUTH', '模型服务拒绝访问，请在本机核对密钥、接口地址和模型权限。')
             if response.status_code != 200:
+                if response.status_code in (404, 405):
+                    raise AIError(
+                        'LLM_REQUEST',
+                        f'模型接口不支持当前请求路径或方法（/{endpoint}），请检查适配器和接口地址。'
+                    )
                 raise AIError('LLM_REQUEST', '模型接口请求失败，请核对兼容接口和模型配置。')
             try:
                 envelope = response.json()

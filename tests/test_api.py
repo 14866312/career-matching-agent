@@ -70,12 +70,12 @@ def test_llm_config_api_never_returns_api_key(client, monkeypatch):
 
     retained = client.post('/api/llm/config', json={
         'provider': 'openai',
-        'adapter': 'openai-responses',
+        'adapter': 'chat-completions',
         'base_url': 'https://api.openai.com/v1',
         'model': 'gpt-4o-mini'
     })
     assert retained.status_code == 200
-    assert retained.json()['adapter'] == 'openai-responses'
+    assert retained.json()['adapter'] == 'chat-completions'
     assert retained.json()['has_api_key'] is True
     assert 'test-secret-key' not in retained.text
 
