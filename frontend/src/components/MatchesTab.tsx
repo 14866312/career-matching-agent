@@ -297,7 +297,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   if (notConfirmed && meta == null && !loading && loadError == null) {
     return (
       <div className="matches-stitch matches-stitch-empty">
-        <div className="matches-stitch-hero"><div className="stitch-pill"><i /> AI MATCH REPORT · 等待画像</div><h2 className="empty-title">深度能力匹配报告</h2><p>先确认能力画像，系统会按岗位要求计算匹配度，并把能力差距转成可执行建议。</p></div>
+        <div className="matches-stitch-hero"><h2 className="empty-title">深度能力匹配报告</h2></div>
         <div className="match-empty-card"><EmptyState symbol="↗" title="先完成并确认能力画像"><p>到「能力档案」填写并点击「确认完整画像」后，这里会展示最多 5 个岗位推荐。</p><button className="ghost-button" type="button" onClick={onGoProfile}>去填写能力画像</button></EmptyState></div>
       </div>
     );
@@ -306,13 +306,9 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   return (
     <div className="matches-stitch">
       <section className="matches-stitch-hero">
-        <div className="stitch-pill"><i /> AI POWERED MATCH REPORT</div>
-        <p className="matches-target">TARGET JOB MATCH INDEX</p>
         <h2>{m?.basic == null ? '—' : fmtNum(m.basic)}<small>/ 100</small></h2>
         <h3>{m?.job_name || '正在计算目标岗位'}</h3>
-        <p>{active?.reason || '匹配结果来自当前确认画像与岗位能力基线。'}</p>
         <div className="matches-hero-actions"><button className="primary-button" type="button" onClick={generateReport} disabled={reportDisabled}>{reportLoading ? '正在生成…' : '生成 AI 深度建议'}</button><button className="ghost-button" type="button" onClick={load} disabled={loading}>刷新匹配结果</button></div>
-        <div className="stitch-scroll-cue"><span>向下查看 · 诊断报告</span><i>⌄</i></div>
       </section>
       <main className="match-report-flow">
         <details className="match-filter-panel"><summary>调整岗位筛选条件 <span>{meta?.summary || '全部岗位'}</span></summary><div className="matches-stitch-filter"><label>城市<input value={city} maxLength={80} placeholder="不限" onChange={e => setCity(e.target.value)} /></label><label>薪资下限<input value={salaryMin} type="number" min={0} step={100} placeholder="如 5000" onChange={e => setSalaryMin(e.target.value)} /></label><label>薪资上限<input value={salaryMax} type="number" min={0} step={100} placeholder="如 12000" onChange={e => setSalaryMax(e.target.value)} /></label><label>计薪周期<select value={salaryPeriod} onChange={e => setSalaryPeriod(e.target.value as Filters['salary_period'])}><option value="month">按月</option><option value="day">按天</option></select></label><label>必须包含技能<input value={skillText} maxLength={200} placeholder="Java, MySQL" onChange={e => setSkillText(e.target.value)} /></label><label>排序<select value={sortBy} onChange={e => setSortBy(e.target.value as 'basic' | 'enhanced')}><option value="basic">按基础分</option><option value="enhanced">按增强分</option></select></label><button className="primary-button" type="button" onClick={load}>应用筛选</button></div></details>

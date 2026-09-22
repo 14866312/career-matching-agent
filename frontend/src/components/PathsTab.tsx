@@ -56,12 +56,9 @@ export default function PathsTab({ active, jobs, showToast }: {
   return (
     <div className="paths-stitch">
       <section className="paths-hero">
-        <div className="stitch-pill"><i /> CAREER MILESTONE ENGINE 3.0</div>
         <h2>明确你的职业成长路径</h2>
-        <p>基于当前岗位能力结构与可迁移技能，规划从现阶段到资深岗位的纵向成长与横向转型路线。</p>
         <label className="path-job-select">聚焦岗位<select value={focusJobId} onChange={e => { setSelectedJobId(e.target.value); setSelectedEdgeId(null); }}>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
         <div className="path-overview"><div><small>{STAGE_LABELS[0]}</small><b>{focusNodes[0]?.label || jobName.get(focusJobId) || '起步岗位'}</b></div><span>→</span><div><small>{STAGE_LABELS[1]}</small><b>{focusNodes[1]?.label || '能力进阶'}</b></div><span>→</span><div><small>{STAGE_LABELS[2]}</small><b>{focusNodes[2]?.label || '资深岗位'}</b></div><em>↗</em></div>
-        <div className="stitch-scroll-cue"><span>SCROLL TO CONVERGE</span><i>⌄</i></div>
       </section>
 
       <main className="path-flow">

@@ -2198,3 +2198,139 @@ button { font-family: inherit; }
   .timeline-stage.reverse .timeline-card { grid-column: 2; grid-row: 2; }
   .path-action-hub { align-items: flex-start; flex-direction: column; }
 }
+
+/* Unified hero treatment: one centered title scale across the four main views. */
+.jobs-stitch-hero h2,
+.profile-stitch-hero h2,
+.matches-stitch-empty .matches-stitch-hero h2.empty-title,
+.paths-hero h2 {
+  margin: 0;
+  max-width: none;
+  white-space: nowrap;
+  text-align: center;
+  color: #fff;
+  font-size: clamp(42px, 5.2vw, 72px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -.065em;
+}
+
+.jobs-stitch-hero {
+  min-height: auto;
+  padding: clamp(88px, 11vh, 132px) 24px 42px;
+}
+
+.jobs-stitch-stats { margin-top: 38px; }
+
+.profile-stitch-hero {
+  padding: clamp(88px, 11vh, 132px) 24px 62px;
+}
+
+.profile-stitch-hero h2 { margin-bottom: 32px; }
+.profile-meta-line { margin-top: 0; }
+.profile-stitch-progress { margin-top: 34px; }
+
+.matches-stitch-hero {
+  min-height: min(calc(100vh - 64px), 720px);
+  padding: 70px 24px 34px;
+}
+
+.matches-stitch-empty .matches-stitch-hero {
+  min-height: min(64vh, 620px);
+  padding: 84px 24px 28px;
+  justify-content: center;
+}
+
+.matches-stitch-empty .matches-stitch-hero h2.empty-title {
+  font-size: clamp(42px, 5.2vw, 72px);
+  line-height: 1;
+  letter-spacing: -.065em;
+}
+
+.matches-stitch-hero h2:not(.empty-title) {
+  font-size: clamp(60px, 7vw, 92px);
+}
+
+.matches-stitch-hero h3 { margin-top: 17px; }
+.matches-hero-actions { margin-top: 20px; }
+.match-empty-card { margin: -10px auto 120px; }
+
+.paths-hero {
+  min-height: auto;
+  padding: clamp(88px, 11vh, 132px) 24px 72px;
+}
+
+.paths-hero h2 { margin-bottom: 28px; }
+.path-job-select { margin-top: 0; }
+.path-overview { margin-top: 28px; }
+
+/* Job details use the same dark editorial surface as the main Stitch views. */
+.jobs-stitch .modal-backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(8px); }
+.jobs-stitch .modal {
+  max-width: 820px;
+  max-height: 88vh;
+  padding: 34px 34px 28px;
+  border: 1px solid var(--stitch-line-strong);
+  border-radius: 20px;
+  color: #e9e9ec;
+  background: linear-gradient(145deg, rgba(23,23,28,.98), rgba(9,9,12,.99));
+  box-shadow: 0 30px 100px rgba(0,0,0,.72), inset 0 1px rgba(255,255,255,.06);
+}
+
+.jobs-stitch .modal-close {
+  top: 15px;
+  right: 15px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--stitch-line);
+  color: #d7d7db;
+  background: rgba(255,255,255,.045);
+}
+
+.jobs-stitch .modal-close:hover { border-color: var(--stitch-line-strong); background: rgba(255,255,255,.09); }
+.jobs-stitch .job-detail h3 { color: #fff; font-size: 30px; font-weight: 400; }
+.jobs-stitch .job-detail .eyebrow { color: #85858b; }
+.jobs-stitch .detail-meta,
+.jobs-stitch .detail-summary,
+.jobs-stitch .req-basis,
+.jobs-stitch .soft-note { color: #77777e; }
+.jobs-stitch .detail-summary { max-width: 680px; }
+.jobs-stitch .item-block h4 { color: #8d8d94; }
+.jobs-stitch .req-item {
+  border-color: var(--stitch-line);
+  border-radius: 11px;
+  color: #d8d8dc;
+  background: rgba(255,255,255,.025);
+}
+.jobs-stitch .req-item summary { color: #ededf0; }
+.jobs-stitch .req-item summary .mono { color: #77777e; }
+.jobs-stitch .req-quote {
+  border-left-color: #a7a7ad;
+  color: #9a9aa1;
+  background: rgba(255,255,255,.035);
+}
+.jobs-stitch .req-quote cite { color: #696970; }
+.jobs-stitch .item.pending {
+  border-color: rgba(210, 174, 91, .45);
+  color: #aaaab0;
+  background: rgba(210,174,91,.06);
+}
+.jobs-stitch .sample-row { color: #d0d0d4; border-bottom-color: var(--stitch-line); }
+.jobs-stitch .sample-row span { color: #85858b; }
+.jobs-stitch .detail-actions { padding-top: 4px; }
+
+@media (max-width: 680px) {
+  .jobs-stitch-hero h2,
+  .profile-stitch-hero h2,
+  .matches-stitch-empty .matches-stitch-hero h2.empty-title,
+  .paths-hero h2 { font-size: clamp(26px, 8.3vw, 52px); }
+
+  .jobs-stitch-hero,
+  .profile-stitch-hero,
+  .paths-hero { padding-left: 18px; padding-right: 18px; }
+
+  .matches-stitch-hero { padding-left: 18px; padding-right: 18px; }
+  .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
+  .jobs-stitch .modal { padding: 30px 18px 22px; border-radius: 16px; }
+  .jobs-stitch .job-detail h3 { font-size: 25px; }
+}

@@ -139,16 +139,13 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   return (
     <div className="jobs-stitch">
       <section className="jobs-stitch-hero">
-        <div className="stitch-pill"><i /> 基于岗位能力基线精选</div>
-        <h2>精选适合你的<br />职业岗位</h2>
-        <p>基于你的专业背景与技能画像，为你匹配适合的研发与设计岗位。</p>
+        <h2>精选适合你的职业岗位</h2>
         <div className="jobs-stitch-stats" aria-label="岗位数据概览">
           <div><span>目标岗位</span><strong className="is-text">{targetJobId ? '已选择' : '待选择'}</strong><em>{targetJobId ? '可前往能力档案继续' : '从岗位详情中设为目标'}</em></div>
           <div><span>精选岗位</span><strong>{jobs.length}<small>个</small></strong><em>来自当前岗位样本库</em></div>
           <div><span>能力要求</span><strong>{requirementCount}<small>项</small></strong><em>技能、证书与通用素质</em></div>
           <div className="jobs-stats-action"><span>数据已完成结构化，可继续查看岗位详情</span><a href="#curated-roles">开始探索 <b>↓</b></a></div>
         </div>
-        <div className="stitch-scroll-cue"><span>向下滚动 · 查看岗位</span><i>⌄</i></div>
       </section>
 
       <section className="jobs-stitch-section" id="curated-roles">

@@ -307,9 +307,7 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
   return (
     <div className="profile-stitch">
       <section className="profile-stitch-hero">
-        <div className="stitch-pill"><i /> AI 能力档案 · 真实证据校验</div>
         <h2>我的能力档案与凭证核验</h2>
-        <p>基于真实项目经历与专业技能核对，帮助你构建能力优势与技能盲区。</p>
         <div className="profile-meta-line">
           <span>专业 · {student.major || '待填写'}</span>
           <span>目标 · {jobs.find(j => j.id === student.intention.target_job_id)?.name || '待选择'}</span>
