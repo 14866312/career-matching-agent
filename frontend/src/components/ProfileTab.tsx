@@ -302,152 +302,60 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
     student.skills.filter(x => x.confirmed && x.level > 0 && x.evidence.trim().length > 0).length +
     student.certificates.filter(x => x.confirmed && x.level > 0 && x.evidence.trim().length > 0).length +
     student.qualities.filter(x => x.confirmed && x.level > 0 && x.evidence.trim().length > 0).length;
+  const profileScore = total === 0 ? 0 : Math.round((confirmedCount / total) * 100);
 
   return (
     <div className="profile-stitch">
       <section className="profile-stitch-hero">
-        <div className="profile-stitch-kicker">PROFILE CALIBRATION · YOUR SIGNALS</div>
-        <h2>把经历翻译成<br /><span>可验证的能力。</span></h2>
-        <p>先导入或填写你的经历，再逐项确认技能、证书和通用素质。只有带有真实证据的确认项，才会进入岗位匹配。</p>
+        <div className="stitch-pill"><i /> AI 能力档案 · 真实证据校验</div>
+        <h2>我的能力档案与凭证核验</h2>
+        <p>基于真实项目经历与专业技能核对，帮助你构建能力优势与技能盲区。</p>
+        <div className="profile-meta-line">
+          <span>专业 · {student.major || '待填写'}</span>
+          <span>目标 · {jobs.find(j => j.id === student.intention.target_job_id)?.name || '待选择'}</span>
+          <span>档案 · {student.confirmed ? '已确认' : '待确认'}</span>
+        </div>
         <div className="profile-stitch-progress" aria-label="能力画像流程">
-          <div className="is-current"><b>01</b><span>导入资料</span></div>
-          <div><b>02</b><span>确认能力</span></div>
-          <div><b>03</b><span>生成画像</span></div>
+          <div className="is-current"><b>01</b><span>导入简历</span></div>
+          <div className={total > 0 ? 'is-current' : ''}><b>02</b><span>确认技能项</span></div>
+          <div className={analysis ? 'is-current' : ''}><b>03</b><span>完成能力画像</span></div>
         </div>
       </section>
-      <div className="profile-stitch-layout">
-        <form className="card form-card profile-stitch-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
-          <div className="profile-stitch-form-head">
-            <div>
-              <p className="profile-stitch-kicker">STEP 01 · SOURCE MATERIAL</p>
-              <h3>你的基础资料</h3>
-            </div>
-            <span className="profile-stitch-counter">{total} 项能力</span>
-          </div>
-          <label>
-            专业
-            <input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" aria-label="专业"
-              onChange={e => updateStudent(s => ({ ...s, major: e.target.value }))} />
-          </label>
-          <label>
-            项目 / 实习经历
-            <textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…"
-              aria-label="项目 / 实习经历"
-              value={student.experiences}
-              onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value }))} />
-          </label>
-          <div className="form-row">
-            <label>
-              意向城市
-              <input value={student.intention.city} maxLength={80} placeholder="例如：上海" aria-label="意向城市"
-                onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} />
-            </label>
-            <label>
-              目标岗位
-              <select value={student.intention.target_job_id} aria-label="目标岗位"
-                onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: e.target.value } }))}>
-                <option value="">先浏览岗位</option>
-                {jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="upload-zone">
-            <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
-            <button type="button" className="ghost-button" disabled={resumeBusy || submitBusy} aria-label="导入简历"
-              onClick={() => document.getElementById('resumeFile')?.click()}>
-              {resumeBusy ? '解析中…' : '＋ 导入简历'}
-            </button>
-            <span>{resumeStatus}</span>
-          </div>
-          {resumeError != null && <ErrorBox error={resumeError} />}
-          {DIM_CONFIGS.map(cfg => (
-            <TagEditor
-              key={cfg.key}
-              cfg={cfg}
-              items={student[cfg.key]}
-              dict={tags.filter(t => t.dimension === cfg.key)}
-              onAdd={text => addAbility(cfg.key, text)}
-              onPatch={(i, patch) => patchAbility(cfg.key, i, patch)}
-              onRemove={i => removeAbility(cfg.key, i)}
-            />
-          ))}
-          {tags.length === 0 && (
-            <p className="soft-note">标签字典未加载：新加标签可能无法与岗位要求对应，刷新页面可重试。</p>
-          )}
-          <div className="confirm-row" role="status" aria-label="画像确认状态">
-            <span className={'confirm-badge' + (student.confirmed ? ' ok' : '')}>
-              {student.confirmed ? '画像已确认 ✓' : '画像未确认'}
-            </span>
-            <button
-              type="button"
-              className="ghost-button"
-              disabled={student.confirmed || submitBusy || resumeBusy}
-              aria-label="确认完整画像"
-              onClick={confirmProfile}
-            >
-              确认完整画像
-            </button>
-            <span className="soft-note">
-              {student.confirmed
-                ? '匹配报告将使用当前画像；编辑任何内容会自动撤销确认。'
-                : '确认后才能计算匹配与生成建议；编辑任何内容会自动撤销确认。' + (total === 0 ? '当前没有任何标签：零技能画像也可以确认，结果会展示为 0 分或待确认。' : '')}
-            </span>
-          </div>
-          <button className="primary-button" type="submit" disabled={submitBusy || resumeBusy} aria-label="生成能力画像">
-            {submitBusy ? '正在整理…' : '生成能力画像'} <span>↗</span>
+      <form className="profile-flow" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
+        <section className="profile-step profile-source-step">
+          <header><p>第 1 步 · 导入简历与项目经历</p><h3>导入简历与项目经历</h3></header>
+          <div className="profile-source-actions"><button className="is-active" type="button" onClick={() => document.getElementById('resumeFile')?.click()}>导入现有简历</button><span>或手动录入资料</span></div>
+          <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
+          <button type="button" className="profile-upload-card" disabled={resumeBusy || submitBusy} onClick={() => document.getElementById('resumeFile')?.click()}>
+            <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '点击此区域选择简历文件'}</strong><small>支持 PDF、DOCX、TXT 格式（≤5MB）。系统会提取可识别的经历、技能、证书与通用素质。</small><i>{resumeBusy ? '处理中' : '选择文件解析'}</i>
           </button>
-          {submitError != null && <ErrorBox error={submitError} onRetry={() => void handleSubmit()} retryLabel="重试生成画像" />}
-          <p className="form-message" aria-live="polite">{submitMsg}</p>
-        </form>
-        <aside className="card profile-preview">
-          {total === 0 && !analysis ? (
-            <EmptyState symbol="◎" title="你的能力雷达还在等待">
-              <p>填写左侧信息，或导入一份简历。画像只会整理原文依据，不会替你假设"已经掌握"。</p>
-            </EmptyState>
-          ) : (
-            <div className="profile-summary">
-              <p className="eyebrow">STRUCTURED SIGNALS</p>
-              <h3>你的能力画像</h3>
-              <div className="stat-row">
-                <div className="stat"><strong>{confirmedCount}</strong><span>确认+证据（计分）</span></div>
-                <div className="stat"><strong>{total}</strong><span>标签总数</span></div>
-                <div className="stat"><strong>{student.experiences.length}</strong><span>经历字符</span></div>
-              </div>
-              {analysis && analysis.summary.length > 0 && (
-                <div className="item-block">
-                  <h4>AI 整理 · 优势参考</h4>
-                  {analysis.summary.map((s, i) => <div className="item" key={i}>{s}</div>)}
-                  {analysis.evidence_quotes.length > 0 && (
-                    <details className="req-item">
-                      <summary><b>原文依据</b><span className="mono">{analysis.evidence_quotes.length} 条</span></summary>
-                      {analysis.evidence_quotes.map((q, i) => <blockquote className="req-quote" key={i}>「{q}」</blockquote>)}
-                    </details>
-                  )}
-                  <p className="soft-note">{analysis.notice}</p>
-                </div>
-              )}
-              {student.advantages.length > 0 && (
-                <div className="item-block">
-                  <h4>已确认优势</h4>
-                  {student.advantages.map((s, i) => <div className="item" key={i}>✓ {s}</div>)}
-                </div>
-              )}
-              {student.improvements.length > 0 && (
-                <div className="item-block">
-                  <h4>待提升方向</h4>
-                  {student.improvements.map((s, i) => <div className="item gap" key={i}>{s}</div>)}
-                </div>
-              )}
-              <div className="detail-actions">
-                <button className="primary-button" type="button" onClick={onGoMatches} aria-label="查看匹配推荐">
-                  查看匹配推荐 <span>↗</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </aside>
-      </div>
+          <p className="profile-resume-status">{resumeStatus}</p>
+          {resumeError != null && <ErrorBox error={resumeError} />}
+          <div className="profile-basic-grid">
+            <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value }))} /></label>
+            <label>意向城市<input value={student.intention.city} maxLength={80} placeholder="例如：上海" onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} /></label>
+            <label>目标岗位<select value={student.intention.target_job_id} onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: e.target.value } }))}><option value="">先浏览岗位</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
+            <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value }))} /></label>
+          </div>
+        </section>
+        <section className="profile-step profile-skill-step">
+          <header><p>第 2 步 · 确认技能</p><h3>确认已掌握的核心技能</h3><span>已确认 {confirmedCount} / {total} 项</span></header>
+          <p className="profile-step-copy">展开技能项补充等级与原文证据。只有“已确认、等级大于 0、证据非空”的能力会进入匹配分。</p>
+          <div className="profile-editor-stack">{DIM_CONFIGS.map(cfg => <TagEditor key={cfg.key} cfg={cfg} items={student[cfg.key]} dict={tags.filter(t => t.dimension === cfg.key)} onAdd={text => addAbility(cfg.key, text)} onPatch={(i, patch) => patchAbility(cfg.key, i, patch)} onRemove={i => removeAbility(cfg.key, i)} />)}</div>
+          {tags.length === 0 && <p className="soft-note">标签字典未加载：新加标签可能无法与岗位要求对应，刷新页面可重试。</p>}
+        </section>
+        <section className="profile-step profile-result-step">
+          <header><p>第 3 步 · 个人能力画像</p><h3>能力凭证覆盖与画像摘要</h3><span>画像完整度 {profileScore}%</span></header>
+          <div className="profile-assessment-card">
+            <div className="profile-score-column"><span>能力证据覆盖 / EVIDENCE COVERAGE</span><strong>{profileScore}<small>%</small></strong><i><b style={{ width: profileScore + '%' }} /></i><p>{confirmedCount} 项能力具备有效证据，另有 {Math.max(0, total - confirmedCount)} 项待核验。</p><span>经历填写进度（600 字参考）</span><strong className="secondary">{Math.min(100, Math.round((student.experiences.length / 600) * 100))}<small>%</small></strong></div>
+            <div className="profile-radar" aria-label="能力画像维度示意，不参与匹配分计算"><div className="radar-grid"><i /><i /><i /></div><div className="radar-shape" /><span className="r1">专业技能</span><span className="r2">项目经验</span><span className="r3">通用素质</span><span className="r4">证书凭证</span><span className="r5">目标清晰度</span></div>
+          </div>
+          {total === 0 && !analysis ? <EmptyState symbol="◎" title="你的能力雷达还在等待"><p>填写资料或导入简历后生成能力画像。</p></EmptyState> : <div className="profile-analysis-list">{analysis?.summary.map((s, i) => <div className="profile-analysis-item" key={i}><b>{String(i + 1).padStart(2, '0')}</b><span>{s}</span></div>)}{student.advantages.map((s, i) => <div className="profile-analysis-item" key={'a' + i}><b>✓</b><span>{s}</span></div>)}{student.improvements.map((s, i) => <div className="profile-analysis-item is-gap" key={'g' + i}><b>!</b><span>{s}</span></div>)}</div>}
+          {analysis && analysis.evidence_quotes.length > 0 && <details className="profile-evidence"><summary>查看 AI 使用的原文依据 · {analysis.evidence_quotes.length} 条</summary>{analysis.evidence_quotes.map((q, i) => <blockquote key={i}>「{q}」</blockquote>)}</details>}
+          {submitError != null && <ErrorBox error={submitError} onRetry={() => void handleSubmit()} retryLabel="重试生成画像" />}<p className="form-message" aria-live="polite">{submitMsg}</p>
+        </section>
+        <div className="profile-action-dock"><div><i className={student.confirmed ? 'ok' : ''} /><span><b>能力档案完整度 {profileScore}%</b><small>{student.confirmed ? '当前画像已确认，可用于匹配' : '确认后才能生成匹配报告'}</small></span></div><button className="ghost-button" type="submit" disabled={submitBusy || resumeBusy}>{submitBusy ? '正在整理…' : '生成能力画像'}</button><button className="ghost-button" type="button" disabled={student.confirmed || submitBusy || resumeBusy} onClick={confirmProfile}>确认完整画像</button><button className="primary-button" type="button" disabled={!student.confirmed} onClick={onGoMatches}>生成深度匹配报告 <span>→</span></button></div>
+      </form>
     </div>
   );
 }

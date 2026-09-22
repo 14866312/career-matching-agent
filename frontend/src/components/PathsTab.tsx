@@ -1,44 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiGet, errMessage } from '../api';
-import type { CareerPaths, PathNode } from '../types';
+import type { CareerPaths, CareerEdge, PathNode } from '../types';
 import { EmptyState, ErrorBox, Loading } from './ui';
 
-const COL_W = 128;
-const NODE_W = 112;
-const NODE_H = 48;
-const ROW_H = 128;
-const TOP = 26;
-const STAGE_LABELS = ['起步阶段', '进阶阶段', '资深阶段'];
-
-interface LayoutNode extends PathNode {
-  col: number;
-  x: number;
-  y: number;
-  cx: number;
-}
-
-function buildLayout(nodes: PathNode[], jobs: Array<{ id: string; name: string }>): LayoutNode[] {
-  const jobIndex = new Map(jobs.map((j, i) => [j.id, i]));
-  return nodes.map(n => {
-    const col = jobIndex.get(n.job_id) ?? 0;
-    return { ...n, col, x: col * COL_W + 8, y: TOP + n.stage * ROW_H, cx: col * COL_W + 8 + NODE_W / 2 };
-  });
-}
-
-function promotePath(a: LayoutNode, b: LayoutNode): string {
-  const y1 = a.y + NODE_H;
-  const y2 = b.y;
-  const mid = (y1 + y2) / 2;
-  return `M ${a.cx} ${y1} L ${a.cx} ${mid - 6} M ${a.cx - 5} ${mid - 12} L ${a.cx} ${mid - 4} L ${a.cx + 5} ${mid - 12} M ${a.cx} ${mid - 4} L ${a.cx} ${y2}`;
-}
-
-function transitionPath(a: LayoutNode, b: LayoutNode): string {
-  const y = a.y + NODE_H;
-  const dip = y + 26;
-  const x1 = a.cx;
-  const x2 = b.cx;
-  return `M ${x1} ${y} C ${x1} ${dip}, ${x2} ${dip}, ${x2} ${y}`;
-}
+const STAGE_LABELS = ['当前阶段', '中期目标', '最终目标'];
+const PHASE_LABELS = ['PHASE 01 · 基础能力建立', 'PHASE 02 · 核心能力进阶', 'PHASE 03 · 资深能力纵深'];
 
 export default function PathsTab({ active, jobs, showToast }: {
   active: boolean;
@@ -48,12 +14,11 @@ export default function PathsTab({ active, jobs, showToast }: {
   const [data, setData] = useState<CareerPaths | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [selectedJobId, setSelectedJobId] = useState('');
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (active && !data && !loading && error == null) {
-      void load();
-    }
+    if (active && !data && !loading && error == null) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
@@ -63,6 +28,7 @@ export default function PathsTab({ active, jobs, showToast }: {
     try {
       const d = await apiGet<CareerPaths>('/api/career-paths');
       setData(d);
+      setSelectedJobId(current => current || jobs[0]?.id || d.nodes[0]?.job_id || '');
     } catch (e) {
       setError(e);
       showToast('路径加载失败：' + errMessage(e), 'err');
@@ -71,126 +37,50 @@ export default function PathsTab({ active, jobs, showToast }: {
     }
   }
 
-  if (!active && data) return null;
-  if (error != null) {
-    return (
-      <div className="panel-section paths-stitch">
-        <div className="section-head"><div><p className="eyebrow">CAREER MAP</p><h2>路径与换岗</h2></div></div>
-        <ErrorBox error={error} onRetry={load} retryLabel="重新加载路径" />
-      </div>
-    );
-  }
-  if (loading) {
-    return <div className="panel-section paths-stitch"><Loading text="正在加载职业路径…" /></div>;
-  }
-  if (!data) {
-    return (
-      <div className="panel-section paths-stitch">
-        <div className="section-head"><div><p className="eyebrow">CAREER MAP</p><h2>路径与换岗</h2></div></div>
-        <EmptyState symbol="↝" title="路径图尚未加载">
-          <button className="ghost-button" type="button" onClick={load}>加载职业路径</button>
-        </EmptyState>
-      </div>
-    );
-  }
+  const jobName = useMemo(() => new Map(jobs.map(j => [j.id, j.name])), [jobs]);
+  const focusJobId = selectedJobId || jobs[0]?.id || data?.nodes[0]?.job_id || '';
+  const focusNodes = useMemo(() => (data?.nodes ?? []).filter(n => n.job_id === focusJobId).sort((a, b) => a.stage - b.stage), [data, focusJobId]);
+  const nodeById = useMemo(() => new Map((data?.nodes ?? []).map(n => [n.id, n])), [data]);
+  const promotionBySource = useMemo(() => new Map((data?.edges ?? []).filter(e => e.type === 'promotion').map(e => [e.source, e])), [data]);
+  const transitions = useMemo(() => (data?.edges ?? []).filter(e => e.type === 'transition' && (nodeById.get(e.source)?.job_id === focusJobId || nodeById.get(e.target)?.job_id === focusJobId)), [data, nodeById, focusJobId]);
+  const actionEdges = useMemo(() => (data?.edges ?? []).filter(edge =>
+    edge.activity && (nodeById.get(edge.source)?.job_id === focusJobId || nodeById.get(edge.target)?.job_id === focusJobId)
+  ).slice(0, 6), [data, nodeById, focusJobId]);
+  const selectedEdge = data?.edges.find(e => e.id === selectedEdgeId) ?? null;
 
-  const layout = buildLayout(data.nodes, jobs);
-  const nodeById = new Map(layout.map(n => [n.id, n]));
-  const jobName = new Map(jobs.map(j => [j.id, j.name]));
-  const selectedEdge = data.edges.find(e => e.id === selectedEdgeId) ?? null;
-  const width = COL_W * Math.max(jobs.length, 1);
-  const height = TOP + 3 * ROW_H;
-  const transitions = data.edges.filter(e => e.type === 'transition');
-  const promotions = data.edges.filter(e => e.type === 'promotion');
+  if (!active && data) return null;
+  if (error != null) return <div className="paths-stitch"><ErrorBox error={error} onRetry={load} retryLabel="重新加载路径" /></div>;
+  if (loading) return <div className="paths-stitch"><Loading text="正在加载职业路径…" /></div>;
+  if (!data) return <div className="paths-stitch"><EmptyState symbol="↝" title="路径图尚未加载"><button className="ghost-button" type="button" onClick={load}>加载职业路径</button></EmptyState></div>;
 
   return (
-    <div className="panel-section paths-stitch">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">CAREER MAP</p>
-          <h2>晋升与换岗路线</h2>
-        </div>
-        <span className="count-badge">{promotions.length} PROMOTIONS · {transitions.length} TRANSITIONS</span>
-      </div>
-      <div className="path-legend">
-        <span><i className="legend-dot" />晋升（同岗位向上）</span>
-        <span><i className="legend-dot transition" />换岗（跨岗位移动）</span>
-        <span className="mono">点击节点或连线查看说明</span>
-      </div>
-      <div className="card path-card">
-        <svg className="path-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="职业路径图：6 个岗位三阶段，绿实线为晋升，橙虚线为换岗">
-          {STAGE_LABELS.map((s, i) => (
-            <text key={s} x={2} y={TOP + i * ROW_H - 8} className="path-stage-label">{s}</text>
-          ))}
-          {data.edges.map(e => {
-            const a = nodeById.get(e.source);
-            const b = nodeById.get(e.target);
-            if (!a || !b) return null;
-            const sel = e.id === selectedEdgeId;
-            const cls = 'path-edge ' + e.type + (sel ? ' selected' : '');
-            const label = e.type === 'promotion'
-              ? `晋升到 ${b.label}`
-              : `换岗到 ${b.label}`;
-            return (
-              <g key={e.id}>
-                <path
-                  className={cls}
-                  d={e.type === 'promotion' ? promotePath(a, b) : transitionPath(a, b)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={label}
-                  onClick={() => setSelectedEdgeId(e.id)}
-                  onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setSelectedEdgeId(e.id); } }}
-                />
-              </g>
-            );
-          })}
-          {layout.map(n => (
-            <g
-              key={n.id}
-              className="path-node-group"
-              tabIndex={0}
-              role="button"
-              aria-label={`${n.label}（${STAGE_LABELS[n.stage] ?? '阶段 ' + n.stage}）`}
-              onClick={() => showToast(n.label + '：' + (jobName.get(n.job_id) ?? '') + ' · ' + (STAGE_LABELS[n.stage] ?? ''))}
-              onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); showToast(n.label + '：' + (jobName.get(n.job_id) ?? '') + ' · ' + (STAGE_LABELS[n.stage] ?? '')); } }}
-            >
-              <rect x={n.x} y={n.y} width={NODE_W} height={NODE_H} rx={8} className={'path-rect' + (n.stage === 0 ? ' base' : n.stage === 2 ? ' senior' : '')} />
-              <text x={n.x + NODE_W / 2} y={n.y + NODE_H / 2 - 3} className="path-node-title" textAnchor="middle">{n.label}</text>
-              <text x={n.x + NODE_W / 2} y={n.y + NODE_H / 2 + 13} className="path-node-sub" textAnchor="middle">{STAGE_LABELS[n.stage] ?? ''}</text>
-            </g>
-          ))}
-        </svg>
-        {selectedEdge && (
-          <div className="path-detail" role="status">
-            <h4>
-              {selectedEdge.type === 'promotion' ? '晋升路径' : '换岗路径'}：
-              {nodeById.get(selectedEdge.source)?.label ?? selectedEdge.source}
-              →
-              {nodeById.get(selectedEdge.target)?.label ?? selectedEdge.target}
-            </h4>
-            <p><b>可迁移能力：</b>{selectedEdge.transferable.join('、') || '无'}</p>
-            <p><b>需要补齐：</b>{selectedEdge.gaps.join('、') || '无'}</p>
-            <p><b>建议活动：</b>{selectedEdge.activity || '—'}</p>
-            <p className="mono">{selectedEdge.source_type}</p>
-          </div>
-        )}
-      </div>
-      <div className="card transition-card">
-        <h4>换岗路径清单 · {transitions.length} 条</h4>
-        <p className="soft-note">换岗路径基于岗位能力重叠推导，只作参考建议；点击图中连线或下方条目可查看迁移能力与差距。</p>
-        {transitions.map(e => (
-          <button
-            type="button"
-            key={e.id}
-            className={'transition-item' + (e.id === selectedEdgeId ? ' selected' : '')}
-            onClick={() => setSelectedEdgeId(e.id)}
-          >
-            <b>{nodeById.get(e.source)?.label} → {nodeById.get(e.target)?.label}</b>
-            <span>迁移：{e.transferable.join('、') || '—'} · 差距：{e.gaps.join('、') || '—'}</span>
-          </button>
-        ))}
-      </div>
+    <div className="paths-stitch">
+      <section className="paths-hero">
+        <div className="stitch-pill"><i /> CAREER MILESTONE ENGINE 3.0</div>
+        <h2>明确你的职业成长路径</h2>
+        <p>基于当前岗位能力结构与可迁移技能，规划从现阶段到资深岗位的纵向成长与横向转型路线。</p>
+        <label className="path-job-select">聚焦岗位<select value={focusJobId} onChange={e => { setSelectedJobId(e.target.value); setSelectedEdgeId(null); }}>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
+        <div className="path-overview"><div><small>{STAGE_LABELS[0]}</small><b>{focusNodes[0]?.label || jobName.get(focusJobId) || '起步岗位'}</b></div><span>→</span><div><small>{STAGE_LABELS[1]}</small><b>{focusNodes[1]?.label || '能力进阶'}</b></div><span>→</span><div><small>{STAGE_LABELS[2]}</small><b>{focusNodes[2]?.label || '资深岗位'}</b></div><em>↗</em></div>
+        <div className="stitch-scroll-cue"><span>SCROLL TO CONVERGE</span><i>⌄</i></div>
+      </section>
+
+      <main className="path-flow">
+        <section className="path-section path-ladder"><header><p>ACT 01 · 核心能力演进</p><h2>核心技术纵深阶梯</h2><span>点击阶段卡片，查看可迁移能力、需要补齐的差距与建议活动</span></header><div className="path-timeline">{focusNodes.map((node, index) => <TimelineStage key={node.id} node={node} index={index} edge={promotionBySource.get(node.id)} selected={promotionBySource.get(node.id)?.id === selectedEdgeId} onSelect={setSelectedEdgeId} />)}</div></section>
+
+        <section className="path-section path-branches"><header><p>ACT 02 · 交叉学科扩展</p><h2>横向转岗与分支延展路线</h2><span>基于当前岗位的能力重叠，展示可以继续探索的相邻岗位</span></header><div className="path-branch-grid">{transitions.length === 0 ? <EmptyState symbol="◌" title="暂无横向路径"><p>当前数据集中没有与该岗位相连的转岗边。</p></EmptyState> : transitions.map((edge, index) => { const a=nodeById.get(edge.source); const b=nodeById.get(edge.target); const target=a?.job_id===focusJobId?b:a; return <button type="button" key={edge.id} className={edge.id===selectedEdgeId?'active':''} onClick={() => setSelectedEdgeId(edge.id)}><span>DIRECTION {String.fromCharCode(65 + index)}</span><h3>{target?.label || '相邻岗位'}</h3><p>{edge.activity || '通过可迁移能力完成岗位切换。'}</p><small>可迁移：{edge.transferable.slice(0,3).join('、') || '待分析'}</small><em>↗</em></button>; })}</div>{selectedEdge && <EdgeDetail edge={selectedEdge} nodeById={nodeById} />}</section>
+
+        <section className="path-section path-sprints"><header><p>ACT 03 · 实战落地</p><h2>季度冲刺实战任务清单</h2><span>把当前岗位相关的能力差距转成可执行的项目、学习与验证动作</span></header><div className="sprint-list">{actionEdges.length === 0 ? <EmptyState symbol="◌" title="暂无实战任务"><p>当前岗位的路径数据中还没有可执行活动。</p></EmptyState> : actionEdges.map((edge,index) => <button type="button" key={edge.id} onClick={() => setSelectedEdgeId(edge.id)}><b>{String(index+1).padStart(2,'0')}</b><span><strong>{edge.activity}</strong><small>{edge.type === 'promotion' ? '纵向晋升任务' : '横向转岗任务'} · 补齐 {edge.gaps.join('、') || '综合能力'}</small></span><em>{index===0?'RECOMMENDED':index<3?'CORE SPRINT':'PLANNED'}</em></button>)}</div></section>
+
+        <section className="path-action-hub"><div><span>CAREER ACTION HUB</span><h3>保存你的个人职业规划路径</h3><p>路径数据来自当前岗位能力图谱，后续可结合匹配报告持续调整。</p></div><button type="button" className="ghost-button" onClick={() => showToast('当前路径已保留在本次会话中')}>保存当前路径</button></section>
+      </main>
     </div>
   );
+}
+
+function TimelineStage({ node, index, edge, selected, onSelect }: { node: PathNode; index: number; edge?: CareerEdge; selected: boolean; onSelect: (id: string) => void }) {
+  return <article className={'timeline-stage ' + (index % 2 ? 'reverse' : '')}><div className="timeline-copy"><span>{PHASE_LABELS[index] || 'PHASE ' + String(index + 1).padStart(2, '0')}</span><h3>{node.label}</h3><p>{index === 0 ? '夯实岗位基础能力，建立可验证的项目与实践证据。' : index === 1 ? '提升独立交付、复杂问题诊断与跨模块协作能力。' : '形成系统设计、技术决策和团队影响力。'}</p></div><button type="button" className={'timeline-node ' + (selected ? 'active' : '')} disabled={!edge} onClick={() => edge && onSelect(edge.id)}>{String(index + 1).padStart(2, '0')}</button><button type="button" className={'timeline-card ' + (selected ? 'active' : '')} disabled={!edge} onClick={() => edge && onSelect(edge.id)}><span>{index === 0 ? 'CORE CAPABILITIES MATRIX' : index === 1 ? 'STAGE REQUIREMENTS' : 'LONG-TERM STRATEGY'}</span>{edge ? <><p><b>可迁移能力</b>{edge.transferable.join('、') || '按当前阶段积累'}</p><p><b>需要补齐</b>{edge.gaps.join('、') || '暂无明确缺口'}</p><small>{edge.activity || '继续积累真实项目证据'}</small></> : <p>当前阶段已是该岗位路径的终点，可继续探索横向转型路线。</p>}</button></article>;
+}
+
+function EdgeDetail({ edge, nodeById }: { edge: CareerEdge; nodeById: Map<string, PathNode> }) {
+  return <div className="path-selected-detail"><span>{edge.type === 'promotion' ? '纵向晋升路径' : '横向转岗路径'}</span><h3>{nodeById.get(edge.source)?.label || edge.source} → {nodeById.get(edge.target)?.label || edge.target}</h3><p><b>可迁移能力：</b>{edge.transferable.join('、') || '无'}</p><p><b>需要补齐：</b>{edge.gaps.join('、') || '无'}</p><p><b>建议活动：</b>{edge.activity || '—'}</p><small>{edge.source_type}</small></div>;
 }

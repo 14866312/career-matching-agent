@@ -116,6 +116,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   }, [jobs, query]);
 
   const requirementCount = jobs.reduce((total, job) => total + job.requirements.length, 0);
+  const maxRequirementCount = Math.max(1, ...jobs.map(job => job.requirements.length));
 
   async function openJob(id: string) {
     openIdRef.current = id;
@@ -138,20 +139,22 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   return (
     <div className="jobs-stitch">
       <section className="jobs-stitch-hero">
-        <div className="jobs-stitch-kicker">CURATED POSITIONS · ROLE ATLAS</div>
-        <h2>精选适合你的<br /><span>职业岗位</span></h2>
-        <p>基于岗位样本整理出的能力基线，先看清岗位需要什么，再决定下一步如何准备。</p>
+        <div className="stitch-pill"><i /> 基于岗位能力基线精选</div>
+        <h2>精选适合你的<br />职业岗位</h2>
+        <p>基于你的专业背景与技能画像，为你匹配适合的研发与设计岗位。</p>
         <div className="jobs-stitch-stats" aria-label="岗位数据概览">
-          <div><strong>{jobs.length}</strong><span>岗位画像</span></div>
-          <div><strong>{requirementCount}</strong><span>要求标签</span></div>
-          <div><strong>{targetJobId ? '已设定' : '未设定'}</strong><span>目标岗位</span></div>
+          <div><span>目标岗位</span><strong className="is-text">{targetJobId ? '已选择' : '待选择'}</strong><em>{targetJobId ? '可前往能力档案继续' : '从岗位详情中设为目标'}</em></div>
+          <div><span>精选岗位</span><strong>{jobs.length}<small>个</small></strong><em>来自当前岗位样本库</em></div>
+          <div><span>能力要求</span><strong>{requirementCount}<small>项</small></strong><em>技能、证书与通用素质</em></div>
+          <div className="jobs-stats-action"><span>数据已完成结构化，可继续查看岗位详情</span><a href="#curated-roles">开始探索 <b>↓</b></a></div>
         </div>
+        <div className="stitch-scroll-cue"><span>向下滚动 · 查看岗位</span><i>⌄</i></div>
       </section>
 
-      <section className="jobs-stitch-section">
+      <section className="jobs-stitch-section" id="curated-roles">
         <div className="jobs-stitch-section-head">
           <div>
-            <div className="jobs-stitch-kicker">BROWSE THE BASELINE</div>
+            <div className="jobs-stitch-kicker">CURATED POSITIONS</div>
             <h3>推荐岗位详情</h3>
             <p>点击岗位卡片，查看核心技能、证书要求、通用素质和来源样本。</p>
           </div>
@@ -173,26 +176,30 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
       ) : visibleJobs.length === 0 ? (
         <EmptyState symbol="⌕" title="没有找到匹配岗位">换一个岗位名称、方向或技能关键词试试。</EmptyState>
       ) : (
-        <div className="jobs-stitch-grid">
+        <div className="jobs-stitch-list">
           {visibleJobs.map(j => (
             <button type="button" className={'jobs-stitch-card' + (j.id === targetJobId ? ' is-target' : '')} key={j.id} onClick={() => openJob(j.id)} aria-label={'查看 ' + j.name + ' 详情'}>
-              <div className="jobs-stitch-card-top">
-                <span className="jobs-stitch-family">{j.family}</span>
-                <span className="jobs-stitch-level">{j.level}</span>
+              <div className="jobs-card-main">
+                <div className="jobs-stitch-card-top">
+                  <span className="jobs-stitch-family">{j.id === targetJobId ? 'TARGET ROLE' : j.family}</span>
+                  <span className="jobs-stitch-level">{j.level}</span>
+                </div>
+                <div className="jobs-stitch-title-row"><h4>{j.name}</h4></div>
+                <p>{j.summary}</p>
               </div>
-              <div className="jobs-stitch-title-row">
-                <span className="jobs-stitch-monogram" style={{ background: j.color }}>{j.monogram}</span>
-                <h4>{j.name}</h4>
-              </div>
-              <p>{j.summary}</p>
+              <div className="jobs-card-score"><strong>{j.requirements.length}<small>项</small></strong><span>核心能力要求</span><i><b style={{ width: `${(j.requirements.length / maxRequirementCount) * 100}%` }} /></i></div>
               <div className="jobs-stitch-divider" />
-              <div className="jobs-stitch-card-bottom">
-                <span>{j.requirements.length} 项能力要求</span>
-                <span>{j.id === targetJobId ? '目标岗位 ✓' : '查看详情  ↗'}</span>
+              <div className="jobs-card-metrics">
+                <span><b>{j.requirements.length}</b> 项核心要求</span>
+                <span><b>{j.preferred.length}</b> 项加分能力</span>
+                <span><b>{j.version}</b> 数据版本</span>
               </div>
-              <div className="jobs-stitch-pills">
-                {j.requirements.slice(0, 3).map(r => <span key={r.tag_id}>{r.label}</span>)}
-                {j.requirements.length > 3 && <span>+{j.requirements.length - 3}</span>}
+              <div className="jobs-card-footer">
+                <div className="jobs-stitch-pills">
+                  {j.requirements.slice(0, 4).map(r => <span key={r.tag_id}>{r.label}</span>)}
+                  {j.requirements.length > 4 && <span>+{j.requirements.length - 4}</span>}
+                </div>
+                <span className="jobs-card-link">{j.id === targetJobId ? '目标岗位 ✓' : '了解岗位要求'} <b>↗</b></span>
               </div>
             </button>
           ))}
