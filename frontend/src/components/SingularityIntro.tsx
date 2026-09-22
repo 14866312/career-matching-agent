@@ -115,6 +115,30 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
         context!.globalAlpha = particle.alpha;
         context!.fill();
       }
+      if (!explodedRef.current && chargeFactor > 0.02) {
+        context!.save();
+        context!.globalCompositeOperation = 'lighter';
+        const rayCount = 20;
+        for (let i = 0; i < rayCount; i += 1) {
+          const angle = (Math.PI * 2 * i) / rayCount + now * (i % 2 === 0 ? 0.00045 : -0.00032);
+          const shimmer = Math.sin(now * 0.006 + i * 1.7);
+          const start = 38 + chargeFactor * 24;
+          const end = start + chargeFactor * (105 + shimmer * 18) + 12;
+          const startX = centerX + Math.cos(angle) * start;
+          const startY = centerY + Math.sin(angle) * start;
+          const endX = centerX + Math.cos(angle) * end;
+          const endY = centerY + Math.sin(angle) * end;
+
+          context!.beginPath();
+          context!.moveTo(startX, startY);
+          context!.lineTo(endX, endY);
+          context!.strokeStyle = i % 3 === 0 ? '#8566ff' : '#4ef2e2';
+          context!.globalAlpha = 0.12 + chargeFactor * 0.35;
+          context!.lineWidth = 0.5 + chargeFactor * 1.2;
+          context!.stroke();
+        }
+        context!.restore();
+      }
       context!.globalAlpha = 1;
       frameRef.current = requestAnimationFrame(draw);
     }
@@ -160,7 +184,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
       const elapsed = Math.min(80, now - last);
       last = now;
       if (chargingRef.current) {
-        chargeRef.current = Math.min(100, chargeRef.current + elapsed / 34);
+        chargeRef.current = Math.min(100, chargeRef.current + elapsed / 27);
       } else {
         chargeRef.current = Math.max(0, chargeRef.current - elapsed / 170);
       }
@@ -203,9 +227,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
       <div className="singularity-ambient" aria-hidden="true" />
       <canvas ref={canvasRef} className="singularity-canvas" aria-hidden="true" />
       <header className="singularity-header">
-        <span className="singularity-badge"><i /> QUANTUM SINGULARITY CORE · V2.5</span>
         <h1>开启你的个性化<br /><span>职业智能探索</span></h1>
-        <p>{charge > 0 ? '引力奇点高速凝聚中 · 持续保持按住' : '长按核心基点或按住空格 · 凝聚引力奇点'}</p>
       </header>
       <section className="singularity-core-zone" aria-label="宇宙奇点启动核心">
         <div className="singularity-orbit singularity-orbit-outer" aria-hidden="true"><i /></div>
@@ -224,12 +246,7 @@ export default function SingularityIntro({ onComplete }: SingularityIntroProps) 
             <span className="singularity-nucleus"><i /></span>
           </button>
         </div>
-        <span className="singularity-percent">{charge}%</span>
       </section>
-      <footer className="singularity-footer">
-        <span>按住核心，凝聚你的职业可能性</span>
-        <button type="button" onClick={triggerExplosion}>跳过奇点引导 <b>→</b></button>
-      </footer>
       <div className="singularity-whiteout" aria-hidden="true" />
     </main>
   );

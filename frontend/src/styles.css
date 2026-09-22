@@ -1272,6 +1272,28 @@ button { font-family: inherit; }
   place-items: center;
 }
 
+.singularity-core-zone::before,
+.singularity-core-zone::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.singularity-core-zone::before {
+  inset: 7%;
+  border: 1px solid rgba(78, 242, 226, .12);
+  box-shadow: 0 0 32px rgba(78, 242, 226, .1), inset 0 0 32px rgba(133, 102, 255, .08);
+  animation: singularity-field-breathe 3.8s ease-in-out infinite;
+}
+
+.singularity-core-zone::after {
+  inset: 17%;
+  border: 1px dashed rgba(133, 102, 255, .24);
+  transform: rotate(28deg) scaleY(.48);
+  animation: singularity-orbit-spin-reverse 7s linear infinite;
+}
+
 .singularity-orbit,
 .singularity-progress-ring,
 .singularity-halo,
@@ -1334,6 +1356,17 @@ button { font-family: inherit; }
   inset: 2px;
   border-radius: inherit;
   background: #101116;
+}
+
+.singularity-progress-ring::after {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border: 1px solid rgba(78, 242, 226, .16);
+  border-radius: inherit;
+  box-shadow: 0 0 26px rgba(78, 242, 226, .12);
+  animation: singularity-ring-breathe 2.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .singularity-halo {
@@ -1422,6 +1455,8 @@ button { font-family: inherit; }
 
 @keyframes singularity-orbit-spin { to { transform: rotate(382deg) scaleY(.41); } }
 @keyframes singularity-orbit-spin-reverse { to { transform: rotate(-391deg) scaleY(.57); } }
+@keyframes singularity-field-breathe { 0%, 100% { transform: scale(.94) rotate(0deg); opacity: .45; } 50% { transform: scale(1.04) rotate(12deg); opacity: 1; } }
+@keyframes singularity-ring-breathe { 0%, 100% { transform: scale(.96); opacity: .32; } 50% { transform: scale(1.06); opacity: .8; } }
 @keyframes singularity-pulse { 0%, 100% { transform: scale(.9); opacity: .68; } 50% { transform: scale(1.1); opacity: 1; } }
 @keyframes singularity-core-explode { 0% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(3.2); opacity: 0; } }
 @keyframes singularity-halo-explode { to { transform: scale(4.6); opacity: 0; } }
@@ -1948,6 +1983,8 @@ button { font-family: inherit; }
 .matches-target { margin: 55px 0 14px !important; color: #68686f !important; font: 400 9px "JetBrains Mono", monospace !important; letter-spacing: .17em; }
 .matches-stitch-hero h2 { margin: 0; color: #fff; font: 300 clamp(82px, 11vw, 142px)/.9 "JetBrains Mono", monospace; letter-spacing: -.11em; }
 .matches-stitch-hero h2.empty-title { font: 400 clamp(44px, 6vw, 72px)/1.05 Inter, system-ui, sans-serif; letter-spacing: -.06em; }
+.matches-stitch-empty .matches-stitch-hero { justify-content: flex-start; padding-top: clamp(118px, 18vh, 230px); }
+.matches-stitch-empty .matches-stitch-hero h2.empty-title { font-size: clamp(68px, 9vw, 126px); line-height: .96; letter-spacing: -.085em; }
 .matches-stitch-hero h2 small { margin-left: 13px; color: #77777e; font-size: 20px; letter-spacing: 0; }
 .matches-stitch-hero h3 { margin: 26px 0 10px; color: #f5f5f7; font-size: 19px; font-weight: 500; }
 .matches-stitch-hero > p:not(.matches-target) { max-width: 560px; margin: 0; color: #7a7a80; font-size: 11px; line-height: 1.7; }
@@ -2134,6 +2171,7 @@ button { font-family: inherit; }
   .profile-action-dock > div { display: none; }
   .matches-stitch-hero h2 { font-size: 82px; }
   .matches-stitch-hero h2.empty-title { font-size: 43px; }
+  .matches-stitch-empty .matches-stitch-hero h2.empty-title { font-size: clamp(58px, 15vw, 96px); }
   .match-report-flow,
   .path-flow { padding-left: 16px; padding-right: 16px; }
   .matches-stitch-filter { grid-template-columns: 1fr; }
