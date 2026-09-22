@@ -17,10 +17,10 @@ function MatchItemRow({ x }: { x: MatchItem }) {
         : x.related_only && x.enhancement_basis
           ? '相关基础：' + x.enhancement_basis + '（计入增强参考，不代表已满足）'
           : x.level_source === 'binary_requirement'
-            ? '二元要求 · 具备即可 · 请在「我的能力」确认'
+            ? '二元要求 · 具备即可 · 请在「能力档案」确认'
             : x.required_level == null
-              ? '要求等级未标注 · 请在「我的能力」确认'
-              : '要求等级 ' + x.required_level + ' · 请在「我的能力」确认';
+              ? '要求等级未标注 · 请在「能力档案」确认'
+              : '要求等级 ' + x.required_level + ' · 请在「能力档案」确认';
   return (
     <div className={'item ' + (x.status === 'satisfied' ? '' : x.status)}>
       <span className="item-label">
@@ -237,7 +237,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     // ErrorBox 的重试也直接调用本函数：内部重新校验，防止绕过按钮的禁用门槛。
     if (!studentRef.current.confirmed) {
       setReportError(null);
-      showToast('画像尚未确认，请先到「我的能力」确认后再生成建议', 'err');
+      showToast('画像尚未确认，请先到「能力档案」确认后再生成建议', 'err');
       return;
     }
     if (resultsStale) {
@@ -326,7 +326,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
         <div className="matches-stitch-hero"><p className="matches-stitch-kicker">MATCH ENGINE · REPORT BUILDER</p><h2>看见你与岗位的<br /><span>距离与下一步。</span></h2><p>先确认能力画像，系统会按岗位要求计算匹配度，并把差距转成可执行的学习建议。</p></div>
         <div className="card match-list">
           <EmptyState symbol="↗" title="先完成并确认能力画像">
-            <p>到「我的能力」填写并点击「确认完整画像」后，这里会展示最多 5 个岗位推荐。零技能画像也可以确认，结果会展示为 0 分或待确认。</p>
+            <p>到「能力档案」填写并点击「确认完整画像」后，这里会展示最多 5 个岗位推荐。零技能画像也可以确认，结果会展示为 0 分或待确认。</p>
             <button className="ghost-button" type="button" aria-label="去填写能力画像" onClick={onGoProfile}>去填写能力画像</button>
           </EmptyState>
         </div>
@@ -395,7 +395,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
             meta ? (
               <EmptyState symbol="◌" title="暂时没有符合条件的岗位">
                 <p>{meta.note}</p>
-                <p>尝试清空城市或薪资筛选，或回「我的能力」确认更多标签。</p>
+                <p>尝试清空城市或薪资筛选，或回「能力档案」确认更多标签。</p>
               </EmptyState>
             ) : null
           ) : (
@@ -407,7 +407,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
                 </p>
               )}
               {notConfirmed && (
-                <div className="stale-banner" role="status">画像已修改（未确认），以下结果已失效。请到「我的能力」重新确认后再刷新。</div>
+                <div className="stale-banner" role="status">画像已修改（未确认），以下结果已失效。请到「能力档案」重新确认后再刷新。</div>
               )}
               {!notConfirmed && matchesStale && (
                 <div className="stale-banner" role="status">学生信息已修改，以下结果按旧输入计算，请点击「刷新推荐」。</div>

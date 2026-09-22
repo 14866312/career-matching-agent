@@ -21,16 +21,21 @@ const EMPTY_STUDENT: StudentProfile = {
 
 type TabId = 'jobs' | 'profile' | 'paths' | 'matches';
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'jobs', label: '岗位浏览' },
-  { id: 'profile', label: '我的能力' },
-  { id: 'paths', label: '职业路径' },
-  { id: 'matches', label: '匹配与建议' }
+const TABS: Array<{ id: TabId; label: string; code: string }> = [
+  { id: 'jobs', label: '职业探索', code: '01' },
+  { id: 'profile', label: '能力档案', code: '02' },
+  { id: 'matches', label: '匹配报告', code: '03' },
+  { id: 'paths', label: '成长路径', code: '04' }
 ];
+
+function tabFromLocation(): TabId {
+  const value = window.location.hash.slice(1);
+  return TABS.some(item => item.id === value) ? value as TabId : 'jobs';
+}
 
 export default function App() {
   const [stage, setStage] = useState<'singularity' | 'exploration'>('singularity');
-  const [tab, setTab] = useState<TabId>('jobs');
+  const [tab, setTab] = useState<TabId>(tabFromLocation);
   const [health, setHealth] = useState<HealthResp | null>(null);
   const [healthError, setHealthError] = useState<unknown>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -57,6 +62,19 @@ export default function App() {
     const t = setTimeout(() => setToast(null), 3600);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    const syncTabFromHistory = () => setTab(tabFromLocation());
+    window.addEventListener('popstate', syncTabFromHistory);
+    return () => window.removeEventListener('popstate', syncTabFromHistory);
+  }, []);
+
+  const navigateTo = useCallback((nextTab: TabId) => {
+    if (nextTab === tab) return;
+    window.history.pushState(null, '', '#' + nextTab);
+    setTab(nextTab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab]);
 
   const applyStudent = useCallback((next: StudentProfile) => {
     studentRef.current = next;
@@ -86,7 +104,7 @@ export default function App() {
 
   const confirmProfile = useCallback(() => {
     applyStudent({ ...studentRef.current, confirmed: true });
-    showToast('画像已确认，可前往「匹配与建议」查看匹配');
+    showToast('画像已确认，可前往「匹配报告」查看匹配');
   }, [applyStudent, showToast]);
 
   const loadHealth = useCallback(async () => {
@@ -122,11 +140,11 @@ export default function App() {
 
   const setTargetJob = useCallback((id: string, name: string) => {
     updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: id } }));
-    showToast('目标岗位已设为 ' + name + '，到「我的能力」确认画像后即可匹配');
+    showToast('目标岗位已设为 ' + name + '，到「能力档案」确认画像后即可匹配');
   }, [updateStudent, showToast]);
 
   const llmNote = health
-    ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，岗位浏览不受影响')
+    ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，职业探索不受影响')
     : null;
 
   if (stage === 'singularity') {
@@ -134,48 +152,39 @@ export default function App() {
   }
 
   return (
-    <div className="shell exploration-shell">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark">✦</span>
-          <span>职业探索</span>
-          <small>CAREER EXPLORATION · FROM SINGULARITY TO DIRECTION</small>
-        </div>
-        <div className="status" role="status" aria-live="polite">
-          <span className={'status-dot' + (health?.status === 'ok' ? ' ok' : '')} />
-          <span className="mono">
-            {healthError != null
-              ? '服务未连接'
-              : health
-                ? '数据 ' + health.data_version + ' · 算法 ' + health.algorithm_version + ' · ' + (llmNote ?? '')
-                : '正在检查服务…'}
+    <div className="exploration-shell">
+      <header className="exploration-header">
+        <button className="exploration-brand" type="button" onClick={() => setStage('singularity')} aria-label="重新进入宇宙奇点首页">
+          <span className="exploration-brand-core"><i /></span>
+          <span><b>CareerAI</b><small>职业智能探索系统</small></span>
+        </button>
+        <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              aria-controls={'page-' + t.id}
+              className={'exploration-nav-item' + (tab === t.id ? ' active' : '')}
+              onClick={() => navigateTo(t.id)}
+            >
+              <span>{t.code}</span>{t.label}
+            </button>
+          ))}
+        </nav>
+        <div className="exploration-utility">
+          <span className={'exploration-profile-state' + (student.confirmed ? ' confirmed' : '')}>
+            {student.confirmed ? '画像已确认' : '画像待确认'}
           </span>
+          <div className="exploration-status" role="status" aria-live="polite" title={health ? '数据 ' + health.data_version + ' · 算法 ' + health.algorithm_version + ' · ' + (llmNote ?? '') : undefined}>
+            <i className={health?.status === 'ok' ? 'online' : ''} />
+            {healthError != null ? '服务未连接' : health ? '系统在线' : '连接中'}
+          </div>
         </div>
       </header>
-      <section className="exploration-intro-bar">
-        <div>
-          <p className="eyebrow">THE UNIVERSE OF YOUR CAREER</p>
-          <h1>从奇点出发，探索你的职业轨道。</h1>
-          <p>这里的每一步都连接到真实的岗位样本、能力证据和匹配结果。自由切换模块，逐步收敛你的方向。</p>
-        </div>
-        <div className="exploration-orbit-mark" aria-hidden="true"><i /><span>EXPLORE</span></div>
-      </section>
-      <nav className="tabs exploration-nav" role="tablist" aria-label="职业探索导航">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={'tab exploration-nav-item' + (tab === t.id ? ' active' : '')}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main>
-        <div className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="岗位浏览">
+      <main className="exploration-pages" data-active-page={tab}>
+        <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
           <JobsTab
             jobs={jobs}
             loading={jobsLoading}
@@ -185,7 +194,7 @@ export default function App() {
             targetJobId={student.intention.target_job_id}
           />
         </div>
-        <div className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="我的能力">
+        <div id="page-profile" className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="能力档案">
           <ProfileTab
             student={student}
             updateStudent={updateStudent}
@@ -197,13 +206,10 @@ export default function App() {
             analysis={analysis}
             setAnalysis={setAnalysis}
             showToast={showToast}
-            onGoMatches={() => setTab('matches')}
+            onGoMatches={() => navigateTo('matches')}
           />
         </div>
-        <div className={'panel' + (tab === 'paths' ? ' active' : '')} role="tabpanel" aria-label="职业路径">
-          <PathsTab active={tab === 'paths'} jobs={jobs} showToast={showToast} />
-        </div>
-        <div className={'panel' + (tab === 'matches' ? ' active' : '')} role="tabpanel" aria-label="匹配与建议">
+        <div id="page-matches" className={'panel' + (tab === 'matches' ? ' active' : '')} role="tabpanel" aria-label="匹配报告">
           <MatchesTab
             isActive={tab === 'matches'}
             student={student}
@@ -211,8 +217,11 @@ export default function App() {
             serverAlgorithm={health?.algorithm_version ?? null}
             serverDataVersion={health?.data_version ?? null}
             showToast={showToast}
-            onGoProfile={() => setTab('profile')}
+            onGoProfile={() => navigateTo('profile')}
           />
+        </div>
+        <div id="page-paths" className={'panel' + (tab === 'paths' ? ' active' : '')} role="tabpanel" aria-label="成长路径">
+          <PathsTab active={tab === 'paths'} jobs={jobs} showToast={showToast} />
         </div>
       </main>
       {toast && <div className={'toast show ' + toast.kind} role="status">{toast.msg}</div>}

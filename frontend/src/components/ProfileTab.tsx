@@ -390,7 +390,7 @@ export default function ProfileTab({ student, updateStudent, editStudent, replac
             </button>
             <span className="soft-note">
               {student.confirmed
-                ? '匹配与建议将使用当前画像；编辑任何内容会自动撤销确认。'
+                ? '匹配报告将使用当前画像；编辑任何内容会自动撤销确认。'
                 : '确认后才能计算匹配与生成建议；编辑任何内容会自动撤销确认。' + (total === 0 ? '当前没有任何标签：零技能画像也可以确认，结果会展示为 0 分或待确认。' : '')}
             </span>
           </div>

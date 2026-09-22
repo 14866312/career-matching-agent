@@ -1428,86 +1428,187 @@ button { font-family: inherit; }
 @keyframes singularity-whiteout { 0%, 40% { opacity: 0; } 58% { opacity: .96; } 100% { opacity: 0; } }
 @keyframes singularity-fade-away { to { opacity: 0; transform: translateY(-8px); } }
 
-/* The post-explosion space gives the four existing modules a shared navigation shell. */
+/* Full workspace shown after the singularity transition. */
 .exploration-shell {
   min-height: 100vh;
-  max-width: 1380px;
-  padding: 0 clamp(10px, 2.2vw, 30px) 30px;
-  background: #f6f4ec;
+  width: 100%;
+  color: #f3f5f4;
+  background: #090a0c;
+  position: relative;
+  isolation: isolate;
 }
 
-.exploration-shell .topbar { padding-left: clamp(10px, 2vw, 28px); padding-right: clamp(10px, 2vw, 28px); }
+.exploration-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% -10%, rgba(78,242,226,.08), transparent 29%),
+    radial-gradient(circle at 92% 20%, rgba(133,102,255,.07), transparent 27%),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: auto, auto, 72px 72px, 72px 72px;
+}
 
-.exploration-intro-bar {
-  margin: 20px clamp(10px, 2vw, 28px) 0;
-  padding: clamp(28px, 5vw, 58px) clamp(22px, 5vw, 64px);
-  min-height: 220px;
+.exploration-header {
+  min-height: 72px;
+  padding: 0 clamp(18px, 3vw, 46px);
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr);
+  align-items: stretch;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+  background: rgba(9,10,12,.86);
+  backdrop-filter: blur(22px);
+}
+
+.exploration-brand {
+  justify-self: start;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 28px;
-  overflow: hidden;
-  border: 1px solid rgba(133, 102, 255, .22);
-  border-radius: 22px;
-  color: #f4f3ff;
-  background: radial-gradient(circle at 88% 50%, rgba(78,242,226,.18), transparent 23%), radial-gradient(circle at 72% 20%, rgba(133,102,255,.18), transparent 27%), linear-gradient(115deg, #111119, #191627 55%, #111a20);
-  box-shadow: 0 20px 60px rgba(34, 27, 58, .15);
+  gap: 11px;
+  padding: 0;
+  border: 0;
+  color: #f7f8f8;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
 }
 
-.exploration-intro-bar .eyebrow { color: var(--orange); }
-.exploration-intro-bar h1 { margin: 0; max-width: 720px; font-size: clamp(32px, 5vw, 62px); line-height: 1.02; letter-spacing: -.07em; font-weight: 300; }
-.exploration-intro-bar p:not(.eyebrow) { max-width: 620px; margin: 18px 0 0; color: rgba(238,236,255,.65); font-size: 14px; }
-
-.exploration-orbit-mark {
-  position: relative;
-  width: 150px;
-  height: 150px;
-  flex: 0 0 auto;
-  border: 1px solid rgba(78,242,226,.48);
+.exploration-brand-core {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(78,242,226,.4);
   border-radius: 50%;
-  transform: rotate(-20deg);
+  box-shadow: 0 0 22px rgba(78,242,226,.14);
 }
 
-.exploration-orbit-mark::before,
-.exploration-orbit-mark::after {
+.exploration-brand-core::before,
+.exploration-brand-core i {
   content: "";
-  position: absolute;
-  inset: 18px -8px;
-  border: 1px solid rgba(133,102,255,.42);
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  background: #4ef2e2;
+  box-shadow: 0 0 12px #4ef2e2;
 }
 
-.exploration-orbit-mark::after { inset: 34px -18px; transform: rotate(78deg); border-color: rgba(255,255,255,.22); }
-.exploration-orbit-mark i { position: absolute; inset: 58px; border-radius: 50%; background: #fff; box-shadow: 0 0 25px 8px rgba(78,242,226,.8); }
-.exploration-orbit-mark span { position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%) rotate(20deg); color: rgba(238,236,255,.54); font: 500 9px "DM Mono", monospace; letter-spacing: .18em; white-space: nowrap; }
+.exploration-brand > span:last-child { display: flex; align-items: baseline; gap: 8px; }
+.exploration-brand b { font-size: 14px; letter-spacing: -.03em; }
+.exploration-brand small { color: #777b80; font: 500 9px "DM Mono", monospace; letter-spacing: .08em; }
 
 .exploration-nav {
-  margin: 22px clamp(10px, 2vw, 28px) 0;
-  padding: 0 10px;
-  gap: clamp(18px, 4vw, 48px);
-  border: 0;
-  border-bottom: 1px solid var(--line);
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 4px;
 }
 
 .exploration-nav-item {
-  padding: 17px 3px 15px;
-  transition: color .2s ease, transform .2s ease;
+  min-width: 102px;
+  padding: 0 15px;
+  position: relative;
+  border: 0;
+  color: #85898e;
+  background: transparent;
+  font: 600 12px Manrope, system-ui, sans-serif;
+  cursor: pointer;
+  transition: color .2s ease, background .2s ease;
 }
 
-.exploration-nav-item:hover { color: var(--green); transform: translateY(-1px); }
-.exploration-nav-item.active { color: var(--green); }
+.exploration-nav-item span {
+  margin-right: 7px;
+  color: #484b50;
+  font: 500 8px "DM Mono", monospace;
+  transition: color .2s ease;
+}
+
+.exploration-nav-item::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: -1px;
+  height: 2px;
+  background: #4ef2e2;
+  box-shadow: 0 0 12px rgba(78,242,226,.75);
+  transform: scaleX(0);
+  transition: transform .22s ease;
+}
+
+.exploration-nav-item:hover { color: #e7ebea; background: rgba(255,255,255,.025); }
+.exploration-nav-item.active { color: #fff; background: rgba(255,255,255,.035); }
+.exploration-nav-item.active span { color: #4ef2e2; }
+.exploration-nav-item.active::after { transform: scaleX(1); }
+
+.exploration-utility {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exploration-profile-state,
+.exploration-status {
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 999px;
+  color: #777b80;
+  background: rgba(255,255,255,.025);
+  font: 500 9px "DM Mono", monospace;
+  letter-spacing: .05em;
+}
+
+.exploration-profile-state { padding: 7px 10px; }
+.exploration-profile-state.confirmed { color: #d9ff55; border-color: rgba(217,255,85,.25); }
+.exploration-status { display: flex; align-items: center; gap: 7px; padding: 7px 10px; }
+.exploration-status i { width: 6px; height: 6px; border-radius: 50%; background: #d79562; box-shadow: 0 0 8px rgba(215,149,98,.5); }
+.exploration-status i.online { background: #4ef2e2; box-shadow: 0 0 8px rgba(78,242,226,.65); }
+
+.exploration-pages { min-height: calc(100vh - 72px); }
+.exploration-pages .panel { display: none; padding: 0; }
+.exploration-pages .panel.active { display: block; animation: exploration-page-enter .32s ease both; }
+.exploration-pages .jobs-stitch,
+.exploration-pages .profile-stitch,
+.exploration-pages .matches-stitch,
+.exploration-pages .paths-stitch {
+  min-height: calc(100vh - 72px);
+  margin: 0;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+@keyframes exploration-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 @media (max-width: 640px) {
   .singularity-intro { padding: 24px 18px; }
   .singularity-header h1 { margin-top: 32px; }
   .singularity-core-zone { width: min(86vw, 390px); }
   .singularity-footer { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .exploration-intro-bar { align-items: flex-start; flex-direction: column; }
-  .exploration-orbit-mark { width: 110px; height: 110px; margin: 12px 0 10px auto; }
-  .exploration-orbit-mark i { inset: 42px; }
+  .exploration-header { min-height: auto; padding: 14px 16px 0; grid-template-columns: 1fr auto; gap: 12px; }
+  .exploration-brand small, .exploration-profile-state { display: none; }
+  .exploration-utility { grid-column: 2; grid-row: 1; }
+  .exploration-nav { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; justify-content: flex-start; }
+  .exploration-nav-item { min-width: max-content; height: 48px; padding: 0 13px; }
+  .exploration-pages { min-height: calc(100vh - 120px); }
+  .exploration-pages .jobs-stitch,
+  .exploration-pages .profile-stitch,
+  .exploration-pages .matches-stitch,
+  .exploration-pages .paths-stitch { min-height: calc(100vh - 120px); margin: 0; border-radius: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .exploration-pages .panel.active { animation: none; }
   .singularity-orbit-outer,
   .singularity-orbit-middle,
   .singularity-halo { animation: none; }
