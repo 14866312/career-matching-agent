@@ -2236,9 +2236,9 @@ button { font-family: inherit; }
 }
 
 .matches-stitch-empty .matches-stitch-hero {
-  min-height: min(64vh, 620px);
-  padding: 84px 24px 28px;
-  justify-content: center;
+  min-height: auto;
+  padding: clamp(88px, 11vh, 132px) 24px 80px;
+  justify-content: flex-start;
 }
 
 .matches-stitch-empty .matches-stitch-hero h2.empty-title {
@@ -2253,7 +2253,7 @@ button { font-family: inherit; }
 
 .matches-stitch-hero h3 { margin-top: 17px; }
 .matches-hero-actions { margin-top: 20px; }
-.match-empty-card { margin: -10px auto 120px; }
+.match-empty-card { margin: 0 auto 120px; }
 
 .paths-hero {
   min-height: auto;
@@ -2330,6 +2330,8 @@ button { font-family: inherit; }
   .paths-hero { padding-left: 18px; padding-right: 18px; }
 
   .matches-stitch-hero { padding-left: 18px; padding-right: 18px; }
+  .matches-stitch-empty .matches-stitch-hero { padding-top: 88px; padding-bottom: 56px; }
+  .match-empty-card { width: calc(100% - 32px); }
   .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
   .jobs-stitch .modal { padding: 30px 18px 22px; border-radius: 16px; }
   .jobs-stitch .job-detail h3 { font-size: 25px; }
