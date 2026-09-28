@@ -18,14 +18,7 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(config) });
     });
     await page.goto(base);
-
-    const core = page.getByRole('button', { name: /长按凝聚宇宙奇点/ });
-    await core.waitFor();
-    const box = await core.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(2200);
-    await page.mouse.up();
+    assert.equal(await page.locator('.singularity-intro').count(), 0, 'the removed cosmic intro must not render');
     await page.locator('.exploration-header').waitFor();
 
     const workflowModal = page.getByRole('dialog', { name: '先确认流程与保存方式', exact: true });

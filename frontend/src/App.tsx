@@ -5,7 +5,6 @@ import JobsTab from './components/JobsTab';
 import ProfileTab from './components/ProfileTab';
 import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
-import SingularityIntro from './components/SingularityIntro';
 import AIConfigPanel from './components/AIConfigPanel';
 import { createLocalDraft, getBrowserStorage, readAutosavePreference, readLocalDraft, writeAutosavePreference, writeLocalDraft, clearLocalDraft, type PathSelection } from './lib/localDraft';
 import { deriveWorkflowState, type MatchFreshness, type ReportFreshness } from './lib/workflow';
@@ -40,7 +39,6 @@ function tabFromLocation(): TabId {
 export default function App() {
   const [storage] = useState(getBrowserStorage);
   const [initialPreference] = useState(() => readAutosavePreference(storage));
-  const [stage, setStage] = useState<'singularity' | 'exploration'>('singularity');
   const [tab, setTab] = useState<TabId>(tabFromLocation);
   const [health, setHealth] = useState<HealthResp | null>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -86,11 +84,11 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
-    if (stage !== 'exploration' || !autosaveChoicePending) return;
+    if (!autosaveChoicePending) return;
     const modal = autosaveModalRef.current;
     if (!modal) return;
     modal.querySelector<HTMLElement>('button:not([disabled])')?.focus();
-  }, [autosaveChoicePending, stage]);
+  }, [autosaveChoicePending]);
 
   useEffect(() => {
     const syncTabFromHistory = () => {
@@ -319,12 +317,6 @@ export default function App() {
     navigateTo('profile');
   }, [applyStudent, navigateTo, showToast]);
 
-  const enterExploration = useCallback(() => {
-    window.history.replaceState(null, '', '#' + tab);
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    setStage('exploration');
-  }, [tab]);
-
   const workflow = deriveWorkflowState({
     targetJobId: student.intention.target_job_id,
     student,
@@ -371,10 +363,6 @@ export default function App() {
       first.focus();
     }
   }, []);
-
-  if (stage === 'singularity') {
-    return <SingularityIntro onComplete={enterExploration} />;
-  }
 
   return (
     <div className="exploration-shell">

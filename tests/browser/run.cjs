@@ -39,14 +39,7 @@ async function responseAfter(url, action) {
 }
 async function ready() {
   await page.goto(base);
-  const core = page.getByRole('button', { name: /长按凝聚宇宙奇点/ });
-  if (await core.count()) {
-    const box = await core.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(2200);
-    await page.mouse.up();
-  }
+  assert.equal(await page.locator('.singularity-intro').count(), 0, 'the removed cosmic intro must not render');
   await page.locator('.exploration-header').waitFor();
   const workflowModal = page.getByRole('dialog', { name: '先确认流程与保存方式', exact: true });
   if (await workflowModal.isVisible().catch(() => false)) {
