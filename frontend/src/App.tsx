@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, errMessage } from './api';
 import type { HealthResp, JobSummary, ProfileFocusTarget, ProfileResp, StudentProfile } from './types';
 import JobsTab from './components/JobsTab';
@@ -7,8 +7,10 @@ import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
 import AIConfigPanel from './components/AIConfigPanel';
 import LocalDraftSettingsPanel from './components/LocalDraftSettingsPanel';
+import OnboardingWizard, { type OnboardingOutcome, type OnboardingStart } from './components/OnboardingWizard';
 import { createLocalDraft, getBrowserStorage, readAutosavePreference, readLocalDraft, writeAutosavePreference, writeLocalDraft, clearLocalDraft, type PathSelection } from './lib/localDraft';
 import { deriveWorkflowState, type MatchFreshness, type ReportFreshness } from './lib/workflow';
+import { readOnboardingState, writeOnboardingState } from './lib/onboarding';
 
 const EMPTY_STUDENT: StudentProfile = {
   major: '',
@@ -32,24 +34,12 @@ const TABS: Array<{ id: TabId; label: string; code: string }> = [
   { id: 'paths', label: '成长路径', code: '04' }
 ];
 
-const WORKFLOW_GUIDE_COPY = [
-  {
-    title: '了解目标岗位',
-    description: '先选一个感兴趣的岗位，看看它需要什么。还没有方向也没关系，可以跳过这一步。'
-  },
-  {
-    title: '整理能力档案',
-    description: '手动填写，或导入简历后逐项审核。只有你确认过的能力和证据才会参与匹配。'
-  },
-  {
-    title: '查看岗位匹配',
-    description: '确认档案后查看符合项、待补充信息和明确差距，知道下一步先补哪里。'
-  },
-  {
-    title: '开始行动',
-    description: '生成行动建议，或者进入成长路径，选一条适合自己的学习和转型路线。'
-  }
-] as const;
+function workflowStepForTab(tab: TabId, reportFreshness?: ReportFreshness): 0 | 1 | 2 | 3 {
+  if (tab === 'jobs') return 0;
+  if (tab === 'profile') return 1;
+  if (tab === 'matches') return reportFreshness === 'current' || reportFreshness === 'stale' ? 3 : 2;
+  return 3;
+}
 
 function tabFromLocation(): TabId {
   const value = window.location.hash.slice(1);
@@ -59,6 +49,7 @@ function tabFromLocation(): TabId {
 export default function App() {
   const [storage] = useState(getBrowserStorage);
   const [initialPreference] = useState(() => readAutosavePreference(storage));
+  const [initialOnboarding] = useState(() => readOnboardingState(storage));
   const [tab, setTab] = useState<TabId>(tabFromLocation);
   const [health, setHealth] = useState<HealthResp | null>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -83,10 +74,10 @@ export default function App() {
   const [reportFreshness, setReportFreshness] = useState<ReportFreshness>('not_generated');
   const [workflowAnchor, setWorkflowAnchor] = useState<WorkflowAnchor | null>(null);
   const [workflowFocus, setWorkflowFocus] = useState<0 | 1 | 2 | 3 | null>(null);
-  const [workflowGuideExpanded, setWorkflowGuideExpanded] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(() => initialOnboarding.status !== 'stored' || !initialPreference.configured);
+  const [profileSourceModeRequest, setProfileSourceModeRequest] = useState<{ mode: 'resume' | 'manual'; token: number } | null>(null);
   const [sessionResetKey, setSessionResetKey] = useState(0);
   const skipNextDraftWrite = useRef(false);
-  const autosaveModalRef = useRef<HTMLElement | null>(null);
 
   // 所有画像修改都经由 applyStudent 同步进 studentRef / revRef：
   // 异步请求（画像生成、简历解析、匹配、报告）返回时用 rev 判断期间是否
@@ -106,24 +97,17 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
-    if (!autosaveChoicePending) return;
-    const modal = autosaveModalRef.current;
-    if (!modal) return;
-    modal.querySelector<HTMLElement>('button:not([disabled])')?.focus();
-  }, [autosaveChoicePending]);
-
-  useEffect(() => {
     const syncTabFromHistory = () => {
       const nextTab = tabFromLocation();
       setTab(nextTab);
-      setWorkflowFocus(nextTab === 'jobs' ? 0 : nextTab === 'profile' ? 1 : nextTab === 'matches' ? 2 : null);
+      setWorkflowFocus(workflowStepForTab(nextTab));
     };
     window.addEventListener('popstate', syncTabFromHistory);
     return () => window.removeEventListener('popstate', syncTabFromHistory);
   }, []);
 
   const navigateTo = useCallback((nextTab: TabId) => {
-    setWorkflowFocus(nextTab === 'jobs' ? 0 : nextTab === 'profile' ? 1 : nextTab === 'matches' ? 2 : null);
+    setWorkflowFocus(workflowStepForTab(nextTab));
     if (nextTab === tab) return;
     window.history.pushState(null, '', '#' + nextTab);
     setTab(nextTab);
@@ -368,6 +352,19 @@ export default function App() {
     navigateTo('profile');
   }, [applyStudent, navigateTo, showToast]);
 
+  const finishOnboarding = useCallback((outcome: OnboardingOutcome, start?: OnboardingStart) => {
+    const saved = writeOnboardingState(storage, outcome);
+    setOnboardingOpen(false);
+    if (!saved && storage) showToast('新手教程状态保存失败；本次仍可继续使用', 'err');
+    if (outcome !== 'completed' || !start) return;
+    if (start === 'jobs') {
+      navigateTo('jobs');
+      return;
+    }
+    setProfileSourceModeRequest({ mode: start, token: Date.now() });
+    navigateTo('profile');
+  }, [navigateTo, showToast, storage]);
+
   const workflow = deriveWorkflowState({
     targetJobId: student.intention.target_job_id,
     student,
@@ -380,45 +377,16 @@ export default function App() {
     { id: 'matches' as TabId, label: '匹配结果', state: workflow.match === 'current' ? '最新' : workflow.match === 'stale' ? '已过期' : workflow.match === 'not_run' ? '待计算' : '待确认档案' },
     { id: 'matches' as TabId, label: '行动建议', state: workflow.report === 'current' ? '已生成' : workflow.report === 'stale' ? '已过期' : workflow.report === 'not_generated' ? '可生成' : '等待最新匹配' }
   ];
-  const activeWorkflowStep = workflowFocus ?? (tab === 'jobs' ? 0
-    : tab === 'profile' ? 1
-    : tab === 'matches' && (reportFreshness === 'current' || reportFreshness === 'stale') ? 3
-    : tab === 'matches' ? 2
-    : 3);
-  const activeGuideCopy = WORKFLOW_GUIDE_COPY[activeWorkflowStep] ?? WORKFLOW_GUIDE_COPY[0];
+  const activeWorkflowStep = workflowFocus ?? workflowStepForTab(tab, reportFreshness);
   const continueLabel = workflow.next === 'profile' ? '继续整理档案' : workflow.next === 'matches'
     ? (matchFreshness === 'stale' ? '刷新匹配结果' : '查看岗位匹配')
     : (reportFreshness === 'stale' ? '更新行动建议' : reportFreshness === 'current' ? '查看行动建议' : '生成行动建议');
   const continueWorkflow = useCallback(() => {
     navigateWorkflowStep(workflow.next === 'profile' ? 1 : workflow.next === 'matches' ? 2 : 3);
   }, [navigateWorkflowStep, workflow.next]);
-  const handleAutosaveModalKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
-    ));
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }, []);
-
   return (
     <div className="exploration-shell">
-      <header className={autosaveChoicePending ? 'exploration-header is-blocked' : 'exploration-header'}>
+      <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
         <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
           {TABS.map(t => (
             <button
@@ -435,6 +403,9 @@ export default function App() {
           ))}
         </nav>
         <div className="exploration-header-actions">
+          <button className="onboarding-trigger" type="button" onClick={() => setOnboardingOpen(true)}>
+            <span aria-hidden="true">?</span> 新手教程
+          </button>
           <button className="settings-trigger" type="button" onClick={() => setSettingsOpen(true)}>
             <span aria-hidden="true">⚙</span> 设置
           </button>
@@ -443,27 +414,7 @@ export default function App() {
           </button>
         </div>
       </header>
-      {!autosaveChoicePending && <aside className={'workflow-guide ' + (workflowGuideExpanded ? 'is-expanded' : 'is-collapsed')} aria-label="新手快速上手">
-        <div className="workflow-guide-heading">
-          <button
-            className="workflow-guide-summary"
-            type="button"
-            aria-expanded={workflowGuideExpanded}
-            onClick={() => setWorkflowGuideExpanded(value => !value)}
-          >
-            <span className="workflow-guide-kicker">快速上手</span>
-            <strong>{activeWorkflowStep + 1} / 4 · {activeGuideCopy.title}</strong>
-          </button>
-          <button
-            className="workflow-guide-toggle"
-            type="button"
-            aria-label={workflowGuideExpanded ? '收起快速上手' : '展开快速上手'}
-            aria-expanded={workflowGuideExpanded}
-            onClick={() => setWorkflowGuideExpanded(value => !value)}
-          >
-            <span aria-hidden="true">{workflowGuideExpanded ? '−' : '+'}</span>
-          </button>
-        </div>
+      {!autosaveChoicePending && <aside className="workflow-guide" aria-label="流程导航">
         <ol>
           {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
             <button
@@ -475,53 +426,27 @@ export default function App() {
               onClick={() => navigateWorkflowStep(index)}
             >
               <span className="workflow-step-number" aria-hidden="true">{index + 1}</span>
-              {workflowGuideExpanded && <span className="workflow-guide-step-copy"><b>{WORKFLOW_GUIDE_COPY[index].title}</b><small>{item.state}</small></span>}
-              {!workflowGuideExpanded && <span className="sr-only">{item.label}：{item.state}</span>}
+              <span className="sr-only">{item.label}：{item.state}</span>
             </button>
           </li>)}
         </ol>
-        {workflowGuideExpanded && <div className="workflow-guide-detail">
-          <p>{activeGuideCopy.description}</p>
-          <button className="workflow-guide-next" type="button" onClick={continueWorkflow} aria-label={'下一步：' + continueLabel} title={continueLabel}>
-            <span className="workflow-guide-next-mark" aria-hidden="true">↗</span>
-            <span className="workflow-guide-next-copy"><small>建议下一步</small><b>{continueLabel}</b></span>
-          </button>
-        </div>}
-      </aside>}
-      {autosaveChoicePending && <div className="workflow-autosave-backdrop" role="presentation">
-        <section
-          ref={autosaveModalRef}
-          className="workflow-autosave-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="workflow-autosave-title"
-          aria-describedby="workflow-autosave-description"
-          onKeyDown={handleAutosaveModalKeyDown}
+        <button
+          className="workflow-guide-next"
+          type="button"
+          aria-label={'下一步：' + continueLabel}
+          title={continueLabel}
+          onClick={continueWorkflow}
         >
-          <div className="workflow-autosave-header">
-            <p className="workflow-autosave-kicker">FIRST SESSION · 01—04</p>
-            <h2 id="workflow-autosave-title">先确认流程与保存方式</h2>
-            <p id="workflow-autosave-description">整个流程分成 4 步：了解岗位、整理能力档案、查看匹配、开始行动。目标岗位可以跳过，你也可以随时从顶部导航或右下角的“快速上手”浮窗切换页面。</p>
-          </div>
-          <ol className="workflow-modal-steps" aria-label="职业规划流程">
-            {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
-              <span className="workflow-modal-step-number" aria-hidden="true">{index + 1}</span>
-              <span><b>{item.label}</b><small>{item.state}</small></span>
-            </li>)}
-          </ol>
-          <p className="workflow-modal-next">建议下一步：<strong>{continueLabel}</strong></p>
-          <div className="workflow-modal-storage">
-            <strong>是否自动保存到本机浏览器？</strong>
-            <p>{initialPreference.available
-              ? '开启后，能力档案、目标岗位、当前页面和已选成长路径会保存在当前浏览器，直到你清除。简历姓名、未审核的简历候选、原文件、AI 报告和模型密钥不会保存。'
-              : '当前浏览器本机存储不可用。你仍可继续使用，数据只保留在本次会话中；自动保存选项暂不可用。'}</p>
-          </div>
-          <div className="workflow-modal-actions">
-            <button className="primary-button" type="button" onClick={() => chooseAutosave(true)} disabled={!initialPreference.available}>继续并自动保存</button>
-            <button className="ghost-button" type="button" onClick={() => chooseAutosave(false)}>关闭自动保存并继续</button>
-          </div>
-        </section>
-      </div>}
+          <span className="workflow-guide-next-mark" aria-hidden="true">↗</span>
+          <span className="workflow-guide-next-copy"><small>继续</small><b>{continueLabel}</b></span>
+        </button>
+      </aside>}
+      {(onboardingOpen || autosaveChoicePending) && <OnboardingWizard
+        autosaveChoicePending={autosaveChoicePending}
+        autosaveAvailable={initialPreference.available}
+        onChooseAutosave={chooseAutosave}
+        onFinish={finishOnboarding}
+      />}
       <main className="exploration-pages" data-active-page={tab}>
         <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
           <JobsTab
@@ -549,6 +474,8 @@ export default function App() {
             showToast={showToast}
             onGoMatches={() => navigateTo('matches')}
             onSetTargetJob={setTargetJob}
+            sourceModeRequest={profileSourceModeRequest}
+            onSourceModeRequestHandled={() => setProfileSourceModeRequest(null)}
             focusTarget={profileFocus}
             onFocusHandled={() => setProfileFocus(null)}
           />

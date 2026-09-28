@@ -153,7 +153,7 @@ function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove, focusTarget, on
   );
 }
 
-export default function ProfileTab({ student, resumeName, setResumeName, updateStudent, editStudent, replaceStudent, confirmProfile, revRef, jobs, analysis, setAnalysis, showToast, onGoMatches, onSetTargetJob, focusTarget, onFocusHandled }: {
+export default function ProfileTab({ student, resumeName, setResumeName, updateStudent, editStudent, replaceStudent, confirmProfile, revRef, jobs, analysis, setAnalysis, showToast, onGoMatches, onSetTargetJob, sourceModeRequest, onSourceModeRequestHandled, focusTarget, onFocusHandled }: {
   student: StudentProfile;
   resumeName: string;
   setResumeName: (name: string) => void;
@@ -168,6 +168,8 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   showToast: (msg: string, kind?: 'ok' | 'err') => void;
   onGoMatches: () => void;
   onSetTargetJob: (id: string, name: string) => void;
+  sourceModeRequest: { mode: 'resume' | 'manual'; token: number } | null;
+  onSourceModeRequestHandled: () => void;
   focusTarget: ProfileFocusTarget | null;
   onFocusHandled: () => void;
 }) {
@@ -191,6 +193,20 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       : '已确认不具备；可查看成长路径安排补齐计划。';
     setFocusNotice('已定位「' + focusTarget.label + '」：' + reasonText);
   }, [focusTarget?.token]);
+
+  useEffect(() => {
+    if (!sourceModeRequest) return;
+    setSourceMode(sourceModeRequest.mode);
+    const timer = window.setTimeout(() => {
+      const target = sourceModeRequest.mode === 'resume'
+        ? document.querySelector<HTMLElement>('.profile-upload-card')
+        : document.querySelector<HTMLElement>('.profile-basic-grid input');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target?.focus();
+      onSourceModeRequestHandled();
+    }, 40);
+    return () => window.clearTimeout(timer);
+  }, [onSourceModeRequestHandled, sourceModeRequest?.mode, sourceModeRequest?.token]);
 
   useEffect(() => {
     let alive = true;

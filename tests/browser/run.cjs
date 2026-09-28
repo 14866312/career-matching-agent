@@ -12,6 +12,7 @@ const tab = name => page.getByRole('tab', { name: ({ '我的能力': '能力档�
 const button = name => page.getByRole('button', { name, exact: true });
 const label = name => page.getByLabel(name, { exact: true });
 const reportButton = () => button('生成 AI 深度建议');
+const onboardingDialog = () => page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true });
 async function assertUnavailable(locator, description) {
   const count = await locator.count();
   assert.ok(count === 0 || await locator.isDisabled(), description + ' should be unavailable');
@@ -53,22 +54,26 @@ async function ready() {
   await page.goto(base);
   assert.equal(await page.locator('.singularity-intro').count(), 0, 'the removed cosmic intro must not render');
   await page.locator('.exploration-header').waitFor();
-  const workflowModal = page.getByRole('dialog', { name: '先确认流程与保存方式', exact: true });
-  if (await workflowModal.isVisible().catch(() => false)) {
-    assert.equal(await workflowModal.locator('.workflow-modal-steps > li').count(), 4);
+  const wizard = onboardingDialog();
+  if (await wizard.isVisible().catch(() => false)) {
+    assert.equal(await wizard.locator('.onboarding-start-card').count(), 3);
     assert.equal(await page.locator('.workflow-guide').count(), 0, 'floating workflow guide must wait for the first choice');
-    assert.equal(await workflowModal.locator('.modal-close').count(), 0, 'first-session modal must not expose a close button');
-    await page.locator('.workflow-autosave-backdrop').click({ position: { x: 5, y: 5 } });
+    await page.locator('.onboarding-wizard-backdrop').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('Escape');
-    assert.equal(await workflowModal.isVisible(), true, 'first-session modal must require an autosave choice');
-    const autosaveConsent = button('继续并自动保存');
+    assert.equal(await wizard.isVisible(), true, 'first-session wizard must remain open until the save choice is made');
+    const autosaveConsent = wizard.getByRole('button', { name: '自动保存', exact: true });
     if (await autosaveConsent.isEnabled()) await autosaveConsent.click();
-    else await button('关闭自动保存并继续').click();
-    await workflowModal.waitFor({ state: 'detached' });
+    else await wizard.getByRole('button', { name: '本次不保存', exact: true }).click();
+    await wizard.getByRole('button', { name: /我先看看岗位/ }).click();
+    assert.equal(await wizard.locator('.onboarding-flow-list > li').count(), 4);
+    await wizard.getByRole('button', { name: /先浏览岗位/ }).click();
+    await wizard.waitFor({ state: 'detached' });
   }
   await page.locator('.workflow-guide').waitFor();
   assert.deepEqual(await page.locator('.workflow-guide .workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
   assert.equal(await page.locator('.workflow-guide-step-copy').count(), 0, 'the beginner guide should start as a compact numbered navigator');
+  assert.equal(await page.locator('.workflow-guide-next').count(), 1, 'compact guide should expose a contextual next-step button');
+  assert.match(await page.locator('.workflow-guide-next').getAttribute('aria-label'), /下一步：/);
   const activePanel = page.locator('.exploration-pages > .panel.active');
   await activePanel.waitFor();
   if (await activePanel.getAttribute('id') === 'page-jobs') {

@@ -21,15 +21,20 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     assert.equal(await page.locator('.singularity-intro').count(), 0, 'the removed cosmic intro must not render');
     await page.locator('.exploration-header').waitFor();
 
-    const workflowModal = page.getByRole('dialog', { name: '先确认流程与保存方式', exact: true });
-    await workflowModal.waitFor();
-    const autosaveButton = workflowModal.getByRole('button', { name: '继续并自动保存', exact: true });
+    const wizard = page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true });
+    await wizard.waitFor();
+    assert.equal(await wizard.locator('.onboarding-start-card').count(), 3);
+    assert.equal(await page.locator('.workflow-guide').count(), 0, 'number navigator must stay behind the first-session wizard');
+    const autosaveButton = wizard.getByRole('button', { name: '自动保存', exact: true });
     if (await autosaveButton.isEnabled()) {
       await autosaveButton.click();
     } else {
-      await workflowModal.getByRole('button', { name: '关闭自动保存并继续', exact: true }).click();
+      await wizard.getByRole('button', { name: '本次不保存', exact: true }).click();
     }
-    await workflowModal.waitFor({ state: 'detached' });
+    await wizard.getByRole('button', { name: /我没有简历/ }).click();
+    assert.equal(await wizard.locator('.onboarding-flow-list > li').count(), 4);
+    await wizard.getByRole('button', { name: /手动建立档案/ }).click();
+    await wizard.waitFor({ state: 'detached' });
 
     assert.equal(await page.locator('.local-draft-bar').count(), 0, 'local draft settings must not be a home-page status bar');
     const draftSettingsButton = page.getByRole('button', { name: '设置', exact: true });
@@ -52,9 +57,13 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     await guide.waitFor();
     assert.deepEqual(await guide.locator('.workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
     assert.equal(await guide.locator('.workflow-guide-step-copy').count(), 0, 'collapsed guide should show only numbered steps');
-    await guide.getByRole('button', { name: '展开快速上手', exact: true }).click();
-    assert.equal(await guide.locator('.workflow-guide-step-copy').count(), 4, 'expanded guide should restore beginner guidance');
-    await guide.getByRole('button', { name: '收起快速上手', exact: true }).click();
+    assert.equal(await guide.getByRole('button').count(), 5, 'compact guide should expose four numbered buttons and a next-step button');
+    assert.match(await guide.locator('.workflow-guide-next').getAttribute('aria-label'), /下一步：/);
+
+    await page.getByRole('button', { name: '新手教程', exact: true }).click();
+    await page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true }).waitFor();
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true }).waitFor({ state: 'detached' });
 
     await page.getByRole('tab', { name: /能力档案/ }).click();
     await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
