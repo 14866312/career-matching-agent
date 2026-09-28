@@ -112,11 +112,21 @@ export interface CareerPaths {
 
 export interface MatchItem extends Requirement {
   status: 'satisfied' | 'gap' | 'pending';
+  pending_reason?: 'not_provided' | 'unconfirmed' | 'missing_evidence' | string;
+  gap_reason?: 'confirmed_absent' | string;
   student_level: number | null;
   student_evidence: string;
   contribution: number;
   enhancement_basis: string;
   related_only: boolean;
+}
+
+export interface ProfileFocusTarget {
+  dimension: Dimension;
+  tag_id: string;
+  token: number;
+  label: string;
+  reason: 'not_provided' | 'unconfirmed' | 'missing_evidence' | 'confirmed_absent';
 }
 
 export interface DimResult {
@@ -225,6 +235,7 @@ export interface ProfileResp {
 }
 
 export interface ResumeResp {
+  name: string;
   profile: StudentProfile;
   notice: string;
   mode: string;

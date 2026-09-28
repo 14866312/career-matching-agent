@@ -1825,6 +1825,10 @@ button { font-family: inherit; }
 .profile-upload-card strong { font-size: 14px; font-weight: 500; }
 .profile-upload-card small { max-width: 520px; margin: 10px 0 20px; color: #74747a; font-size: 10px; line-height: 1.7; }
 .profile-upload-card i { padding: 7px 12px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #aaaab0; font-size: 9px; font-style: normal; }
+.profile-name-field { max-width: 480px; margin: 18px auto 0; display: grid; gap: 8px; color: #c6cad2; font-size: 12px; }
+.profile-name-field input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--stitch-line); border-radius: 10px; color: #eee; background: rgba(9,9,12,.8); }
+.profile-name-field input:focus { outline: 2px solid rgba(124, 92, 255, .55); outline-offset: 1px; }
+.profile-name-field small { color: #74747a; font-size: 10px; line-height: 1.6; }
 .profile-resume-status { margin: 12px 0 30px; text-align: center; color: #626268; font-size: 10px; }
 .profile-basic-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
 .profile-basic-grid label { display: grid; gap: 8px; color: #85858b; font-size: 10px; }
@@ -1844,6 +1848,8 @@ button { font-family: inherit; }
 }
 .profile-basic-grid input,
 .profile-basic-grid select { height: 42px; padding: 0 12px; }
+.profile-stitch select { color-scheme: dark; }
+.profile-stitch select option { color: #f3f4f6; background-color: #18181d; }
 .profile-basic-grid textarea { padding: 12px; resize: vertical; }
 .profile-basic-grid input:focus,
 .profile-basic-grid select:focus,
@@ -2361,7 +2367,291 @@ button { font-family: inherit; }
 .jobs-card-metrics b { color: #f0f1f3; }
 
 /* Native menus may open on a light platform surface; keep their labels visible. */
-.profile-stitch .form-card select option { color: #17171a; background: #fff; }
+.profile-stitch .form-card select option { color: #f3f4f6; background: #18181d; }
+
+/* Flow guidance, local draft controls and resume review. */
+.local-draft-bar {
+  position: fixed;
+  left: clamp(12px, 2.5vw, 30px);
+  bottom: 102px;
+  z-index: 34;
+  width: min(560px, calc(100% - 150px));
+  margin: 0;
+}
+
+.workflow-guide {
+  position: fixed;
+  top: 50%;
+  right: clamp(12px, 2.5vw, 30px);
+  z-index: 35;
+  width: auto;
+  margin: 0;
+  padding: 8px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(14, 14, 18, .84);
+  box-shadow: 0 16px 44px rgba(0,0,0,.36), inset 0 0 0 1px rgba(255,255,255,.025);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+
+.workflow-guide-next {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(217,255,85,.32);
+  border-radius: 12px;
+  color: #f5f5f7;
+  background: rgba(217,255,85,.08);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.workflow-guide-next:hover { border-color: rgba(217,255,85,.7); background: rgba(217,255,85,.14); transform: translateY(-1px); }
+.workflow-guide-next-mark { color: #d9ff55; font: 600 16px/1 "JetBrains Mono", Consolas, monospace; }
+.workflow-guide-next-copy { display: grid; gap: 2px; min-width: 0; }
+.workflow-guide-next-copy small { color: #aeb5bf; font-size: 9px; line-height: 1; }
+.workflow-guide-next-copy b { overflow: hidden; color: #fff; font-size: 10px; font-weight: 550; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+
+.workflow-guide ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflow-guide li { margin: 0; }
+
+.workflow-guide li button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 50%;
+  color: #aeb5bf;
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+  transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.workflow-guide li button:hover { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.1); transform: scale(1.05); }
+.workflow-guide li button .workflow-step-number { font: 600 13px "JetBrains Mono", Consolas, monospace; }
+.workflow-guide li.is-done button { color: #a5d6b3; border-color: rgba(143, 196, 161, .48); }
+.workflow-guide li.is-stale button { color: #f0be7e; border-color: rgba(232, 174, 104, .65); }
+.workflow-guide li button[aria-current="step"] { color: #111114; border-color: #f5f5f7; background: #f5f5f7; box-shadow: 0 0 0 3px rgba(245,245,247,.12); }
+
+.workflow-autosave-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: rgba(0,0,0,.76);
+  backdrop-filter: blur(10px) saturate(115%);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.workflow-autosave-modal {
+  width: min(720px, 100%);
+  max-height: min(840px, calc(100vh - 32px));
+  overflow: auto;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 22px;
+  color: var(--stitch-text);
+  background: linear-gradient(145deg, rgba(29,29,35,.98), rgba(12,12,15,.98));
+  box-shadow: 0 30px 100px rgba(0,0,0,.58), inset 0 0 0 1px rgba(255,255,255,.035);
+  overscroll-behavior: contain;
+  touch-action: auto;
+}
+
+.workflow-autosave-kicker { margin: 0 0 12px; color: #d9ff55; font: 500 10px "JetBrains Mono", Consolas, monospace; letter-spacing: .16em; }
+.workflow-autosave-header h2 { margin: 0; color: #fff; font-size: clamp(28px, 5vw, 46px); font-weight: 300; letter-spacing: -.065em; line-height: 1.05; }
+.workflow-autosave-header > p:last-child { max-width: 590px; margin: 18px 0 0; color: #b8bec8; font-size: 13px; line-height: 1.8; }
+
+.workflow-modal-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflow-modal-steps li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 66px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
+}
+
+.workflow-modal-step-number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 50%;
+  color: #c5cad2;
+  font: 600 11px "JetBrains Mono", Consolas, monospace;
+}
+
+.workflow-modal-steps li > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.workflow-modal-steps b { color: #f5f5f7; font-size: 12px; font-weight: 550; }
+.workflow-modal-steps small { color: #aeb5bf; font-size: 10px; }
+.workflow-modal-steps li.is-done { border-color: rgba(143,196,161,.38); }
+.workflow-modal-steps li.is-done .workflow-modal-step-number,
+.workflow-modal-steps li.is-done small { color: #a5d6b3; }
+.workflow-modal-steps li.is-stale { border-color: rgba(232,174,104,.58); }
+.workflow-modal-steps li.is-stale .workflow-modal-step-number,
+.workflow-modal-steps li.is-stale small { color: #f0be7e; }
+
+.workflow-modal-next {
+  margin: 18px 0 0;
+  padding: 11px 13px;
+  border-left: 2px solid #d9ff55;
+  color: #b8bec8;
+  background: rgba(217,255,85,.055);
+  font-size: 12px;
+}
+
+.workflow-modal-next strong { color: #f5f5f7; font-weight: 550; }
+
+.workflow-modal-storage {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.workflow-modal-storage strong { color: #fff; font-size: 14px; font-weight: 600; }
+.workflow-modal-storage p { margin: 7px 0 0; color: #b8bec8; font-size: 12px; line-height: 1.75; }
+
+.workflow-modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.workflow-modal-actions button { min-height: 42px; flex: 1 1 230px; white-space: nowrap; }
+
+.local-draft-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 13px;
+  color: #e4e5e8;
+  border-color: rgba(255,255,255,.08);
+  background: rgba(10, 10, 13, .74);
+  box-shadow: 0 16px 44px rgba(0,0,0,.28);
+  backdrop-filter: blur(16px) saturate(125%);
+}
+
+.local-draft-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #e1e3e7;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.local-draft-bar input { accent-color: #d5c287; }
+.local-draft-bar > span { flex: 1 1 280px; min-width: 0; overflow: hidden; color: #adb4be; font-size: 10px; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.local-draft-bar button { font-size: 10px; }
+
+.report-matrix,
+.report-advice { scroll-margin-top: 24px; }
+
+.resume-review {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(208, 187, 125, .42);
+  border-radius: 14px;
+  background: rgba(207, 180, 100, .045);
+}
+
+.resume-review > header h4 { margin: 0; color: #f4f0df; font-size: 14px; }
+.resume-review > header p { margin: 5px 0 0; color: #b9bdc4; font-size: 11px; line-height: 1.55; }
+.resume-review-list { display: grid; gap: 8px; }
+
+.resume-review-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--stitch-line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .2);
+}
+
+.resume-review-item > div:first-child { min-width: 0; }
+.resume-review-item b { color: #f0f0f2; font-size: 11px; }
+.resume-review-item p { margin: 5px 0; color: #d4d6db; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.resume-review-item small { display: block; color: #aeb5bf; font-size: 10px; line-height: 1.5; }
+.resume-review-item .resume-conflict { color: #f0be7e; }
+.resume-review-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.resume-review-actions button { min-width: 55px; min-height: 34px; padding: 0 10px; border: 1px solid var(--stitch-line-strong); border-radius: 8px; color: #d5d7dc; background: rgba(255,255,255,.035); cursor: pointer; }
+.resume-review-actions button.selected { border-color: #d5c287; color: #fff2c0; background: rgba(213,194,135,.14); }
+.resume-review > .primary-button { justify-self: start; }
+
+.profile-focus-notice { padding: 12px 14px; border: 1px solid rgba(232,174,104,.45); border-radius: 10px; color: #f0c587; background: rgba(232,174,104,.07); }
+.matrix-action { min-height: 34px; }
+.path-save-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.exploration-shell :focus-visible {
+  outline: 2px solid #f0d78f;
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .workflow-guide { right: 12px; padding: 6px; }
+  .workflow-guide ol { gap: 5px; }
+  .workflow-guide li button { width: 34px; height: 34px; min-height: 34px; }
+  .workflow-autosave-modal { max-height: calc(100vh - 24px); padding: 24px 18px; border-radius: 18px; }
+  .workflow-modal-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .local-draft-bar { left: 12px; right: 12px; bottom: 148px; width: auto; align-items: flex-start; }
+  .local-draft-bar > span { white-space: normal; }
+}
+
+@media (max-width: 520px) {
+  .workflow-guide { top: auto; right: 14px; bottom: 14px; left: 14px; display: flex; align-items: center; gap: 6px; transform: none; }
+  .workflow-guide ol { display: flex; gap: 5px; }
+  .workflow-guide li button { width: 34px; height: 34px; min-height: 34px; }
+  .workflow-guide-next { width: auto; flex: 1 1 auto; min-width: 0; margin-top: 0; }
+  .workflow-modal-steps { gap: 6px; }
+  .workflow-modal-steps li { min-height: 60px; padding: 8px; gap: 7px; }
+  .workflow-modal-step-number { width: 25px; height: 25px; }
+  .workflow-modal-actions button,
+  .local-draft-bar button { width: 100%; white-space: normal; }
+  .workflow-modal-actions { display: grid; }
+  .local-draft-bar label,
+  .local-draft-bar > span { flex-basis: 100%; }
+  .resume-review { padding: 13px; }
+  .resume-review-item { flex-direction: column; }
+  .resume-review-actions { width: 100%; }
+  .resume-review-actions button { flex: 1; }
+  .resume-review > .primary-button { width: 100%; white-space: normal; }
+  .path-save-actions { width: 100%; }
+  .path-save-actions button { flex: 1 1 100%; white-space: normal; }
+}
 
 @media (max-width: 680px) {
   .jobs-stitch-hero h2,
@@ -2379,4 +2669,68 @@ button { font-family: inherit; }
   .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
   .jobs-stitch .modal { padding: 30px 18px 22px; border-radius: 16px; }
   .jobs-stitch .job-detail h3 { font-size: 25px; }
+}
+
+/* Desktop reading scale: keep page headings expressive while making all
+   supporting copy and controls comfortable at a normal viewing distance. */
+@media (min-width: 901px) {
+  .exploration-nav { height: 42px; }
+  .exploration-nav-item { height: 34px; padding-inline: 16px; font-size: 14px; }
+  .model-config-trigger { min-height: 40px; padding-inline: 16px; font-size: 13px; }
+
+  .exploration-pages :is(p, label, summary, li) {
+    font-size: max(15px, 1em) !important;
+  }
+
+  .exploration-pages :is(button, input, select, textarea) {
+    font-size: max(14px, 1em) !important;
+  }
+
+  .exploration-pages small,
+  .exploration-pages :is(
+    .stitch-pill, .stitch-scroll-cue,
+    .jobs-stitch-stats span, .jobs-stitch-stats em, .jobs-stitch-kicker,
+    .jobs-stitch-family, .jobs-stitch-level, .jobs-card-score span,
+    .jobs-card-score strong small, .jobs-card-metrics b, .jobs-stitch-pills span,
+    .profile-meta-line, .profile-stitch-progress span, .profile-stitch-progress b,
+    .profile-upload-card i, .profile-radar > span, .profile-analysis-item b,
+    .profile-action-dock > div b, .profile-action-dock > div small,
+    .matches-target, .matches-stitch-hero h2 small, .report-section > header span,
+    .diagnosis-grid article > span, .diagnosis-facts span, .dimension-readouts b,
+    .dimension-readouts small, .matrix-row > b, .matrix-row > span, .matrix-row em,
+    .matrix-row small, .advice-placeholder b, .alternative-grid span,
+    .path-job-select, .path-overview small, .path-overview b,
+    .path-section > header span, .timeline-copy span, .timeline-node,
+    .timeline-card > span, .timeline-card small, .path-branch-grid span,
+    .path-branch-grid small, .path-selected-detail > span, .path-selected-detail small,
+    .sprint-list button > b, .sprint-list small, .sprint-list em, .path-action-hub span
+  ) {
+    font-size: 13px !important;
+  }
+
+  .exploration-pages :is(.jobs-stitch-note, .profile-step > header p, .profile-step > header span,
+    .profile-resume-status, .profile-step-copy, .profile-score-column > span,
+    .profile-score-column > p, .profile-analysis-item, .profile-evidence,
+    .profile-evidence blockquote, .match-filter-panel summary, .matches-stitch-filter label,
+    .diagnosis-grid article > em, .diagnosis-grid article > p, .matches-stitch .chart-note,
+    .dimension-readouts span, .advice-placeholder p, .alternative-grid p,
+    .paths-hero > p, .timeline-copy p, .timeline-card p, .path-branch-grid p,
+    .path-selected-detail p, .sprint-list strong, .path-action-hub p) {
+    font-size: 15px !important;
+  }
+
+  .jobs-stitch-search input,
+  .profile-basic-grid :is(input, select, textarea),
+  .matches-stitch-filter :is(input, select) {
+    font-size: 15px !important;
+  }
+
+  .ai-config-panel :is(.ai-config-lead, label, input, select, .ai-provider-grid button strong,
+    .ai-config-state, .ai-config-error) {
+    font-size: 15px !important;
+  }
+  .ai-config-panel :is(.ai-config-kicker, .ai-config-label-note, .ai-provider-grid button span) {
+    font-size: 13px !important;
+  }
+  .ai-config-panel button:not(.ai-config-close) { font-size: 14px; }
 }

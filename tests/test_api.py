@@ -16,12 +16,36 @@ def student():
     return {'major': '软件工程', 'confirmed': True, 'skills': [{'tag_id': 'java', 'label': 'Java', 'confirmed': True, 'level': 2, 'evidence': 'Java课程项目'}], 'intention': {'target_job_id': 'java', 'city': '北京'}}
 
 
-@pytest.mark.parametrize('route,payload', [('/api/matches', {'job_id': 'java', 'student': {}}), ('/api/recommendations', {'student': {}}), ('/api/reports', {'job_id': 'java', 'student': {}})])
-def test_confirmation_gate(client, route, payload):
-    r = client.post(route, json=payload)
-    assert r.status_code == 400
-    assert r.json()['error']['code'] == 'PROFILE_UNCONFIRMED'
-    assert r.headers['x-request-id'] == r.json()['error']['request_id']
+@pytest.mark.parametrize('route', ['/api/matches', '/api/recommendations', '/api/reports'])
+def test_confirmation_gate(client, route):
+    candidate = student()
+    candidate['confirmed'] = False
+    payload = {'student': candidate}
+    if route != '/api/recommendations':
+        payload['job_id'] = 'java'
+
+    response = client.post(route, json=payload)
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'PROFILE_UNCONFIRMED'
+    assert response.headers['x-request-id'] == response.json()['error']['request_id']
+
+
+def test_unadopted_or_unsupported_ability_stays_out_of_basic_match(client):
+    candidate = student()
+    candidate['skills'][0]['confirmed'] = False
+    unadopted = client.post('/api/matches', json={'job_id': 'java', 'student': candidate})
+    assert unadopted.status_code == 200
+    java = next(item for item in unadopted.json()['items'] if item['tag_id'] == 'java')
+    assert java['status'] == 'pending'
+    assert java not in unadopted.json()['satisfied_items']
+
+    candidate['skills'][0]['confirmed'] = True
+    candidate['skills'][0]['evidence'] = ' '
+    unsupported = client.post('/api/matches', json={'job_id': 'java', 'student': candidate})
+    assert unsupported.status_code == 200
+    java = next(item for item in unsupported.json()['items'] if item['tag_id'] == 'java')
+    assert java['status'] == 'pending'
+    assert java not in unsupported.json()['satisfied_items']
 
 
 @pytest.mark.parametrize('body', [{'student': {'private-resume-secret': 'secret-text'}, 'job_id': 'java'}, {'student': {'skills': [{'tag_id': 'java', 'label': 'Java', 'level': 99}]}, 'job_id': 'java'}])
@@ -78,6 +102,18 @@ def test_llm_config_api_never_returns_api_key(client, monkeypatch):
     assert retained.json()['adapter'] == 'chat-completions'
     assert retained.json()['has_api_key'] is True
     assert 'test-secret-key' not in retained.text
+
+
+def test_llm_connection_test_is_explicit_and_returns_no_secret(client, monkeypatch):
+    monkeypatch.setenv('LLM_MODEL', 'test-model')
+    async def fake_call_json(instruction, payload):
+        assert 'connectivity_test' in payload['purpose']
+        return {'ok': True}
+    monkeypatch.setattr(main, 'call_json', fake_call_json)
+    response = client.post('/api/llm/test', json={})
+    assert response.status_code == 200
+    assert response.json() == {'connected': True, 'model': 'test-model'}
+    assert 'API_KEY' not in response.text
 
 
 def test_llm_config_rejects_insecure_remote_url(client):

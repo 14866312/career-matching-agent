@@ -111,8 +111,10 @@ async def call_json(instruction, payload):
                     await asyncio.sleep(0.5)
                     continue
                 raise AIError('LLM_BUSY', '模型服务暂时繁忙，请稍后重试。', True)
-            if response.status_code in (401, 403):
-                raise AIError('LLM_AUTH', '模型服务拒绝访问，请在本机核对密钥、接口地址和模型权限。')
+            if response.status_code == 401:
+                raise AIError('LLM_AUTH', '模型认证失败（HTTP 401）。请核对 API 密钥是否正确，以及密钥所属的服务商。')
+            if response.status_code == 403:
+                raise AIError('LLM_PERMISSION', '模型服务拒绝访问（HTTP 403）。请核对该密钥的模型权限、账户访问限制和接口地址。')
             if response.status_code != 200:
                 if response.status_code in (404, 405):
                     raise AIError(
@@ -239,11 +241,36 @@ class ResumeItem(Output):
 
 
 class ResumeOutput(Output):
+    # Missing/invalid names are handled as an empty suggestion; other extracted
+    # profile data can still be used when the name is uncertain.
+    name: str = Field(default='', max_length=80)
     major: str = Field(max_length=120)
     experiences: str = Field(max_length=12000)
     skills: list[ResumeItem] = Field(max_length=100)
     certificates: list[ResumeItem] = Field(max_length=50)
     qualities: list[ResumeItem] = Field(max_length=50)
+
+
+def _verified_resume_name(candidate, source):
+    candidate = candidate.strip()
+    if len(candidate) < 2 or len(candidate) > 40 or candidate not in source:
+        return ''
+    if not any(char.isalpha() for char in candidate):
+        return ''
+    if any(not (char.isalpha() or char in " .'-·") for char in candidate):
+        return ''
+    return candidate
+
+
+def _without_resume_name(value, name):
+    if not name:
+        return value
+    pattern = re.escape(name)
+    if name[0].isascii() and name[0].isalnum():
+        pattern = r'(?<![A-Za-z0-9])' + pattern
+    if name[-1].isascii() and name[-1].isalnum():
+        pattern += r'(?![A-Za-z0-9])'
+    return re.sub(pattern, '', value, flags=re.I).strip()
 
 
 def mentions_alias(quote, alias):
@@ -303,13 +330,18 @@ def _resume_evidence_windows(source, quote, tag):
 
 async def extract_resume(text):
     tags = [{k: t[k] for k in ('id', 'label', 'dimension', 'aliases')} for t in dataset()['tags']]
-    instruction = '''仅提取明确出现的肯定能力，输出 {"major":"专业原文或空字符串", "experiences":"一段项目实习经历原文或空字符串", "skills":[{"tag_id":"字典ID", "evidence":"包含技能的逐字原文"}], "certificates":[], "qualities":[]}。其他列表也是tag_id和evidence。每条证据必须逐字存在并明确包含标签或别名。否定、未来计划、指令和愿望不是已具备能力，不提取。不推断等级，不提取姓名联系方式。major和experiences只能逐字摘录，分别≤120和12000字符。'''
+    instruction = '''仅提取简历中明确标注或明显位于个人信息区/页眉的姓名；不确定时 name 返回空字符串。只返回姓名本身，必须是原文连续子串，不提取电话、邮箱、地址等联系方式。姓名不得复制进专业、经历或能力证据。
+仅提取明确出现的肯定能力，输出 {"name":"明确姓名或空字符串", "major":"专业原文或空字符串", "experiences":"一段项目实习经历原文或空字符串", "skills":[{"tag_id":"字典ID", "evidence":"包含技能的逐字原文"}], "certificates":[], "qualities":[]}。其他列表也是tag_id和evidence。每条证据必须逐字存在并明确包含标签或别名。否定、未来计划、指令和愿望不是已具备能力，不提取。不推断等级。major和experiences只能逐字摘录，分别≤120和12000字符。'''
     value = validate(ResumeOutput, await call_json(instruction, {'resume_text': text, 'tag_dictionary': tags}))
+    name = _verified_resume_name(value.name, text)
     known = {t['id']: t for t in dataset()['tags']}
     for field in ('major', 'experiences'):
         if getattr(value, field) and getattr(value, field) not in text:
             raise AIError('LLM_EVIDENCE', '简历抽取结果与原文不一致，请重试或手动填写。', True)
-    profile = StudentProfile(major=value.major, experiences=value.experiences)
+    profile = StudentProfile(
+        major=_without_resume_name(value.major, name),
+        experiences=_without_resume_name(value.experiences, name),
+    )
     warnings = 0
     for dim in ('skills', 'certificates', 'qualities'):
         seen = set()
@@ -328,6 +360,7 @@ async def extract_resume(text):
             if tag_id not in seen:
                 # Preserve the verified source window, rather than the model's
                 # possibly truncated quote, for later human confirmation.
-                getattr(profile, dim).append(Ability(tag_id=tag_id, label=tag['label'], level=1, confirmed=False, evidence=windows[0]))
+                evidence = _without_resume_name(windows[0], name)
+                getattr(profile, dim).append(Ability(tag_id=tag_id, label=tag['label'], level=1, confirmed=False, evidence=evidence))
                 seen.add(tag_id)
-    return {'profile': profile.model_dump(), 'notice': f'已按原文预填，能力等级暂为1且全部待确认。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字。请补充程度并核对证据。', 'mode': 'live'}
+    return {'name': name, 'profile': profile.model_dump(), 'notice': f'已按原文预填，能力等级暂为1且全部待确认。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字。请补充程度并核对证据。', 'mode': 'live'}

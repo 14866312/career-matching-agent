@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartParser
 
 from .data import dataset, get_job
-from .llm import AIError, config_snapshot, extract_resume, generate_advice, generate_profile, configured, update_config
+from .llm import AIError, call_json, config_snapshot, extract_resume, generate_advice, generate_profile, configured, update_config
 from .matching import ALGORITHM_VERSION, match_student, recommendations
 from .models import MatchRequest, RecommendationRequest, StudentProfile
 from pydantic import BaseModel, Field
@@ -107,6 +107,14 @@ def llm_config():
 @app.post('/api/llm/config')
 def save_llm_config(payload: LLMConfigUpdate):
     return update_config(payload.base_url, payload.model, payload.api_key, payload.adapter)
+
+
+@app.post('/api/llm/test')
+async def test_llm_connection():
+    result = await call_json('只返回 {"ok": true}，不要附加其他内容。', {'purpose': 'connectivity_test'})
+    if result.get('ok') is not True:
+        raise AIError('LLM_INVALID_OUTPUT', '连接测试未收到预期确认，请核对模型兼容性和适配器。')
+    return {'connected': True, 'model': os.environ.get('LLM_MODEL', '')}
 
 
 @app.get('/api/tags')

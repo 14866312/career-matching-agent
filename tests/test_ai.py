@@ -97,6 +97,20 @@ async def test_nontransient_status_not_retried(fake_http, status):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(('status', 'code', 'message'), [
+    (401, 'LLM_AUTH', '认证失败（HTTP 401）'),
+    (403, 'LLM_PERMISSION', '拒绝访问（HTTP 403）'),
+])
+async def test_auth_failures_explain_status_without_exposing_upstream_body(fake_http, status, code, message):
+    fake_http([httpx.Response(status, text='private upstream credential detail')])
+    with pytest.raises(llm.AIError) as exc:
+        await llm.call_json('test', {})
+    assert exc.value.code == code
+    assert message in exc.value.message
+    assert 'private upstream' not in exc.value.message
+
+
+@pytest.mark.asyncio
 async def test_read_timeout_not_retried(fake_http):
     calls = fake_http([httpx.ReadTimeout('private upstream content')])
     with pytest.raises(llm.AIError) as exc:
@@ -349,6 +363,46 @@ async def test_resume_valid_all_dimensions_remain_unconfirmed(fake_http):
     for dim in ('skills', 'certificates', 'qualities'):
         assert len(result['profile'][dim]) == 1
         assert not result['profile'][dim][0]['confirmed']
+
+
+@pytest.mark.asyncio
+async def test_resume_name_is_separate_verified_and_redacted_from_followup_payload(fake_http):
+    source = '姓名：张三。专业：软件工程。张三完成Java课程项目。'
+    calls = fake_http([
+        {'name': '张三', 'major': '软件工程', 'experiences': '张三完成Java课程项目。',
+         'skills': [{'tag_id': 'java', 'evidence': 'Java'}], 'certificates': [], 'qualities': []},
+        {'strength_tag_ids': ['java'], 'improvements': []},
+    ])
+
+    result = await llm.extract_resume(source)
+    assert result['name'] == '张三'
+    assert 'name' not in result['profile']
+    assert '张三' not in result['profile']['experiences']
+    assert '张三' not in result['profile']['skills'][0]['evidence']
+
+    student = StudentProfile.model_validate(result['profile'])
+    student.confirmed = True
+    student.skills[0].confirmed = True
+    await llm.generate_profile(student)
+    followup = json.loads(calls[1]['messages'][1]['content'])['student']
+    assert '张三' not in json.dumps(followup, ensure_ascii=False)
+    assert 'name' not in followup
+
+    from backend.app.main import export_report
+    match = match_student(student, get_job('java'))
+    report_text = export_report(student, get_job('java'), match, {
+        'fit_evaluation': '测试建议', 'learning_directions': [], 'learning_steps': [],
+    })
+    assert '张三' not in json.dumps(match, ensure_ascii=False)
+    assert '张三' not in report_text
+
+
+@pytest.mark.asyncio
+async def test_resume_unverified_name_falls_back_to_empty_without_losing_profile(fake_http):
+    fake_http([{'name': '李四', 'major': '软件工程', 'experiences': '', 'skills': [], 'certificates': [], 'qualities': []}])
+    result = await llm.extract_resume('姓名：张三。专业：软件工程。')
+    assert result['name'] == ''
+    assert result['profile']['major'] == '软件工程'
 
 
 @pytest.mark.asyncio

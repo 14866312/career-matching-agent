@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { apiPost, errMessage } from '../api';
-import type { Filters, MatchResult, Recommendation, ReportResp, StudentProfile } from '../types';
+import type { Filters, MatchItem, MatchResult, ProfileFocusTarget, Recommendation, ReportResp, StudentProfile } from '../types';
 import { fmtNum, fmtPct, todayStamp } from '../format';
 import { filtersSummary, parseFilters } from '../lib/filters';
 import { getReportText, reportFileName } from '../report';
@@ -51,9 +51,14 @@ function DimensionChart({ match }: { match: MatchResult }) {
   );
 }
 
-function ReportBlock({ report, stale, onCopy, onExport, copyState }: {
+function statusOrder(item: MatchItem): number {
+  return item.status === 'pending' ? 0 : item.status === 'gap' ? 1 : 2;
+}
+
+function ReportBlock({ report, stale, staleMessage, onCopy, onExport, copyState }: {
   report: ReportResp;
   stale: boolean;
+  staleMessage: string;
   onCopy: () => void;
   onExport: () => void;
   copyState: string;
@@ -62,7 +67,7 @@ function ReportBlock({ report, stale, onCopy, onExport, copyState }: {
     <div className="report">
       {stale && (
         <div className="stale-banner" role="status">
-          学生信息、目标岗位或服务端版本已变化，下方报告按旧输入生成，已标记失效——请点击「生成职业建议」重新计算。
+          {staleMessage}
         </div>
       )}
       <div className="item-block">
@@ -86,7 +91,7 @@ function ReportBlock({ report, stale, onCopy, onExport, copyState }: {
   );
 }
 
-export default function MatchesTab({ isActive, student, studentRev, serverAlgorithm, serverDataVersion, showToast, onGoProfile }: {
+export default function MatchesTab({ isActive, student, studentRev, serverAlgorithm, serverDataVersion, showToast, onGoProfile, onGoProfileFocus, onGoPaths, onFreshnessChange }: {
   isActive: boolean;
   student: StudentProfile;
   studentRev: number;
@@ -94,6 +99,9 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   serverDataVersion: string | null;
   showToast: (msg: string, kind?: 'ok' | 'err') => void;
   onGoProfile: () => void;
+  onGoProfileFocus: (target: Omit<ProfileFocusTarget, 'token'>) => void;
+  onGoPaths: (jobId?: string) => void;
+  onFreshnessChange: (match: 'not_run' | 'current' | 'stale', report: 'not_generated' | 'current' | 'stale') => void;
 }) {
   const [city, setCity] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
@@ -102,7 +110,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   const [skillText, setSkillText] = useState('');
   const [sortBy, setSortBy] = useState<'basic' | 'enhanced'>('basic');
   const [items, setItems] = useState<Recommendation[]>([]);
-  const [meta, setMeta] = useState<{ count: number; note: string; summary: string; rev: number } | null>(null);
+  const [meta, setMeta] = useState<{ count: number; note: string; summary: string; rev: number; targetJobId: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [filterError, setFilterError] = useState<string | null>(null);
@@ -135,7 +143,22 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   const reportStale =
     isReportStale(reportMeta, studentRev, active?.job_id ?? null, active?.match.input_version ?? null) ||
     versionStale;
-  const reportDisabled = reportLoading || resultsStale || notConfirmed;
+  const reportDisabled = reportLoading || resultsStale || notConfirmed || !active;
+  const reportStaleMessage = !student.confirmed
+    ? '能力档案已修改并撤销确认；旧报告已失效。请回档案核对并重新确认，再刷新匹配并生成新建议。'
+    : versionStale
+      ? '服务端算法或岗位数据版本已更新；旧报告已失效。请先刷新匹配结果，再生成新建议。'
+      : resultsStale
+        ? (meta && meta.targetJobId !== student.intention.target_job_id
+          ? '目标岗位已切换，档案确认仍有效；旧报告已失效。请先刷新匹配结果，再生成新建议。'
+          : '能力档案输入已变化，旧报告已失效。请先重新确认档案并刷新匹配结果，再生成新建议。')
+        : '当前报告对应的岗位或输入已变化；请刷新匹配结果并生成新建议。';
+  const workflowMatch = meta == null ? 'not_run' : resultsStale ? 'stale' : 'current';
+  const workflowReport = !report ? 'not_generated' : reportStale ? 'stale' : 'current';
+
+  useEffect(() => {
+    onFreshnessChange(workflowMatch, workflowReport);
+  }, [onFreshnessChange, workflowMatch, workflowReport]);
 
   useEffect(() => {
     // 进入匹配页或确认画像后自动计算一次；学生信息编辑造成的过期不自动重算，
@@ -192,7 +215,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       }
       setItems(merged);
       setActiveIndex(merged.length > 0 ? 0 : -1);
-      setMeta({ count: d.candidate_count, note: d.note, summary: filtersSummary(parsed.filters!), rev: reqRev });
+      setMeta({ count: d.candidate_count, note: d.note, summary: filtersSummary(parsed.filters!), rev: reqRev, targetJobId: reqStudent.intention.target_job_id });
       setReport(null);
       setReportMeta(null);
       setReportError(null);
@@ -242,6 +265,10 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
 
   async function copyReport() {
     if (!report) return;
+    if (reportStale || resultsStale) {
+      showToast('报告已过期，刷新匹配并重新生成后才能复制', 'err');
+      return;
+    }
     const text = getReportText(report);
     if (!text) {
       const msg = '复制失败：报告文本缺失，请重新生成';
@@ -273,6 +300,10 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
 
   function exportReport() {
     if (!report) return;
+    if (reportStale || resultsStale) {
+      showToast('报告已过期，刷新匹配并重新生成后才能导出', 'err');
+      return;
+    }
     const text = getReportText(report);
     if (!text) {
       showToast('导出失败：报告文本缺失，请重新生成', 'err');
@@ -294,6 +325,34 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     }
   }
 
+  function focusProfileItem(item: MatchItem) {
+    const reason = item.pending_reason === 'not_provided' || item.pending_reason === 'unconfirmed' || item.pending_reason === 'missing_evidence'
+      ? item.pending_reason
+      : item.status === 'gap' ? 'confirmed_absent' : 'not_provided';
+    onGoProfileFocus({ dimension: item.dimension, tag_id: item.tag_id, label: item.label, reason });
+  }
+
+  function itemStatusLabel(item: MatchItem): string {
+    if (item.status === 'satisfied') return '已满足';
+    if (item.status === 'gap') return item.gap_reason === 'confirmed_absent' ? '已确认不具备' : '需补齐';
+    if (item.pending_reason === 'not_provided') return '尚未填写';
+    if (item.pending_reason === 'missing_evidence') return '缺少证据';
+    if (item.pending_reason === 'unconfirmed') return '尚未确认';
+    return '待确认';
+  }
+
+  function itemNextAction(item: MatchItem): string {
+    if (item.status === 'gap') return '查看成长路径';
+    if (item.status === 'pending' && item.pending_reason === 'not_provided') return '开始自评';
+    if (item.status === 'pending') return '核对档案与证据';
+    return '已完成';
+  }
+
+  function openItemAction(item: MatchItem) {
+    if (item.status === 'gap') onGoPaths(active?.job_id);
+    else if (item.status === 'pending') focusProfileItem(item);
+  }
+
   if (notConfirmed && meta == null && !loading && loadError == null) {
     return (
       <div className="matches-stitch matches-stitch-empty">
@@ -313,12 +372,12 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       <main className="match-report-flow">
         <details className="match-filter-panel"><summary>调整岗位筛选条件 <span>{meta?.summary || '全部岗位'}</span></summary><div className="matches-stitch-filter"><label>城市<input value={city} maxLength={80} placeholder="不限" onChange={e => setCity(e.target.value)} /></label><label>薪资下限<input value={salaryMin} type="number" min={0} step={100} placeholder="如 5000" onChange={e => setSalaryMin(e.target.value)} /></label><label>薪资上限<input value={salaryMax} type="number" min={0} step={100} placeholder="如 12000" onChange={e => setSalaryMax(e.target.value)} /></label><label>计薪周期<select value={salaryPeriod} onChange={e => setSalaryPeriod(e.target.value as Filters['salary_period'])}><option value="month">按月</option><option value="day">按天</option></select></label><label>必须包含技能<input value={skillText} maxLength={200} placeholder="Java, MySQL" onChange={e => setSkillText(e.target.value)} /></label><label>排序<select value={sortBy} onChange={e => setSortBy(e.target.value as 'basic' | 'enhanced')}><option value="basic">按基础分</option><option value="enhanced">按增强分</option></select></label><button className="primary-button" type="button" onClick={load}>应用筛选</button></div></details>
         {filterError && <div className="error-box"><p>{filterError}</p></div>}
-        {notConfirmed && <div className="stale-banner">画像已修改且尚未确认，当前报告已失效。</div>}{matchesStale && !notConfirmed && <div className="stale-banner">画像已变化，请刷新匹配结果。</div>}{versionStale && <div className="stale-banner">服务端算法或数据版本已更新，请刷新匹配结果。</div>}
+        {notConfirmed && <div className="stale-banner">能力档案内容已修改并撤销确认，旧匹配与报告已失效。请回到档案核对并重新确认。</div>}{matchesStale && !notConfirmed && <div className="stale-banner">{meta && meta.targetJobId !== student.intention.target_job_id ? '目标岗位已切换，档案确认仍有效；旧匹配与报告已失效，请刷新匹配结果。' : '能力档案输入已变化，旧匹配与报告已失效；请确认档案后刷新匹配结果。'}</div>}{versionStale && <div className="stale-banner">服务端算法或岗位数据版本已更新，旧匹配与报告已失效，请刷新匹配结果。</div>}
         {loading ? <Loading text="正在计算推荐…" /> : loadError != null ? <ErrorBox error={loadError} onRetry={load} retryLabel="重新计算推荐" /> : !m ? <EmptyState symbol="◌" title="暂时没有符合条件的岗位"><p>{meta?.note || '请调整筛选条件后重试。'}</p></EmptyState> : <>
           <section className="report-section report-diagnosis"><header><p>ACT 01 · 双维匹配诊断</p><h2>双维量化契合诊断</h2><span>基础分与增强分均由服务端匹配规则计算</span></header><div className="diagnosis-grid"><article><span>BASE FIT INDEX</span><em>基础对齐分</em><strong>{fmtPct(m.basic)}</strong><p>只统计已确认、等级达标且有证据的能力项。</p><i><b style={{ width: Math.min(100, m.basic ?? 0) + '%' }} /></i></article><article><span>ENHANCED MATCH</span><em>增强匹配度</em><strong>{fmtPct(m.enhanced)}</strong><p>综合能力等级与相关基础能力后的参考结果，不改变基础分。</p><i><b style={{ width: Math.min(100, m.enhanced ?? 0) + '%' }} /></i></article></div><div className="diagnosis-facts"><div><b>{m.satisfied}</b><span>已满足能力</span></div><div><b>{m.gap_items.length}</b><span>明确能力缺口</span></div><div><b>{m.pending_items.length}</b><span>待确认能力</span></div><div><b>{m.required}</b><span>岗位要求总数</span></div></div></section>
           <section className="report-section report-ecosystem"><header><p>ACT 02 · 能力生态图谱</p><h2>能力维度全景图谱</h2><span>观察技能、证书与通用素质在目标岗位中的分布</span></header><div className="ecosystem-card"><DimensionChart match={m} /><div className="dimension-readouts">{m.dimensions.map(d => <div key={d.id}><span>{d.label}</span><b>{d.required === 0 ? '不适用' : fmtPct(d.basic)}</b><small>{d.satisfied} / {d.required} 已满足</small></div>)}</div></div></section>
-          <section className="report-section report-matrix"><header><p>ACT 03 · COMPLIANCE MATRIX</p><h2>必需技能差距矩阵</h2><span>在能力档案中补充等级、确认状态和原文证据</span></header><div className="matrix-list">{m.items.map(x => <div className={'matrix-row ' + x.status} key={x.dimension + x.tag_id}><b>{x.status === 'satisfied' ? '✓' : x.status === 'gap' ? '!' : '○'}</b><div><strong>{x.label}</strong><small>{x.dimension} · {x.enhancement_basis || '等待证据核验'}</small></div><span>当前 {x.student_level ?? '—'}</span><span>目标 {x.required_level ?? '—'}</span><em>{x.status === 'satisfied' ? '已满足' : x.status === 'gap' ? '需补齐' : '待确认'}</em></div>)}</div></section>
-          <section className="report-section report-advice"><header><p>ACT 04 · INTELLIGENCE ROADMAP</p><h2>AI 智能体建议与行动路径</h2><span>建议只作为职业决策辅助，最终以你的实际经历为准</span></header>{reportError != null && <ErrorBox error={reportError} onRetry={generateReport} retryLabel="重试生成" />}{report ? <ReportBlock report={report} stale={reportStale} onCopy={copyReport} onExport={exportReport} copyState={copyState} /> : <div className="advice-placeholder"><div><b>01</b><h3>生成契合度评价</h3><p>结合已满足项和能力缺口，生成针对目标岗位的判断。</p></div><div><b>02</b><h3>拆解学习方向</h3><p>把差距转换为可开始执行的学习主题与实战任务。</p></div><div><b>03</b><h3>建立成长步骤</h3><p>按优先级排列后续行动，并保留报告导出能力。</p></div><button className="primary-button" type="button" onClick={generateReport} disabled={reportDisabled}>{reportLoading ? '正在生成…' : '生成职业建议'}</button></div>}</section>
+          <section className="report-section report-matrix" id="report-matrix"><header><p>ACT 03 · COMPLIANCE MATRIX</p><h2>必需能力待办与差距</h2><span>必需项优先；未填写、未确认、缺证据与已确认差距分别处理</span></header><div className="matrix-list">{[...m.items].sort((a, b) => Number(a.related_only) - Number(b.related_only) || statusOrder(a) - statusOrder(b)).map(x => <div className={'matrix-row ' + x.status} key={x.dimension + x.tag_id}><b aria-hidden="true">{x.status === 'satisfied' ? '✓' : x.status === 'gap' ? '!' : '○'}</b><div><strong>{x.label}</strong><small>{x.dimension} · {itemStatusLabel(x)} · {x.enhancement_basis || '等待证据核验'}</small></div><span>当前 {x.student_level ?? '—'}</span><span>目标 {x.required_level ?? '—'}</span>{x.status === 'satisfied' ? <em>已满足</em> : <button type="button" className="matrix-action" onClick={() => openItemAction(x)}>{itemNextAction(x)} →</button>}</div>)}</div></section>
+          <section className="report-section report-advice" id="report-advice"><header><p>ACT 04 · INTELLIGENCE ROADMAP</p><h2>AI 智能体建议与行动路径</h2><span>建议只作为职业决策辅助，最终以你的实际经历为准</span></header>{reportError != null && <ErrorBox error={reportError} onRetry={generateReport} retryLabel="重试生成" />}{report ? <ReportBlock report={report} stale={reportStale} staleMessage={reportStaleMessage} onCopy={copyReport} onExport={exportReport} copyState={copyState} /> : <div className="advice-placeholder"><div><b>01</b><h3>生成契合度评价</h3><p>结合已满足项和能力缺口，生成针对目标岗位的判断。</p></div><div><b>02</b><h3>拆解学习方向</h3><p>把差距转换为可开始执行的学习主题与实战任务。</p></div><div><b>03</b><h3>建立成长步骤</h3><p>按优先级排列后续行动，并保留报告导出能力。</p></div><button className="primary-button" type="button" onClick={generateReport} disabled={reportDisabled}>{reportLoading ? '正在生成…' : '生成职业建议'}</button></div>}</section>
           <section className="report-section report-alternatives"><header><p>ACT 05 · 协同备选</p><h2>其他高匹配岗位</h2><span>{meta ? '共 ' + meta.count + ' 个岗位符合 · ' + meta.note : '选择岗位可切换整份报告'}</span></header><div className="alternative-grid">{items.map((x, i) => <button type="button" className={i === activeIndex ? 'active' : ''} key={x.job_id} onClick={() => { setActiveIndex(i); setReport(null); setReportMeta(null); setReportError(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><span>{String(i + 1).padStart(2, '0')}</span><h3>{x.job_name}</h3><strong>{fmtPct(x.match.basic)}</strong><p>{x.reason}</p></button>)}</div></section>
         </>}
       </main>

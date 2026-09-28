@@ -1,26 +1,72 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet, errMessage } from '../api';
 import type { CareerPaths, CareerEdge, PathNode } from '../types';
 import { EmptyState, ErrorBox, Loading } from './ui';
+import type { PathSelection } from '../lib/localDraft';
 
 const STAGE_LABELS = ['当前阶段', '中期目标', '最终目标'];
 const PHASE_LABELS = ['PHASE 01 · 基础能力建立', 'PHASE 02 · 核心能力进阶', 'PHASE 03 · 资深能力纵深'];
 
-export default function PathsTab({ active, jobs, showToast }: {
+export default function PathsTab({ active, jobs, showToast, targetJobId, focusRequest, savedSelection, onSelectionChange, onClearSelection, onSaveSelection }: {
   active: boolean;
   jobs: Array<{ id: string; name: string }>;
   showToast: (msg: string, kind?: 'ok' | 'err') => void;
+  targetJobId: string;
+  focusRequest: { jobId: string; token: number } | null;
+  savedSelection: PathSelection | null;
+  onSelectionChange: (selection: PathSelection) => void;
+  onClearSelection: () => void;
+  onSaveSelection: (selection: PathSelection) => void;
 }) {
+  const savedSelectionForTarget = savedSelection &&
+    (!targetJobId || savedSelection.targetJobId === targetJobId)
+    ? savedSelection
+    : null;
   const [data, setData] = useState<CareerPaths | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const [selectedJobId, setSelectedJobId] = useState('');
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState(() => savedSelectionForTarget?.jobId || targetJobId || '');
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(() => savedSelectionForTarget?.edgeId ?? null);
+  const userSelected = useRef(false);
+  const handledFocusToken = useRef<number | null>(null);
+  const previousTargetJobId = useRef(targetJobId);
 
   useEffect(() => {
     if (active && !data && !loading && error == null) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
+
+  useEffect(() => {
+    if (previousTargetJobId.current !== targetJobId) {
+      previousTargetJobId.current = targetJobId;
+      userSelected.current = false;
+      const preferredId = targetJobId && data?.nodes.some(node => node.job_id === targetJobId)
+        ? targetJobId
+        : jobs.find(job => data?.nodes.some(node => node.job_id === job.id))?.id || data?.nodes[0]?.job_id || '';
+      setSelectedJobId(preferredId);
+      setSelectedEdgeId(null);
+      if (preferredId) onSelectionChange({ jobId: preferredId, edgeId: null, savedAt: null, targetJobId });
+      return;
+    }
+    if (focusRequest && handledFocusToken.current !== focusRequest.token) {
+      if (!data) return;
+      handledFocusToken.current = focusRequest.token;
+      if (!userSelected.current && data.nodes.some(node => node.job_id === focusRequest.jobId)) {
+        setSelectedJobId(focusRequest.jobId);
+        setSelectedEdgeId(null);
+        onSelectionChange({ jobId: focusRequest.jobId, edgeId: null, savedAt: null, targetJobId });
+      }
+      return;
+    }
+    if (userSelected.current) return;
+    if (savedSelectionForTarget) {
+      setSelectedJobId(savedSelectionForTarget.jobId);
+      setSelectedEdgeId(savedSelectionForTarget.edgeId);
+    } else if (targetJobId && data?.nodes.some(node => node.job_id === targetJobId)) {
+      setSelectedJobId(targetJobId);
+      setSelectedEdgeId(null);
+    }
+  }, [data, focusRequest?.jobId, focusRequest?.token, jobs, onSelectionChange, savedSelectionForTarget?.jobId, savedSelectionForTarget?.edgeId, targetJobId]);
 
   async function load() {
     setLoading(true);
@@ -28,7 +74,11 @@ export default function PathsTab({ active, jobs, showToast }: {
     try {
       const d = await apiGet<CareerPaths>('/api/career-paths');
       setData(d);
-      setSelectedJobId(current => current || jobs[0]?.id || d.nodes[0]?.job_id || '');
+      const preferredId = savedSelectionForTarget?.jobId || targetJobId;
+      const preferredHasPath = preferredId && d.nodes.some(node => node.job_id === preferredId);
+      const fallbackId = (preferredHasPath ? preferredId : '') || jobs.find(job => d.nodes.some(node => node.job_id === job.id))?.id || d.nodes[0]?.job_id || '';
+      setSelectedJobId(current => current || fallbackId);
+      if (!savedSelectionForTarget && !selectedJobId && fallbackId) onSelectionChange({ jobId: fallbackId, edgeId: null, savedAt: null, targetJobId });
     } catch (e) {
       setError(e);
       showToast('路径加载失败：' + errMessage(e), 'err');
@@ -48,6 +98,31 @@ export default function PathsTab({ active, jobs, showToast }: {
   ).slice(0, 6), [data, nodeById, focusJobId]);
   const selectedEdge = data?.edges.find(e => e.id === selectedEdgeId) ?? null;
 
+  function selectJob(jobId: string) {
+    userSelected.current = true;
+    setSelectedJobId(jobId);
+    setSelectedEdgeId(null);
+    onSelectionChange({ jobId, edgeId: null, savedAt: null, targetJobId });
+  }
+
+  function selectEdge(edgeId: string) {
+    userSelected.current = true;
+    setSelectedEdgeId(edgeId);
+    onSelectionChange({ jobId: focusJobId, edgeId, savedAt: null, targetJobId });
+  }
+
+  function clearSavedPath() {
+    onClearSelection();
+    setSelectedEdgeId(null);
+    userSelected.current = false;
+    const preferred = jobs.some(job => job.id === targetJobId && data?.nodes.some(node => node.job_id === targetJobId))
+      ? targetJobId
+      : jobs.find(job => data?.nodes.some(node => node.job_id === job.id))?.id || data?.nodes[0]?.job_id || '';
+    setSelectedJobId(preferred);
+  }
+
+  const selectionSaved = Boolean(savedSelection && savedSelection.jobId === focusJobId && savedSelection.edgeId === selectedEdgeId && savedSelection.savedAt);
+
   if (!active && data) return null;
   if (error != null) return <div className="paths-stitch"><ErrorBox error={error} onRetry={load} retryLabel="重新加载路径" /></div>;
   if (loading) return <div className="paths-stitch"><Loading text="正在加载职业路径…" /></div>;
@@ -57,18 +132,18 @@ export default function PathsTab({ active, jobs, showToast }: {
     <div className="paths-stitch">
       <section className="paths-hero">
         <h2>明确你的职业成长路径</h2>
-        <label className="path-job-select">聚焦岗位<select value={focusJobId} onChange={e => { setSelectedJobId(e.target.value); setSelectedEdgeId(null); }}>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
+        <label className="path-job-select">聚焦岗位<select value={focusJobId} onChange={e => selectJob(e.target.value)}>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
         <div className="path-overview"><div><small>{STAGE_LABELS[0]}</small><b>{focusNodes[0]?.label || jobName.get(focusJobId) || '起步岗位'}</b></div><span>→</span><div><small>{STAGE_LABELS[1]}</small><b>{focusNodes[1]?.label || '能力进阶'}</b></div><span>→</span><div><small>{STAGE_LABELS[2]}</small><b>{focusNodes[2]?.label || '资深岗位'}</b></div><em>↗</em></div>
       </section>
 
       <main className="path-flow">
-        <section className="path-section path-ladder"><header><p>ACT 01 · 核心能力演进</p><h2>核心技术纵深阶梯</h2><span>点击阶段卡片，查看可迁移能力、需要补齐的差距与建议活动</span></header><div className="path-timeline">{focusNodes.map((node, index) => <TimelineStage key={node.id} node={node} index={index} edge={promotionBySource.get(node.id)} selected={promotionBySource.get(node.id)?.id === selectedEdgeId} onSelect={setSelectedEdgeId} />)}</div></section>
+        <section className="path-section path-ladder"><header><p>ACT 01 · 核心能力演进</p><h2>核心技术纵深阶梯</h2><span>点击阶段卡片，查看可迁移能力、需要补齐的差距与建议活动</span></header><div className="path-timeline">{focusNodes.map((node, index) => <TimelineStage key={node.id} node={node} index={index} edge={promotionBySource.get(node.id)} selected={promotionBySource.get(node.id)?.id === selectedEdgeId} onSelect={selectEdge} />)}</div></section>
 
-        <section className="path-section path-branches"><header><p>ACT 02 · 交叉学科扩展</p><h2>横向转岗与分支延展路线</h2><span>基于当前岗位的能力重叠，展示可以继续探索的相邻岗位</span></header><div className="path-branch-grid">{transitions.length === 0 ? <EmptyState symbol="◌" title="暂无横向路径"><p>当前数据集中没有与该岗位相连的转岗边。</p></EmptyState> : transitions.map((edge, index) => { const a=nodeById.get(edge.source); const b=nodeById.get(edge.target); const target=a?.job_id===focusJobId?b:a; return <button type="button" key={edge.id} className={edge.id===selectedEdgeId?'active':''} onClick={() => setSelectedEdgeId(edge.id)}><span>DIRECTION {String.fromCharCode(65 + index)}</span><h3>{target?.label || '相邻岗位'}</h3><p>{edge.activity || '通过可迁移能力完成岗位切换。'}</p><small>可迁移：{edge.transferable.slice(0,3).join('、') || '待分析'}</small><em>↗</em></button>; })}</div>{selectedEdge && <EdgeDetail edge={selectedEdge} nodeById={nodeById} />}</section>
+        <section className="path-section path-branches"><header><p>ACT 02 · 交叉学科扩展</p><h2>横向转岗与分支延展路线</h2><span>基于当前岗位的能力重叠，展示可以继续探索的相邻岗位</span></header><div className="path-branch-grid">{transitions.length === 0 ? <EmptyState symbol="◌" title="暂无横向路径"><p>当前数据集中没有与该岗位相连的转岗边。</p></EmptyState> : transitions.map((edge, index) => { const a=nodeById.get(edge.source); const b=nodeById.get(edge.target); const target=a?.job_id===focusJobId?b:a; return <button type="button" key={edge.id} className={edge.id===selectedEdgeId?'active':''} onClick={() => selectEdge(edge.id)}><span>DIRECTION {String.fromCharCode(65 + index)}</span><h3>{target?.label || '相邻岗位'}</h3><p>{edge.activity || '通过可迁移能力完成岗位切换。'}</p><small>可迁移：{edge.transferable.slice(0,3).join('、') || '待分析'}</small><em>↗</em></button>; })}</div>{selectedEdge && <EdgeDetail edge={selectedEdge} nodeById={nodeById} />}</section>
 
-        <section className="path-section path-sprints"><header><p>ACT 03 · 实战落地</p><h2>季度冲刺实战任务清单</h2><span>把当前岗位相关的能力差距转成可执行的项目、学习与验证动作</span></header><div className="sprint-list">{actionEdges.length === 0 ? <EmptyState symbol="◌" title="暂无实战任务"><p>当前岗位的路径数据中还没有可执行活动。</p></EmptyState> : actionEdges.map((edge,index) => <button type="button" key={edge.id} onClick={() => setSelectedEdgeId(edge.id)}><b>{String(index+1).padStart(2,'0')}</b><span><strong>{edge.activity}</strong><small>{edge.type === 'promotion' ? '纵向晋升任务' : '横向转岗任务'} · 补齐 {edge.gaps.join('、') || '综合能力'}</small></span><em>{index===0?'RECOMMENDED':index<3?'CORE SPRINT':'PLANNED'}</em></button>)}</div></section>
+        <section className="path-section path-sprints"><header><p>ACT 03 · 实战落地</p><h2>季度冲刺实战任务清单</h2><span>把当前岗位相关的能力差距转成可执行的项目、学习与验证动作</span></header><div className="sprint-list">{actionEdges.length === 0 ? <EmptyState symbol="◌" title="暂无实战任务"><p>当前岗位的路径数据中还没有可执行活动。</p></EmptyState> : actionEdges.map((edge,index) => <button type="button" key={edge.id} onClick={() => selectEdge(edge.id)}><b>{String(index+1).padStart(2,'0')}</b><span><strong>{edge.activity}</strong><small>{edge.type === 'promotion' ? '纵向晋升任务' : '横向转岗任务'} · 补齐 {edge.gaps.join('、') || '综合能力'}</small></span><em>{index===0?'RECOMMENDED':index<3?'CORE SPRINT':'PLANNED'}</em></button>)}</div></section>
 
-        <section className="path-action-hub"><div><span>CAREER ACTION HUB</span><h3>保存你的个人职业规划路径</h3><p>路径数据来自当前岗位能力图谱，后续可结合匹配报告持续调整。</p></div><button type="button" className="ghost-button" onClick={() => showToast('当前路径已保留在本次会话中')}>保存当前路径</button></section>
+        <section className="path-action-hub"><div><span>CAREER ACTION HUB</span><h3>保存你的个人职业规划路径</h3><p>{selectionSaved ? '已保存于 ' + new Date(savedSelection!.savedAt!).toLocaleString() : '当前聚焦与选中路线会随本机草稿自动保存。'}</p></div><div className="path-save-actions"><button type="button" className="ghost-button" onClick={() => { onSaveSelection({ jobId: focusJobId, edgeId: selectedEdge?.id ?? null, savedAt: null }); showToast('当前岗位与成长路线已保存到本机草稿'); }}>{selectionSaved ? '更新已保存路径' : '保存当前路径'}</button>{savedSelection && <button type="button" className="ghost-button" onClick={clearSavedPath}>清除已保存路径</button>}</div></section>
       </main>
     </div>
   );
