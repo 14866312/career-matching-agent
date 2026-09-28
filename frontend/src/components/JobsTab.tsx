@@ -44,41 +44,51 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
   const samples = job.samples ?? [];
   return (
     <div className="job-detail">
-      <p className="eyebrow">JOB PROFILE</p>
-      <h3>{job.name}</h3>
-      <p className="mono detail-meta">{job.family} · {job.level} · 数据版本 {job.version}</p>
-      <p className="detail-summary">{job.summary}</p>
-      {DIM_GROUPS.map(g => {
-        const items = (job.requirements ?? []).filter(r => r.dimension === g.key);
-        if (g.key !== 'certificates' && items.length === 0) return null;
-        return (
-          <div className="item-block" key={g.key}>
-            <h4>{g.label} · {items.length}</h4>
-            {items.length > 0
-              ? items.map(r => <RequirementItem key={r.tag_id} r={r} />)
-              : <div className="item pending">样本中未提及该维度要求（未提及不等于无要求）</div>}
-            {g.key === 'certificates' && job.certificate_note && <p className="soft-note">{job.certificate_note}</p>}
+      <header className="job-detail-head">
+        <p className="eyebrow">JOB PROFILE</p>
+        <h3>{job.name}</h3>
+        <p className="mono detail-meta">{job.family} · {job.level} · 数据版本 {job.version}</p>
+        <p className="detail-summary">{job.summary}</p>
+      </header>
+      <div className="job-detail-layout">
+        <section className="job-detail-main" aria-label="岗位能力要求">
+          {DIM_GROUPS.map(g => {
+            const items = (job.requirements ?? []).filter(r => r.dimension === g.key);
+            if (g.key !== 'certificates' && items.length === 0) return null;
+            return (
+              <div className="item-block job-detail-group" key={g.key}>
+                <h4>{g.label} · {items.length}</h4>
+                <div className="job-detail-items">
+                  {items.length > 0
+                    ? items.map(r => <RequirementItem key={r.tag_id} r={r} />)
+                    : <div className="item pending">样本中未提及该维度要求（未提及不等于无要求）</div>}
+                </div>
+                {g.key === 'certificates' && job.certificate_note && <p className="soft-note">{job.certificate_note}</p>}
+              </div>
+            );
+          })}
+        </section>
+        <aside className="job-detail-aside" aria-label="岗位补充信息">
+          {(job.preferred ?? []).length > 0 && (
+            <div className="item-block">
+              <h4>优先项 · {job.preferred.length}<span>只作补充建议，不计入基础分</span></h4>
+              {job.preferred.map(r => (
+                <div className="item pending" key={r.tag_id}>＋ {r.label}{r.required_level ? <span className="mono"> · 建议等级 {r.required_level}</span> : null}</div>
+              ))}
+            </div>
+          )}
+          <div className="item-block job-detail-samples">
+            <h4>来源样本 · 共 {samples.length} 条<span>显示前 3 条</span></h4>
+            <p className="soft-note">以下为历史招聘样本，仅用于能力基线整理与条件筛选。</p>
+            {samples.slice(0, 3).map(s => (
+              <div className="sample-row" key={s.id}>
+                <b>{s.company}</b>
+                <span>{s.city ?? '—'} · {s.salary?.raw || '薪资面议'}</span>
+                <span className="mono">{s.updated_raw ?? ''}</span>
+              </div>
+            ))}
           </div>
-        );
-      })}
-      {(job.preferred ?? []).length > 0 && (
-        <div className="item-block">
-          <h4>优先项 · {job.preferred.length}（只作补充建议，不计入基础分）</h4>
-          {job.preferred.map(r => (
-            <div className="item pending" key={r.tag_id}>＋ {r.label}{r.required_level ? <span className="mono"> · 建议等级 {r.required_level}</span> : null}</div>
-          ))}
-        </div>
-      )}
-      <div className="item-block">
-        <h4>来源样本 · 共 {samples.length} 条（显示前 3 条）</h4>
-        <p className="soft-note">以下为赛题历史招聘样本，仅用于能力基线整理与条件筛选，不代表当前有效招聘。</p>
-        {samples.slice(0, 3).map(s => (
-          <div className="sample-row" key={s.id}>
-            <b>{s.company}</b>
-            <span>{s.city ?? '—'} · {s.salary?.raw || '薪资面议'}</span>
-            <span className="mono">{s.updated_raw ?? ''}</span>
-          </div>
-        ))}
+        </aside>
       </div>
       <div className="detail-actions">
         <button className="primary-button" type="button" onClick={() => onSetTarget(job.id, job.name)}>

@@ -47,6 +47,13 @@ const FLOW_STEPS = [
   { number: '4', title: '开始行动', detail: '查看建议，或保存一条成长路径。' }
 ];
 
+const ROUTE_STEPS = [
+  { number: '01', title: '了解岗位', detail: '先定方向' },
+  { number: '02', title: '整理档案', detail: '补齐证据' },
+  { number: '03', title: '查看匹配', detail: '看清差距' },
+  { number: '04', title: '开始行动', detail: '选择下一步' }
+];
+
 function focusableElements(container: HTMLElement | null): HTMLElement[] {
   if (!container) return [];
   return Array.from(container.querySelectorAll<HTMLElement>(
@@ -131,8 +138,8 @@ export default function OnboardingWizard({
       >
         <header className="onboarding-wizard-header">
           <div>
-            <p className="onboarding-wizard-kicker">NEW HERE · 01—04</p>
-            <p className="onboarding-wizard-progress" aria-live="polite">{screen + 1} / 2</p>
+            <p className="onboarding-wizard-kicker">新手教程 · 从这里开始</p>
+            <p className="onboarding-wizard-progress" aria-live="polite">{screen === 0 ? '入口选择' : '开始规划'} · {screen + 1} / 2</p>
           </div>
           <button
             className="onboarding-wizard-close"
@@ -148,8 +155,41 @@ export default function OnboardingWizard({
         {screen === 0 ? (
           <>
             <div className="onboarding-wizard-intro">
-              <h2 id="onboarding-wizard-title">先选一种开始方式</h2>
-              <p id="onboarding-wizard-description">不用一次准备完整。选一个最接近你现在状态的入口，接下来每一步都会告诉你该做什么；岗位目标随时可以跳过。</p>
+              <span className="onboarding-section-label">四步路线</span>
+              <h2 id="onboarding-wizard-title">把“我该做什么”变成下一步</h2>
+              <p id="onboarding-wizard-description">你不需要一次准备完整。先选一个最接近现在状态的入口，系统会把岗位、档案、匹配和行动建议串起来；目标岗位也可以稍后再选。</p>
+            </div>
+
+            {autosaveChoicePending && (
+              <section className="onboarding-storage-choice" aria-labelledby="onboarding-storage-title">
+                <div>
+                  <span className="onboarding-section-label">使用偏好</span>
+                  <strong id="onboarding-storage-title">要在这台浏览器自动保存吗？</strong>
+                  <p>{autosaveAvailable
+                    ? '会保存能力档案、目标岗位、当前页面和已选成长路径。简历姓名、未审核候选、原文件、AI 报告和模型密钥不会保存。'
+                    : '当前浏览器不允许本机存储。你仍可继续使用，数据只保留在本次会话中。'}</p>
+                </div>
+                <div className="onboarding-storage-actions">
+                  <button className="primary-button" type="button" onClick={() => onChooseAutosave(true)} disabled={!autosaveAvailable}>自动保存</button>
+                  <button className="ghost-button" type="button" onClick={() => onChooseAutosave(false)}>本次不保存</button>
+                </div>
+              </section>
+            )}
+
+            <ol className="onboarding-route-preview" aria-label="职业规划四步路线">
+              {ROUTE_STEPS.map((step, index) => (
+                <li key={step.number}>
+                  <span className="onboarding-route-number" aria-hidden="true">{step.number}</span>
+                  <span className="onboarding-route-copy"><strong>{step.title}</strong><small>{step.detail}</small></span>
+                  {index < ROUTE_STEPS.length - 1 && <span className="onboarding-route-line" aria-hidden="true" />}
+                </li>
+              ))}
+            </ol>
+
+            <div className="onboarding-choice-heading">
+              <span className="onboarding-section-label">第一步</span>
+              <strong>从哪里开始最适合你？</strong>
+              <small>选完后仍可随时切换页面。</small>
             </div>
             <div className="onboarding-start-grid" aria-label="选择开始方式">
               {START_POINTS.map(point => (
@@ -171,21 +211,6 @@ export default function OnboardingWizard({
               ))}
             </div>
 
-            {autosaveChoicePending && (
-              <section className="onboarding-storage-choice" aria-labelledby="onboarding-storage-title">
-                <div>
-                  <strong id="onboarding-storage-title">要在这台浏览器自动保存吗？</strong>
-                  <p>{autosaveAvailable
-                    ? '会保存能力档案、目标岗位、当前页面和已选成长路径。简历姓名、未审核候选、原文件、AI 报告和模型密钥不会保存。'
-                    : '当前浏览器不允许本机存储。你仍可继续使用，数据只保留在本次会话中。'}</p>
-                </div>
-                <div className="onboarding-storage-actions">
-                  <button className="primary-button" type="button" onClick={() => onChooseAutosave(true)} disabled={!autosaveAvailable}>自动保存</button>
-                  <button className="ghost-button" type="button" onClick={() => onChooseAutosave(false)}>本次不保存</button>
-                </div>
-              </section>
-            )}
-
             <footer className="onboarding-wizard-footer">
               <span>你可以之后从顶部“新手教程”再次打开说明。</span>
               <button className="onboarding-skip-button" type="button" disabled={!canLeave} onClick={() => onFinish('skipped')}>先跳过教程</button>
@@ -195,25 +220,14 @@ export default function OnboardingWizard({
           <>
             <div className="onboarding-wizard-intro">
               <button className="onboarding-back-button" type="button" onClick={() => setScreen(0)}>← 重新选择入口</button>
-              <h2 id="onboarding-wizard-title">你会这样完成一次规划</h2>
-              <p id="onboarding-wizard-description">{startPoint?.title}：{startPoint?.description}</p>
-            </div>
-            <ol className="onboarding-flow-list" aria-label="四步使用说明">
-              {FLOW_STEPS.map(step => (
-                <li key={step.number}>
-                  <span className="onboarding-flow-number" aria-hidden="true">{step.number}</span>
-                  <span><strong>{step.title}</strong><small>{step.detail}</small></span>
-                </li>
-              ))}
-            </ol>
-            <div className="onboarding-principles">
-              <div><b>简历先审核</b><span>识别出的每项经历、能力和证据都要由你接受或跳过。</span></div>
-              <div><b>能力要确认</b><span>补充证据后确认档案，才会参与匹配。</span></div>
-              <div><b>差距有去处</b><span>待补充和明确差距会带你回到资料、建议或成长路径。</span></div>
+              <span className="onboarding-section-label">第二步</span>
+              <h2 id="onboarding-wizard-title">准备好，按这条线继续</h2>
+              <p id="onboarding-wizard-description">当前入口：{startPoint?.title}。{startPoint?.description}</p>
             </div>
             {autosaveChoicePending && (
               <section className="onboarding-storage-choice" aria-labelledby="onboarding-storage-title-final">
                 <div>
+                  <span className="onboarding-section-label">使用偏好</span>
                   <strong id="onboarding-storage-title-final">先确认本机保存方式</strong>
                   <p>{autosaveAvailable
                     ? '完成选择后才能开始使用。会保存能力档案、目标岗位、当前页面和已选成长路径；简历姓名、未审核候选、原文件、AI 报告和模型密钥不会保存。'
@@ -225,6 +239,20 @@ export default function OnboardingWizard({
                 </div>
               </section>
             )}
+            <ol className="onboarding-flow-list" aria-label="四步使用说明">
+              {FLOW_STEPS.map(step => (
+                <li key={step.number}>
+                  <span className="onboarding-flow-number" aria-hidden="true">{step.number}</span>
+                  <span><strong>{step.title}</strong><small>{step.detail}</small></span>
+                </li>
+              ))}
+            </ol>
+            <p className="onboarding-confirmation-note">每一步都可以返回修改。简历识别结果会先进入审核清单，只有你确认过的内容才会进入能力档案。</p>
+            <div className="onboarding-principles">
+              <div><b>简历先审核</b><span>识别出的每项经历、能力和证据都要由你接受或跳过。</span></div>
+              <div><b>能力要确认</b><span>补充证据后确认档案，才会参与匹配。</span></div>
+              <div><b>差距有去处</b><span>待补充和明确差距会带你回到资料、建议或成长路径。</span></div>
+            </div>
             <footer className="onboarding-wizard-footer onboarding-wizard-footer-final">
               <button className="onboarding-skip-button" type="button" disabled={!canLeave} onClick={() => onFinish('skipped')}>跳过教程</button>
               <button className="primary-button" type="button" disabled={!canLeave || !selectedStart} onClick={() => selectedStart && onFinish('completed', selectedStart)}>

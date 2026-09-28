@@ -79,8 +79,8 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
       return { color: style.color, backgroundColor: style.backgroundColor, colorScheme: style.colorScheme };
     });
     console.log('目标岗位选项样式:', JSON.stringify(optionStyle));
-    assert.equal(optionStyle.color, 'rgb(243, 244, 246)', '目标岗位选项文字应有足够对比度');
-    assert.equal(optionStyle.backgroundColor, 'rgb(24, 24, 29)', '目标岗位下拉菜单应使用深色背景');
+    assert.equal(optionStyle.color, 'rgb(244, 244, 244)', '目标岗位选项文字应有足够对比度');
+    assert.equal(optionStyle.backgroundColor, 'rgb(24, 24, 24)', '目标岗位下拉菜单应使用深色背景');
 
     await page.getByRole('button', { name: /AI 模型配置/ }).click();
     const dialog = page.getByRole('dialog', { name: 'AI 模型配置' });

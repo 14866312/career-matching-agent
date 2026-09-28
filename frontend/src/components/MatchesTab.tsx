@@ -26,17 +26,17 @@ function DimensionChart({ match }: { match: MatchResult }) {
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 52, bottom: 4, left: 4 }} barCategoryGap="24%">
             <CartesianGrid horizontal={false} stroke="rgba(255,255,255,.08)" />
             <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => v + '%'}
-              tick={{ fontSize: 10, fill: '#7d7d84' }} axisLine={{ stroke: 'rgba(255,255,255,.08)' }} tickLine={false} />
+              tick={{ fontSize: 10, fill: '#7d7d7d' }} axisLine={{ stroke: 'rgba(255,255,255,.08)' }} tickLine={false} />
             <YAxis type="category" dataKey="name" width={72}
-              tick={{ fontSize: 11, fill: '#d7d7dc' }} axisLine={false} tickLine={false} />
+              tick={{ fontSize: 11, fill: '#d7d7d7' }} axisLine={false} tickLine={false} />
             <Tooltip formatter={(v: unknown) => [String(v) + '%']} />
-            <Bar dataKey="basic" name="基础匹配" fill="#f5f5f7" radius={[0, 3, 3, 0]} barSize={12}>
+            <Bar dataKey="basic" name="基础匹配" fill="#f5f5f5" radius={[0, 3, 3, 0]} barSize={12}>
               <LabelList dataKey="basic" position="right" formatter={(v: unknown) => fmtPct(Number(v))}
-                style={{ fontSize: 10, fill: '#f5f5f7' }} />
+                style={{ fontSize: 10, fill: '#f5f5f5' }} />
             </Bar>
-            <Bar dataKey="enhanced" name="增强参考" fill="#77777f" radius={[0, 3, 3, 0]} barSize={12}>
+            <Bar dataKey="enhanced" name="增强参考" fill="#777777" radius={[0, 3, 3, 0]} barSize={12}>
               <LabelList dataKey="enhanced" position="right" formatter={(v: unknown) => fmtPct(Number(v))}
-                style={{ fontSize: 10, fill: '#b7b7bd' }} />
+                style={{ fontSize: 10, fill: '#b7b7b7' }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
