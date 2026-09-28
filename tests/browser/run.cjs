@@ -18,6 +18,18 @@ async function assertUnavailable(locator, description) {
 }
 const filterSelect = index => page.locator('.matches-stitch-filter select').nth(index);
 async function manualMode() { await page.getByRole('tab', { name: '手动录入资料', exact: true }).click(); }
+async function draftSettings() {
+  await button('设置').click();
+  const dialog = page.getByRole('dialog', { name: '本机数据设置', exact: true });
+  await dialog.waitFor();
+  return dialog;
+}
+async function clearDraft() {
+  const dialog = await draftSettings();
+  await dialog.getByRole('button', { name: '清除本机草稿并重置流程', exact: true }).click();
+  await dialog.getByRole('button', { name: '完成', exact: true }).click();
+  await dialog.waitFor({ state: 'detached' });
+}
 const targetJob = () => page.locator('.profile-target-select select');
 async function until(fn, message) {
   const end = Date.now() + 12000;
@@ -56,6 +68,7 @@ async function ready() {
   }
   await page.locator('.workflow-guide').waitFor();
   assert.deepEqual(await page.locator('.workflow-guide .workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
+  assert.equal(await page.locator('.workflow-guide-step-copy').count(), 0, 'the beginner guide should start as a compact numbered navigator');
   const activePanel = page.locator('.exploration-pages > .panel.active');
   await activePanel.waitFor();
   if (await activePanel.getAttribute('id') === 'page-jobs') {
@@ -172,7 +185,10 @@ async function delayRoute(url) {
       assert.equal(await targetJob().inputValue(), 'java');
       assert.equal(await label('Java 熟练度').inputValue(), '2');
 
-      await page.locator('.local-draft-bar input[type="checkbox"]').uncheck();
+      const draftDialog = await draftSettings();
+      await draftDialog.getByRole('checkbox', { name: '自动保存到本机浏览器', exact: true }).uncheck();
+      await draftDialog.getByRole('button', { name: '完成', exact: true }).click();
+      await draftDialog.waitFor({ state: 'detached' });
       const retainedDraft = await page.evaluate(() => localStorage.getItem('career-planner.local-draft'));
       assert.ok(retainedDraft, 'turning off autosave should leave the existing draft available to clear');
       await page.reload(); await ready();
@@ -180,7 +196,7 @@ async function delayRoute(url) {
       assert.equal(await label('专业').inputValue(), '', 'autosave disabled must not restore the existing draft');
       assert.ok(await page.evaluate(() => localStorage.getItem('career-planner.local-draft')));
 
-      await button('清除本机草稿并重置流程').click();
+      await clearDraft();
       assert.equal(await page.evaluate(() => localStorage.getItem('career-planner.local-draft')), null);
       await page.reload(); await ready();
       await tab('我的能力'); await manualMode();
@@ -219,10 +235,10 @@ async function delayRoute(url) {
     assert.equal(await targetJob().inputValue(), '');
     const rec = await confirmAndMatch();
     assert.ok(rec.items.length > 0, 'recommendations should be available without a target');
-    assert.match(await page.locator('.workflow-guide button').nth(0).getAttribute('aria-label'), /可跳过/);
+    assert.match(await page.locator('.workflow-guide-step').first().getAttribute('aria-label'), /可跳过/);
   });
   await step('Canonical aliases deduplicate and binary absence differs from missing evidence', async () => {
-    await button('清除本机草稿并重置流程').click();
+    await clearDraft();
     await tab('我的能力');
     await manualMode();
     await label('新增技能标签').fill('Vue.js'); await label('新增技能标签').press('Enter');
@@ -253,7 +269,7 @@ async function delayRoute(url) {
   });
   let manualReport;
   await step('Manual profile, evidence confirmation and independent expected scores', async () => {
-    await button('清除本机草稿并重置流程').click();
+    await clearDraft();
     await tab('我的能力');
     await manualMode();
     await label('专业').fill('软件工程');
@@ -286,7 +302,7 @@ async function delayRoute(url) {
     await tab('我的能力');
     await targetJob().selectOption('testing');
     assert.equal(await button('确认完整画像').isDisabled(), true, 'target selection must preserve confirmation');
-    assert.match(await page.locator('.workflow-guide button').nth(1).getAttribute('aria-label'), /能力档案：已确认/);
+    assert.match(await page.locator('.workflow-guide-step').nth(1).getAttribute('aria-label'), /能力档案：已确认/);
     await tab('匹配与建议');
     assert.equal(await reportButton().isDisabled(), true, 'stale match cannot generate a report');
     await assertUnavailable(button('复制报告'), 'copy report');
@@ -441,7 +457,7 @@ async function delayRoute(url) {
   });
   await step('Zero skills, target outside top five and narrow viewport', async () => {
     await ready();
-    await button('清除本机草稿并重置流程').click();
+    await clearDraft();
     await tab('我的能力'); await manualMode(); await targetJob().selectOption('testing');
     const rec = await confirmAndMatch();
     assert.equal(rec.items.length, 5);

@@ -6,6 +6,7 @@ import ProfileTab from './components/ProfileTab';
 import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
 import AIConfigPanel from './components/AIConfigPanel';
+import LocalDraftSettingsPanel from './components/LocalDraftSettingsPanel';
 import { createLocalDraft, getBrowserStorage, readAutosavePreference, readLocalDraft, writeAutosavePreference, writeLocalDraft, clearLocalDraft, type PathSelection } from './lib/localDraft';
 import { deriveWorkflowState, type MatchFreshness, type ReportFreshness } from './lib/workflow';
 
@@ -31,6 +32,25 @@ const TABS: Array<{ id: TabId; label: string; code: string }> = [
   { id: 'paths', label: '成长路径', code: '04' }
 ];
 
+const WORKFLOW_GUIDE_COPY = [
+  {
+    title: '了解目标岗位',
+    description: '先选一个感兴趣的岗位，看看它需要什么。还没有方向也没关系，可以跳过这一步。'
+  },
+  {
+    title: '整理能力档案',
+    description: '手动填写，或导入简历后逐项审核。只有你确认过的能力和证据才会参与匹配。'
+  },
+  {
+    title: '查看岗位匹配',
+    description: '确认档案后查看符合项、待补充信息和明确差距，知道下一步先补哪里。'
+  },
+  {
+    title: '开始行动',
+    description: '生成行动建议，或者进入成长路径，选一条适合自己的学习和转型路线。'
+  }
+] as const;
+
 function tabFromLocation(): TabId {
   const value = window.location.hash.slice(1);
   return TABS.some(item => item.id === value) ? value as TabId : 'jobs';
@@ -50,6 +70,7 @@ export default function App() {
   const [analysis, setAnalysis] = useState<ProfileResp['analysis'] | null>(null);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [autosaveEnabled, setAutosaveEnabled] = useState(initialPreference.enabled);
   const [autosaveChoicePending, setAutosaveChoicePending] = useState(!initialPreference.configured);
   const [draftHydrated, setDraftHydrated] = useState(false);
@@ -62,6 +83,7 @@ export default function App() {
   const [reportFreshness, setReportFreshness] = useState<ReportFreshness>('not_generated');
   const [workflowAnchor, setWorkflowAnchor] = useState<WorkflowAnchor | null>(null);
   const [workflowFocus, setWorkflowFocus] = useState<0 | 1 | 2 | 3 | null>(null);
+  const [workflowGuideExpanded, setWorkflowGuideExpanded] = useState(false);
   const [sessionResetKey, setSessionResetKey] = useState(0);
   const skipNextDraftWrite = useRef(false);
   const autosaveModalRef = useRef<HTMLElement | null>(null);
@@ -245,6 +267,35 @@ export default function App() {
     else if (isInitialChoice) setDraftHydrated(true);
   }, [autosaveChoicePending, restoreLocalDraft, storage]);
 
+  const toggleAutosave = useCallback((enabled: boolean) => {
+    const saved = writeAutosavePreference(storage, enabled);
+    if (!saved) {
+      setAutosaveEnabled(false);
+      setDraftStatus('无法更新本机保存设置；当前内容仍保留在本次会话中。');
+      return;
+    }
+
+    if (enabled) {
+      const current = studentRef.current;
+      const hasCurrentContent = Boolean(
+        current.major.trim() || current.experiences.trim() || current.skills.length ||
+        current.certificates.length || current.qualities.length ||
+        current.intention.target_job_id || current.intention.city.trim() || selectedPath || tab !== 'jobs'
+      );
+      const existing = readLocalDraft(storage);
+      setAutosaveEnabled(true);
+      if (!hasCurrentContent && existing.status === 'restored') {
+        restoreLocalDraft();
+      } else {
+        setDraftStatus('自动保存已开启；从现在开始保存本次流程。');
+      }
+      return;
+    }
+
+    setAutosaveEnabled(false);
+    setDraftStatus('自动保存已关闭；已有草稿仍留在本机，可在此清除。');
+  }, [restoreLocalDraft, selectedPath, storage, tab]);
+
   const clearSessionDraft = useCallback(() => {
     const cleared = clearLocalDraft(storage);
     skipNextDraftWrite.current = true;
@@ -333,7 +384,8 @@ export default function App() {
     : tab === 'profile' ? 1
     : tab === 'matches' && (reportFreshness === 'current' || reportFreshness === 'stale') ? 3
     : tab === 'matches' ? 2
-    : -1);
+    : 3);
+  const activeGuideCopy = WORKFLOW_GUIDE_COPY[activeWorkflowStep] ?? WORKFLOW_GUIDE_COPY[0];
   const continueLabel = workflow.next === 'profile' ? '继续整理档案' : workflow.next === 'matches'
     ? (matchFreshness === 'stale' ? '刷新匹配结果' : '查看岗位匹配')
     : (reportFreshness === 'stale' ? '更新行动建议' : reportFreshness === 'current' ? '查看行动建议' : '生成行动建议');
@@ -382,28 +434,60 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <button className="model-config-trigger" type="button" onClick={() => setConfigOpen(true)}>
-          <span aria-hidden="true">✦</span> AI 模型配置
-        </button>
-      </header>
-      {!autosaveChoicePending && <nav className="workflow-guide" aria-label="职业规划流程步骤">
-        <ol>{workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
-          <button
-            type="button"
-            title={item.label + '：' + item.state}
-            aria-label={(index + 1) + '. ' + item.label + '：' + item.state}
-            aria-current={activeWorkflowStep === index ? 'step' : undefined}
-            onClick={() => navigateWorkflowStep(index)}
-          >
-            <span className="workflow-step-number" aria-hidden="true">{index + 1}</span>
-            <span className="sr-only">{item.label}：{item.state}</span>
+        <div className="exploration-header-actions">
+          <button className="settings-trigger" type="button" onClick={() => setSettingsOpen(true)}>
+            <span aria-hidden="true">⚙</span> 设置
           </button>
-        </li>)}</ol>
-        <button className="workflow-guide-next" type="button" onClick={continueWorkflow} aria-label={'下一步：' + continueLabel} title={continueLabel}>
-          <span className="workflow-guide-next-mark" aria-hidden="true">↗</span>
-          <span className="workflow-guide-next-copy"><small>下一步</small><b>{continueLabel}</b></span>
-        </button>
-      </nav>}
+          <button className="model-config-trigger" type="button" onClick={() => setConfigOpen(true)}>
+            <span aria-hidden="true">✦</span> AI 模型配置
+          </button>
+        </div>
+      </header>
+      {!autosaveChoicePending && <aside className={'workflow-guide ' + (workflowGuideExpanded ? 'is-expanded' : 'is-collapsed')} aria-label="新手快速上手">
+        <div className="workflow-guide-heading">
+          <button
+            className="workflow-guide-summary"
+            type="button"
+            aria-expanded={workflowGuideExpanded}
+            onClick={() => setWorkflowGuideExpanded(value => !value)}
+          >
+            <span className="workflow-guide-kicker">快速上手</span>
+            <strong>{activeWorkflowStep + 1} / 4 · {activeGuideCopy.title}</strong>
+          </button>
+          <button
+            className="workflow-guide-toggle"
+            type="button"
+            aria-label={workflowGuideExpanded ? '收起快速上手' : '展开快速上手'}
+            aria-expanded={workflowGuideExpanded}
+            onClick={() => setWorkflowGuideExpanded(value => !value)}
+          >
+            <span aria-hidden="true">{workflowGuideExpanded ? '−' : '+'}</span>
+          </button>
+        </div>
+        <ol>
+          {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
+            <button
+              className="workflow-guide-step"
+              type="button"
+              title={item.label + '：' + item.state}
+              aria-label={(index + 1) + '. ' + item.label + '：' + item.state}
+              aria-current={activeWorkflowStep === index ? 'step' : undefined}
+              onClick={() => navigateWorkflowStep(index)}
+            >
+              <span className="workflow-step-number" aria-hidden="true">{index + 1}</span>
+              {workflowGuideExpanded && <span className="workflow-guide-step-copy"><b>{WORKFLOW_GUIDE_COPY[index].title}</b><small>{item.state}</small></span>}
+              {!workflowGuideExpanded && <span className="sr-only">{item.label}：{item.state}</span>}
+            </button>
+          </li>)}
+        </ol>
+        {workflowGuideExpanded && <div className="workflow-guide-detail">
+          <p>{activeGuideCopy.description}</p>
+          <button className="workflow-guide-next" type="button" onClick={continueWorkflow} aria-label={'下一步：' + continueLabel} title={continueLabel}>
+            <span className="workflow-guide-next-mark" aria-hidden="true">↗</span>
+            <span className="workflow-guide-next-copy"><small>建议下一步</small><b>{continueLabel}</b></span>
+          </button>
+        </div>}
+      </aside>}
       {autosaveChoicePending && <div className="workflow-autosave-backdrop" role="presentation">
         <section
           ref={autosaveModalRef}
@@ -417,7 +501,7 @@ export default function App() {
           <div className="workflow-autosave-header">
             <p className="workflow-autosave-kicker">FIRST SESSION · 01—04</p>
             <h2 id="workflow-autosave-title">先确认流程与保存方式</h2>
-            <p id="workflow-autosave-description">你可以从岗位开始，也可以先建立能力档案。确认后，右侧会保留一个只显示 1、2、3、4 的步骤导航，随时可以跳转；成长路径也可以从主导航进入。</p>
+            <p id="workflow-autosave-description">整个流程分成 4 步：了解岗位、整理能力档案、查看匹配、开始行动。目标岗位可以跳过，你也可以随时从顶部导航或右下角的“快速上手”浮窗切换页面。</p>
           </div>
           <ol className="workflow-modal-steps" aria-label="职业规划流程">
             {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
@@ -437,11 +521,6 @@ export default function App() {
             <button className="ghost-button" type="button" onClick={() => chooseAutosave(false)}>关闭自动保存并继续</button>
           </div>
         </section>
-      </div>}
-      {!autosaveChoicePending && <div className="local-draft-bar" aria-label="本机草稿设置">
-        <label><input type="checkbox" checked={autosaveEnabled} disabled={!initialPreference.available || autosaveChoicePending} onChange={e => chooseAutosave(e.target.checked)} /> 自动保存到本机浏览器</label>
-        <span role="status">{draftStatus}{draftSavedAt ? ' · 最近保存：' + new Date(draftSavedAt).toLocaleString() : ''}</span>
-        <button className="ghost-button" type="button" onClick={clearSessionDraft}>清除本机草稿并重置流程</button>
       </div>}
       <main className="exploration-pages" data-active-page={tab}>
         <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
@@ -497,6 +576,15 @@ export default function App() {
         </div>
       </main>
       {configOpen && <AIConfigPanel onClose={() => setConfigOpen(false)} onSaved={() => { void loadHealth(); showToast('AI 模型配置已更新'); }} />}
+      {settingsOpen && <LocalDraftSettingsPanel
+        enabled={autosaveEnabled}
+        available={initialPreference.available}
+        status={draftStatus}
+        savedAt={draftSavedAt}
+        onToggle={toggleAutosave}
+        onClear={clearSessionDraft}
+        onClose={() => setSettingsOpen(false)}
+      />}
       {toast && <div className={'toast show ' + toast.kind} role="status">{toast.msg}</div>}
     </div>
   );

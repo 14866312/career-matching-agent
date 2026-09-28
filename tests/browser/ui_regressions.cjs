@@ -1,4 +1,4 @@
-/* Focused regressions for the native job selector and model configuration state. */
+/* Focused regressions for the native job selector, local draft settings, guide, and model configuration state. */
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 
@@ -30,6 +30,31 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
       await workflowModal.getByRole('button', { name: '关闭自动保存并继续', exact: true }).click();
     }
     await workflowModal.waitFor({ state: 'detached' });
+
+    assert.equal(await page.locator('.local-draft-bar').count(), 0, 'local draft settings must not be a home-page status bar');
+    const draftSettingsButton = page.getByRole('button', { name: '设置', exact: true });
+    await draftSettingsButton.click();
+    const draftDialog = page.getByRole('dialog', { name: '本机数据设置', exact: true });
+    await draftDialog.waitFor();
+    assert.equal(await draftDialog.evaluate(dialog => dialog.contains(document.activeElement)), true, 'opening settings should move focus into the modal');
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await draftDialog.getByRole('button', { name: '完成', exact: true }).evaluate(button => button === document.activeElement), true, 'Shift+Tab from the first control should wrap to the final control');
+    await page.keyboard.press('Tab');
+    assert.equal(await draftDialog.getByRole('button', { name: '关闭本机数据设置', exact: true }).evaluate(button => button === document.activeElement), true, 'Tab from the final control should wrap to the first control');
+    await draftDialog.getByRole('checkbox', { name: '自动保存到本机浏览器', exact: true }).press('Space');
+    assert.match(await draftDialog.getByRole('status').allTextContents().then(items => items.join(' ')), /自动保存已关闭|自动保存已开启/);
+    await page.keyboard.press('Escape');
+    await draftDialog.waitFor({ state: 'detached' });
+    assert.equal(await draftSettingsButton.evaluate(button => button === document.activeElement), true, 'closing settings should restore focus to its trigger');
+    assert.equal(await page.locator('.local-draft-bar').count(), 0, 'closing settings must leave no persistent draft bar');
+
+    const guide = page.locator('.workflow-guide');
+    await guide.waitFor();
+    assert.deepEqual(await guide.locator('.workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
+    assert.equal(await guide.locator('.workflow-guide-step-copy').count(), 0, 'collapsed guide should show only numbered steps');
+    await guide.getByRole('button', { name: '展开快速上手', exact: true }).click();
+    assert.equal(await guide.locator('.workflow-guide-step-copy').count(), 4, 'expanded guide should restore beginner guidance');
+    await guide.getByRole('button', { name: '收起快速上手', exact: true }).click();
 
     await page.getByRole('tab', { name: /能力档案/ }).click();
     await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
