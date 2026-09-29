@@ -2527,15 +2527,15 @@ button { font-family: inherit; }
    supporting copy and controls comfortable at a normal viewing distance. */
 @media (min-width: 901px) {
   .exploration-nav { height: 42px; }
-  .exploration-nav-item { height: 34px; padding-inline: 16px; font-size: 14px; }
-  .model-config-trigger { min-height: 40px; padding-inline: 16px; font-size: 13px; }
+  .exploration-nav-item { height: 38px; padding-inline: 16px; font-size: 15px; }
+  .model-config-trigger { min-height: 42px; padding-inline: 16px; font-size: 14px; }
 
   .exploration-pages :is(p, label, summary, li) {
-    font-size: max(15px, 1em) !important;
+    font-size: max(16px, 1em) !important;
   }
 
   .exploration-pages :is(button, input, select, textarea) {
-    font-size: max(14px, 1em) !important;
+    font-size: max(15px, 1em) !important;
   }
 
   .exploration-pages small,
@@ -2557,7 +2557,7 @@ button { font-family: inherit; }
     .path-branch-grid small, .path-selected-detail > span, .path-selected-detail small,
     .sprint-list button > b, .sprint-list small, .sprint-list em, .path-action-hub span
   ) {
-    font-size: 13px !important;
+    font-size: 14px !important;
   }
 
   .exploration-pages :is(.jobs-stitch-note, .profile-step > header p, .profile-step > header span,
@@ -2568,35 +2568,35 @@ button { font-family: inherit; }
     .dimension-readouts span, .advice-placeholder p, .alternative-grid p,
     .paths-hero > p, .timeline-copy p, .timeline-card p, .path-branch-grid p,
     .path-selected-detail p, .sprint-list strong, .path-action-hub p) {
-    font-size: 15px !important;
+    font-size: 16px !important;
   }
 
   .jobs-stitch-search input,
   .profile-basic-grid :is(input, select, textarea),
   .matches-stitch-filter :is(input, select) {
-    font-size: 15px !important;
+    font-size: 16px !important;
   }
 
   .ai-config-panel :is(.ai-config-lead, label, input, select, .ai-provider-grid button strong,
     .ai-config-state, .ai-config-error) {
-    font-size: 15px !important;
+    font-size: 16px !important;
   }
   .ai-config-panel :is(.ai-config-kicker, .ai-config-label-note, .ai-provider-grid button span) {
-    font-size: 13px !important;
+    font-size: 14px !important;
   }
-  .ai-config-panel button:not(.ai-config-close) { font-size: 14px; }
+  .ai-config-panel button:not(.ai-config-close) { font-size: 15px; }
 }
 
 /* The process navigator stays deliberately small; explanations live in the
    re-openable onboarding dialog above. */
 .onboarding-trigger {
-  min-height: 32px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 999px;
   color: #d8d8d8;
   background: rgba(255, 255, 255, .025);
-  font: 400 10px "JetBrains Mono", Consolas, monospace;
+  font: 500 13px "JetBrains Mono", Consolas, monospace;
   cursor: pointer;
   transition: border-color .2s ease, background .2s ease, color .2s ease;
 }
@@ -2604,12 +2604,12 @@ button { font-family: inherit; }
 .onboarding-trigger span {
   display: inline-grid;
   place-items: center;
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   margin-right: 5px;
   border: 1px solid currentColor;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -2619,8 +2619,8 @@ button { font-family: inherit; }
   top: 50%;
   right: clamp(12px, 2.5vw, 34px);
   bottom: auto;
-  width: auto;
-  padding: 7px;
+  width: 74px;
+  padding: 8px;
   border-radius: 22px;
   background: rgba(16, 16, 16, .86);
   box-shadow: 0 18px 48px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(255, 255, 255, .025);
@@ -2629,6 +2629,7 @@ button { font-family: inherit; }
 
 .workflow-guide ol {
   display: grid;
+  justify-items: center;
   gap: 7px;
 }
 
@@ -2636,9 +2637,9 @@ button { font-family: inherit; }
 .workflow-guide.is-collapsed .workflow-guide-step {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  min-height: 42px;
+  width: 46px;
+  height: 46px;
+  min-height: 46px;
   padding: 0;
   border-radius: 50%;
   color: #a2a2a2;
@@ -2652,7 +2653,7 @@ button { font-family: inherit; }
   height: auto;
   border: 0;
   color: inherit;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .workflow-guide li.is-done .workflow-guide-step { border-color: rgba(182, 182, 182, .45); }
@@ -2664,13 +2665,14 @@ button { font-family: inherit; }
 
 .workflow-guide-next {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  min-height: 34px;
-  margin: 7px auto 0;
-  padding: 5px 6px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  width: 58px;
+  min-height: 54px;
+  margin: 9px auto 0;
+  padding: 6px 4px;
   border: 1px solid rgba(235, 235, 235, .42);
   border-radius: 12px;
   color: #ebebeb;
@@ -2680,12 +2682,12 @@ button { font-family: inherit; }
 }
 
 .workflow-guide-next:hover { border-color: rgba(235, 235, 235, .78); background: rgba(235, 235, 235, .15); transform: translateY(-1px); }
-.workflow-guide-next-mark { font: 600 16px/1 "JetBrains Mono", Consolas, monospace; }
+.workflow-guide-next-mark { display: block; width: 22px; height: 22px; color: #f5f5f5; }
 .workflow-guide-next-copy { display: grid; gap: 2px; min-width: 0; }
-.workflow-guide-next-copy small { color: #ebebeb; font-size: 9px; line-height: 1; }
+.workflow-guide-next-copy small { color: #f5f5f5; font-size: 14px; font-weight: 650; line-height: 1.2; }
 .workflow-guide-next-copy b { display: none; }
 
-.workflow-guide-next:focus-visible::after {
+.workflow-guide-next:is(:hover, :focus-visible)::after {
   content: attr(aria-label);
   position: absolute;
   right: calc(100% + 8px);
@@ -2697,7 +2699,7 @@ button { font-family: inherit; }
   border-radius: 8px;
   color: #f5f5f5;
   background: rgba(16, 16, 16, .96);
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.3;
   transform: translateY(-50%);
   pointer-events: none;
@@ -2742,21 +2744,21 @@ button { font-family: inherit; }
 .onboarding-wizard-kicker {
   margin: 0;
   color: #ebebeb;
-  font: 500 10px "JetBrains Mono", Consolas, monospace;
+  font: 500 12px "JetBrains Mono", Consolas, monospace;
   letter-spacing: .16em;
 }
 
 .onboarding-wizard-progress {
   margin: 8px 0 0;
   color: #959595;
-  font: 500 11px "JetBrains Mono", Consolas, monospace;
+  font: 500 12px "JetBrains Mono", Consolas, monospace;
 }
 
 .onboarding-wizard-close {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   flex: none;
   border: 1px solid rgba(255, 255, 255, .16);
   border-radius: 50%;
@@ -2771,14 +2773,14 @@ button { font-family: inherit; }
 .onboarding-wizard-close:disabled { opacity: .35; cursor: not-allowed; }
 
 .onboarding-wizard-intro { max-width: 700px; margin-top: 28px; }
-.onboarding-wizard-intro h2 { margin: 0; color: #ffffff; font-size: clamp(30px, 5vw, 56px); font-weight: 300; letter-spacing: -.065em; line-height: 1.04; }
-.onboarding-wizard-intro p:not(.onboarding-wizard-kicker) { margin: 18px 0 0; color: #bdbdbd; font-size: 14px; line-height: 1.85; }
+.onboarding-wizard-intro h2 { margin: 0; color: #ffffff; font-size: clamp(34px, 5vw, 58px); font-weight: 350; letter-spacing: -.06em; line-height: 1.08; }
+.onboarding-wizard-intro p:not(.onboarding-wizard-kicker) { margin: 18px 0 0; color: #d0d0d0; font-size: 16px; line-height: 1.75; }
 
 .onboarding-section-label {
   display: block;
   margin-bottom: 9px;
   color: #959595;
-  font: 500 10px/1.2 "JetBrains Mono", Consolas, monospace;
+  font: 500 12px/1.2 "JetBrains Mono", Consolas, monospace;
   letter-spacing: .16em;
   text-transform: uppercase;
 }
@@ -2804,18 +2806,18 @@ button { font-family: inherit; }
 .onboarding-route-number {
   display: grid;
   place-items: center;
-  width: 29px;
-  height: 29px;
+  width: 32px;
+  height: 32px;
   flex: none;
   border: 1px solid rgba(255, 255, 255, .3);
   border-radius: 50%;
   color: #f2f2f2;
-  font: 600 10px/1 "JetBrains Mono", Consolas, monospace;
+  font: 600 12px/1 "JetBrains Mono", Consolas, monospace;
 }
 
 .onboarding-route-copy { display: grid; gap: 3px; min-width: 0; }
-.onboarding-route-copy strong { overflow: hidden; color: #ececec; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.onboarding-route-copy small { color: #959595; font-size: 10px; line-height: 1.35; }
+.onboarding-route-copy strong { overflow: hidden; color: #ececec; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.onboarding-route-copy small { color: #b4b4b4; font-size: 12px; line-height: 1.35; }
 .onboarding-route-line { position: absolute; top: 14px; left: 42px; right: 9px; border-top: 1px solid rgba(255, 255, 255, .14); transform: translateX(0); }
 
 .onboarding-choice-heading {
@@ -2826,8 +2828,8 @@ button { font-family: inherit; }
 }
 
 .onboarding-choice-heading .onboarding-section-label { margin: 0; }
-.onboarding-choice-heading strong { color: #f4f4f4; font-size: 14px; font-weight: 600; }
-.onboarding-choice-heading small { color: #959595; font-size: 11px; }
+.onboarding-choice-heading strong { color: #f4f4f4; font-size: 16px; font-weight: 600; }
+.onboarding-choice-heading small { color: #b4b4b4; font-size: 13px; }
 
 .onboarding-start-grid {
   display: grid;
@@ -2852,11 +2854,11 @@ button { font-family: inherit; }
 
 .onboarding-start-card:hover { transform: translateY(-3px); border-color: rgba(235, 235, 235, .55); background: rgba(235, 235, 235, .07); }
 .onboarding-start-card.is-selected { border-color: #ebebeb; background: rgba(235, 235, 235, .1); box-shadow: 0 0 0 3px rgba(235, 235, 235, .09); }
-.onboarding-start-eyebrow { color: #a2a2a2; font: 500 10px "JetBrains Mono", Consolas, monospace; letter-spacing: .08em; }
-.onboarding-start-card strong { margin-top: 22px; color: #ffffff; font-size: 20px; font-weight: 550; }
-.onboarding-start-card > span:not(.onboarding-start-eyebrow) { margin-top: 11px; color: #bdbdbd; font-size: 12px; line-height: 1.7; }
-.onboarding-start-card em { align-self: end; margin-top: auto; padding-top: 20px; color: #ebebeb; font-size: 12px; font-style: normal; }
-.onboarding-start-card em b { margin-left: 5px; font-size: 16px; }
+.onboarding-start-eyebrow { color: #b4b4b4; font: 500 12px "JetBrains Mono", Consolas, monospace; letter-spacing: .08em; }
+.onboarding-start-card strong { margin-top: 20px; color: #ffffff; font-size: 22px; font-weight: 550; }
+.onboarding-start-card > span:not(.onboarding-start-eyebrow) { margin-top: 11px; color: #d0d0d0; font-size: 14px; line-height: 1.6; }
+.onboarding-start-card em { display: inline-flex; align-items: center; gap: 10px; align-self: end; margin-top: auto; padding-top: 18px; color: #f5f5f5; font-size: 14px; font-style: normal; font-weight: 600; }
+.onboarding-action-arrow { display: inline-block; width: 20px; height: 20px; flex: none; }
 
 .onboarding-storage-choice {
   display: flex;
@@ -2870,10 +2872,12 @@ button { font-family: inherit; }
   background: rgba(235, 235, 235, .055);
 }
 
-.onboarding-storage-choice strong { color: #f8f8f8; font-size: 13px; font-weight: 600; }
-.onboarding-storage-choice p { max-width: 530px; margin: 6px 0 0; color: #bdbdbd; font-size: 11px; line-height: 1.7; }
+.onboarding-storage-choice strong { color: #f8f8f8; font-size: 15px; font-weight: 600; }
+.onboarding-storage-choice p { max-width: 530px; margin: 6px 0 0; color: #d0d0d0; font-size: 13px; line-height: 1.6; }
 .onboarding-storage-actions { display: flex; flex: none; flex-wrap: wrap; gap: 8px; }
-.onboarding-storage-actions button { min-height: 38px; white-space: nowrap; }
+.onboarding-storage-actions button { min-height: 42px; font-size: 14px; white-space: nowrap; }
+.onboarding-storage-actions .ghost-button { color: #f2f2f2; border-color: rgba(255, 255, 255, .5); background: rgba(255, 255, 255, .04); }
+.onboarding-storage-actions .ghost-button:hover { border-color: #f2f2f2; background: rgba(255, 255, 255, .1); }
 
 .onboarding-wizard-footer {
   display: flex;
@@ -2885,9 +2889,9 @@ button { font-family: inherit; }
   border-top: 1px solid rgba(255, 255, 255, .1);
 }
 
-.onboarding-wizard-footer > span { color: #959595; font-size: 11px; line-height: 1.6; }
+.onboarding-wizard-footer > span { color: #b4b4b4; font-size: 13px; line-height: 1.6; }
 .onboarding-skip-button,
-.onboarding-back-button { padding: 5px 0; border: 0; color: #b4b4b4; background: transparent; font-size: 12px; cursor: pointer; }
+.onboarding-back-button { padding: 8px 0; border: 0; color: #d0d0d0; background: transparent; font-size: 14px; cursor: pointer; }
 .onboarding-skip-button:hover,
 .onboarding-back-button:hover { color: #ffffff; }
 .onboarding-skip-button:disabled { opacity: .4; cursor: not-allowed; }
@@ -2895,6 +2899,7 @@ button { font-family: inherit; }
 
 .onboarding-flow-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 30px 0 0;
   padding: 0;
@@ -2907,7 +2912,7 @@ button { font-family: inherit; }
   border-left: 2px solid rgba(255, 255, 255, .32);
   color: #b4b4b4;
   background: rgba(255, 255, 255, .035);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.65;
 }
 
@@ -2925,18 +2930,18 @@ button { font-family: inherit; }
 .onboarding-flow-number {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex: none;
   border: 1px solid rgba(235, 235, 235, .45);
   border-radius: 50%;
   color: #ebebeb;
-  font: 600 12px "JetBrains Mono", Consolas, monospace;
+  font: 600 14px "JetBrains Mono", Consolas, monospace;
 }
 
 .onboarding-flow-list li > span:last-child { display: grid; gap: 4px; }
-.onboarding-flow-list strong { color: #f8f8f8; font-size: 13px; font-weight: 600; }
-.onboarding-flow-list small { color: #b4b4b4; font-size: 11px; line-height: 1.45; }
+.onboarding-flow-list strong { color: #f8f8f8; font-size: 15px; font-weight: 600; }
+.onboarding-flow-list small { color: #d0d0d0; font-size: 13px; line-height: 1.45; }
 
 .onboarding-principles {
   display: grid;
@@ -2946,10 +2951,11 @@ button { font-family: inherit; }
 }
 
 .onboarding-principles div { padding: 15px; border-left: 2px solid #ebebeb; background: rgba(235, 235, 235, .055); }
-.onboarding-principles b { display: block; color: #ffffff; font-size: 12px; }
-.onboarding-principles span { display: block; margin-top: 7px; color: #bdbdbd; font-size: 11px; line-height: 1.65; }
+.onboarding-principles b { display: block; color: #ffffff; font-size: 14px; }
+.onboarding-principles span { display: block; margin-top: 7px; color: #d0d0d0; font-size: 13px; line-height: 1.6; }
 .onboarding-wizard-footer-final { justify-content: flex-end; }
-.onboarding-wizard-footer-final .primary-button { min-width: 180px; }
+.onboarding-wizard-footer-final .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 210px; min-height: 48px; margin-top: 0; font-size: 15px; }
+.onboarding-wizard-footer-final .onboarding-skip-button { white-space: nowrap; }
 
 @media (max-width: 900px) {
   .onboarding-trigger { padding-inline: 10px; }
@@ -2960,17 +2966,18 @@ button { font-family: inherit; }
   .exploration-header-actions { flex-wrap: wrap; justify-content: flex-end; }
   .onboarding-trigger,
   .settings-trigger,
-  .model-config-trigger { padding: 0 9px; font-size: 9px; }
+  .model-config-trigger { padding: 0 10px; font-size: 11px; }
   .workflow-guide { right: 10px; padding: 6px; }
   .workflow-guide-step,
-  .workflow-guide.is-collapsed .workflow-guide-step { width: 38px; height: 38px; min-height: 38px; }
-  .workflow-guide-next { width: 38px; min-height: 32px; }
+  .workflow-guide.is-collapsed .workflow-guide-step { width: 42px; height: 42px; min-height: 42px; }
+  .workflow-guide-next { width: 58px; min-height: 52px; }
   .onboarding-wizard { max-height: calc(100vh - 24px); padding: 24px 18px; border-radius: 20px; }
   .onboarding-route-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 0; }
   .onboarding-route-preview li { padding-right: 12px; }
   .onboarding-route-line { display: none; }
   .onboarding-start-grid,
   .onboarding-principles { grid-template-columns: 1fr; }
+  .onboarding-flow-list { grid-template-columns: 1fr; }
   .onboarding-start-card { min-height: 0; }
   .onboarding-choice-heading { display: grid; gap: 5px; }
   .onboarding-storage-choice { display: grid; }

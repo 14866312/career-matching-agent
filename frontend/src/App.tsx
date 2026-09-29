@@ -434,11 +434,12 @@ export default function App() {
           className="workflow-guide-next"
           type="button"
           aria-label={'下一步：' + continueLabel}
-          title={continueLabel}
           onClick={continueWorkflow}
         >
-          <span className="workflow-guide-next-mark" aria-hidden="true">↗</span>
-          <span className="workflow-guide-next-copy"><small>继续</small><b>{continueLabel}</b></span>
+          <svg className="workflow-guide-next-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <path d="M4 12h16m-7-7 7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="workflow-guide-next-copy"><small>下一步</small><b>{continueLabel}</b></span>
         </button>
       </aside>}
       {(onboardingOpen || autosaveChoicePending) && <OnboardingWizard

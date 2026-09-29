@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export type OnboardingStart = 'resume' | 'manual' | 'jobs';
 export type OnboardingOutcome = 'completed' | 'skipped';
@@ -61,6 +61,14 @@ function focusableElements(container: HTMLElement | null): HTMLElement[] {
   )).filter(element => !element.hidden && element.getClientRects().length > 0);
 }
 
+function ArrowRightIcon() {
+  return (
+    <svg className="onboarding-action-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M4 12h16m-7-7 7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function OnboardingWizard({
   autosaveChoicePending,
   autosaveAvailable,
@@ -72,6 +80,14 @@ export default function OnboardingWizard({
   const dialogRef = useRef<HTMLElement | null>(null);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
+
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    dialog.scrollTop = 0;
+    if (screen === 1) dialog.querySelector<HTMLButtonElement>('.onboarding-back-button')?.focus({ preventScroll: true });
+    else dialog.focus({ preventScroll: true });
+  }, [screen]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -206,7 +222,7 @@ export default function OnboardingWizard({
                   <span className="onboarding-start-eyebrow">{point.eyebrow}</span>
                   <strong>{point.title}</strong>
                   <span>{point.description}</span>
-                  <em>{point.action} <b aria-hidden="true">→</b></em>
+                  <em>{point.action}<ArrowRightIcon /></em>
                 </button>
               ))}
             </div>
@@ -219,7 +235,7 @@ export default function OnboardingWizard({
         ) : (
           <>
             <div className="onboarding-wizard-intro">
-              <button className="onboarding-back-button" type="button" onClick={() => setScreen(0)}>← 重新选择入口</button>
+              <button className="onboarding-back-button" type="button" onClick={() => setScreen(0)}>重新选择入口</button>
               <span className="onboarding-section-label">第二步</span>
               <h2 id="onboarding-wizard-title">准备好，按这条线继续</h2>
               <p id="onboarding-wizard-description">当前入口：{startPoint?.title}。{startPoint?.description}</p>
@@ -256,7 +272,7 @@ export default function OnboardingWizard({
             <footer className="onboarding-wizard-footer onboarding-wizard-footer-final">
               <button className="onboarding-skip-button" type="button" disabled={!canLeave} onClick={() => onFinish('skipped')}>跳过教程</button>
               <button className="primary-button" type="button" disabled={!canLeave || !selectedStart} onClick={() => selectedStart && onFinish('completed', selectedStart)}>
-                {startPoint?.action ?? '开始使用'} <span aria-hidden="true">→</span>
+                {startPoint?.action ?? '开始使用'} <ArrowRightIcon />
               </button>
             </footer>
           </>
