@@ -511,7 +511,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
 
     summary = _summarize(items)
     satisfied_items = [x for x in items if x['status'] == 'satisfied']
-    gap_items = [x for x in items if x['status'] == 'gap']
     pending_items = [x for x in items if x['status'] == 'pending']
     counted_keys = list(seen_keys)
     extra_tags = []
@@ -552,7 +551,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
         'dimensions': [_dimension_summary(dimension, [x for x in items if x['dimension'] == dimension]) for dimension in DIMENSIONS],
         'items': items,
         'satisfied_items': satisfied_items,
-        'gap_items': gap_items,
         'pending_items': pending_items,
         'weak_proficiency_items': [x for x in satisfied_items if x['proficiency_shortfall']],
         'related_items': [x for x in items if x['related_only']],
@@ -644,7 +642,6 @@ def _reason_facts(match):
         'required': match['required'],
         'satisfied': match['satisfied'],
         'satisfied_labels': [x['label'] for x in match['satisfied_items']],
-        'gap_labels': [x['label'] for x in match['gap_items']],
         'pending_labels': [x['label'] for x in match['pending_items']],
         'related_base_labels': [x['label'] for x in match['related_items']],
         'proficiency_shortfall_labels': [x['label'] for x in match['weak_proficiency_items']],

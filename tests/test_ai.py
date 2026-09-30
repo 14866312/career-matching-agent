@@ -555,7 +555,7 @@ async def test_report_pending_directions_and_intention_use_supplied_facts(fake_h
     student.intention.city = '南京'
     match = {
         'items': [{'tag_id': 'java', 'label': 'Java', 'status': 'pending', 'contribution': 0, 'related_only': False}],
-        'satisfied': 0, 'required': 1, 'pending_items': ['java'], 'gap_items': [],
+        'satisfied': 0, 'required': 1, 'pending_items': ['java'],
     }
     original = json.dumps(match, sort_keys=True)
     calls = fake_http([{'focus': '补充证据', 'activities': [{'tag_id': 'java', 'steps': ['整理课程项目源码并自查可独立完成的部分']}]}])

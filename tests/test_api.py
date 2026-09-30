@@ -146,8 +146,10 @@ def test_llm_config_rejects_unknown_adapter(client):
 
 def test_calculation_and_recommendation_consistent(client):
     r = client.post('/api/matches', json={'job_id': 'java', 'student': student()}).json()
+    assert 'gap_items' not in r
     rec = client.post('/api/recommendations', json={'student': student()}).json()
     java = next(x for x in rec['items'] if x['job_id'] == 'java')
+    assert 'gap_items' not in java['match']
     assert java['match']['basic'] == r['basic']
     assert java['match']['input_version'] == r['input_version']
     changed = student()

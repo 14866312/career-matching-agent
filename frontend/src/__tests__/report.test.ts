@@ -18,7 +18,6 @@ const report: ReportResp = {
     dimensions: [],
     items: [],
     satisfied_items: [],
-    gap_items: [],
     pending_items: []
   },
   advice: { fit_evaluation: '基础尚可。', learning_directions: ['Vue 生态'], learning_steps: ['完成官方教程'] },

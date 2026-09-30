@@ -154,7 +154,6 @@ export interface MatchResult {
   dimensions: DimResult[];
   items: MatchItem[];
   satisfied_items: MatchItem[];
-  gap_items: MatchItem[];
   pending_items: MatchItem[];
   notice?: string;
 }
