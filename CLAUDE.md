@@ -28,9 +28,11 @@ npm.cmd --prefix frontend run build                                          # t
 npm.cmd --prefix tests/browser test              # run.cjs；test:ui 跑 ui_regressions.cjs；默认用本机 Edge，PW_CHANNEL=chromium 可切换，E2E_URL 改地址
 
 .venv/Scripts/python.exe scripts/smoke_live.py   # 生产服务启动后真实调用已配置的模型供应商
+.venv/Scripts/python.exe -m ruff check backend scripts tests  # Python 静态检查
+npm.cmd --prefix frontend run lint                         # TypeScript/React 静态检查
 ```
 
-修改前端后必须重新 `run build` 并重启服务，`start.ps1` 不会重复安装或构建。项目没有配置 lint 工具。
+修改前端后必须重新 run build 并重启服务，start.ps1 不会重复安装或构建。Ruff 和 ESLint 只做检查，不自动改写文件。
 
 ## 架构
 
