@@ -1,6 +1,6 @@
 # 本机自动保存与成长路径保存
 
-Status: ready-for-agent
+Status: ready-for-human
 
 ## Scope
 
