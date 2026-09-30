@@ -123,4 +123,4 @@ AIError 对外只提供固定中文消息、code、retryable；不在消息中�
 .venv/Scripts/python.exe -m pytest tests/test_ai.py tests/test_api.py tests/test_resume.py -q
 ~~~
 
-最终回归见 docs/验收产物/后端测试.txt 与 验收产物/后端测试.txt。AI 专项包含127项测试，覆盖总预算、重试额度、ConnectTimeout 允许一次重试、其他超时不重试、响应流关闭、外部取消、畸形 JSON、严格 Schema、原文上下文/引用边界/否定、拒绝无证据优势、拒绝模型分数覆盖、输入不变及意向/确定性事实传递。所有 AI 测试使用模拟传输和虚构配置，没有真实 API 成功含义。
+最终回归见 docs/acceptance/后端测试.txt。AI 专项包含127项测试，覆盖总预算、重试额度、ConnectTimeout 允许一次重试、其他超时不重试、响应流关闭、外部取消、畸形 JSON、严格 Schema、原文上下文/引用边界/否定、拒绝无证据优势、拒绝模型分数覆盖、输入不变及意向/确定性事实传递。所有 AI 测试使用模拟传输和虚构配置，没有真实 API 成功含义。

@@ -10,7 +10,7 @@ if (-not (Test-Path -LiteralPath $pythonExe)) {
     & $basePython.Source -m venv $venvFull
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create Python environment.' }
 }
-& $pythonExe -m pip install -r (Join-Path $PSScriptRoot 'Python依赖锁定.txt')
+& $pythonExe -m pip install -r (Join-Path $PSScriptRoot 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { throw 'Python dependency installation failed.' }
 & $pythonExe -m pip check
 if ($LASTEXITCODE -ne 0) { throw 'Python dependency validation failed.' }
@@ -24,4 +24,4 @@ if (-not $SkipFrontend) {
         if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
     } finally { Pop-Location }
 }
-Write-Host 'Installation complete. Configure .env locally if AI is needed, then run ./启动服务.ps1.'
+Write-Host 'Installation complete. Configure .env locally if AI is needed, then run ./start.ps1.'

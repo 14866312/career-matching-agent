@@ -1,6 +1,5 @@
 .env
-.venv/
-.venv-acceptance/
+.venv*/
 node_modules/
 frontend/dist/
 __pycache__/
@@ -10,3 +9,5 @@ test-results/
 playwright-report/
 *.log
 *.pyc
+tmp/
+.claude/settings.local.json

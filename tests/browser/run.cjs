@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'docs/验收产物');
+const out = path.join(root, 'docs/acceptance');
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 const results = [];
 let browser, context, page;

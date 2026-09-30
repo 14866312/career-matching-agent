@@ -6,17 +6,17 @@
 
 ## 安装与启动（Windows / PowerShell）
 
-需要 Python 3.12、Node.js 20+ 和 npm。首次安装需要网络；前端与 Python 的完整依赖分别锁在 frontend/package-lock.json 和 Python依赖锁定.txt。
+需要 Python 3.12、Node.js 20+ 和 npm。首次安装需要网络；前端与 Python 的完整依赖分别锁在 frontend/package-lock.json 和 requirements.txt。
 
 ~~~powershell
 cd C:/Users/Administrator/Desktop/智能体
-./安装环境.ps1
+./install.ps1
 Copy-Item .env.example .env
 # 用本机编辑器填写 .env，切勿把密钥发送到聊天或提交到版本库。
-./启动服务.ps1
+./start.ps1
 ~~~
 
-打开 http://127.0.0.1:8000。关闭服务终端或按 Ctrl+C 停止。端口占用时使用 ./启动服务.ps1 -Port 8001。脚本从自身目录定位文件，也可从别的目录调用。启动不重复安装依赖；修改前端后在 frontend 运行 npm.cmd run build 并重启服务。
+打开 http://127.0.0.1:8000。关闭服务终端或按 Ctrl+C 停止。端口占用时使用 ./start.ps1 -Port 8001。脚本从自身目录定位文件，也可从别的目录调用。启动不重复安装依赖；修改前端后在 frontend 运行 npm.cmd run build 并重启服务。
 
 .env 的 LLM_BASE_URL、LLM_MODEL、LLM_API_KEY 应使用你自己的可信兼容 Chat Completions 供应商；示例域名不提供服务。每次模型请求总时限45秒，连接故障、429和5xx最多自动重试一次。更改配置后重启。无需模型配置也能浏览岗位、路径，并对人工确认的能力进行确定性匹配；AI画像、简历模型预填和建议需真实服务。
 
@@ -38,7 +38,7 @@ Copy-Item .env.example .env
 
 推荐最多5个典型岗位，默认基础分排序，同分按岗位ID。城市、薪资条件针对实际样本记录；同计薪周期区间重叠，日薪/月薪不换算。无薪资条件保留未知薪资。技能筛选要求全部所选标签出现。候选不足3个如实展示。
 
-所有招聘信息来自赛题样本，不保证仍有效。岗位画像是初级职业基线，晋升与换岗路径为人工整理的条件性建议，不保证录用、薪资或直接转岗。数据口径与证据规则见 scripts/数据字典.md；模型契约见 docs/AI接口契约.md。
+所有招聘信息来自赛题样本，不保证仍有效。岗位画像是初级职业基线，晋升与换岗路径为人工整理的条件性建议，不保证录用、薪资或直接转岗。数据口径与证据规则见 docs/数据字典.md；模型契约见 docs/AI接口契约.md。
 
 ## 文件与隐私
 
@@ -64,6 +64,6 @@ npm.cmd --prefix tests/browser test
 
 浏览器测试默认 http://127.0.0.1:8011；可通过 E2E_URL 改地址。E2E服务只替换模型JSON，不替换匹配、验证、文件解析和报告组装。真实调用脚本缺配置时退出码2，失败退出码1，全部步骤成功才退出0；只输出脱敏状态。
 
-独立干净Python安装可用 ./安装环境.ps1 -VenvPath .venv-acceptance -SkipFrontend，随后用相同 -VenvPath 启动。最终验收状态和已知限制以 docs/验收产物/后端测试.txt 为准；mock自动化不替代 P2/P5 真实调用门槛。
+独立干净Python安装可用 ./install.ps1 -VenvPath .venv-acceptance -SkipFrontend，随后用相同 -VenvPath 启动。最终验收状态和已知限制以 docs/acceptance/后端测试.txt 为准；mock自动化不替代 P2/P5 真实调用门槛。
 
-项目结构：backend/app 为服务与业务逻辑，backend/data 为生成数据，frontend 为界面，scripts 为数据和验收入口，tests 为测试，samples 为虚构示例，competition 为只读原始赛题材料。
+项目结构：backend/app 为服务与业务逻辑，backend/data 为生成数据，frontend 为界面，scripts 为数据和验收入口，tests 为测试，samples 为虚构示例，competition 为只读原始赛题材料。docs 存放契约、数据字典、审定记录和操作指南；docs/acceptance 为验收产物，docs/learning 为项目教学材料，docs/archive 为历史过程记录；.scratch 为按功能划分的需求与 issue。
