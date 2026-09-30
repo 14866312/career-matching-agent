@@ -9,7 +9,7 @@ from backend.app.resume import MAX_BYTES
 
 @pytest.fixture
 def client():
-    return TestClient(main.app)
+    return TestClient(main.app, base_url='http://127.0.0.1')
 
 
 def student():
@@ -98,13 +98,60 @@ def test_llm_config_api_never_returns_api_key(client, monkeypatch):
     retained = client.post('/api/llm/config', json={
         'provider': 'openai',
         'adapter': 'chat-completions',
-        'base_url': 'https://api.openai.com/v1',
+        'base_url': 'https://api.deepseek.com',
         'model': 'gpt-4o-mini'
     })
     assert retained.status_code == 200
     assert retained.json()['adapter'] == 'chat-completions'
     assert retained.json()['has_api_key'] is True
-    assert 'test-secret-key' not in retained.text
+
+    changed_without_key = client.post('/api/llm/config', json={
+        'provider': 'openai',
+        'adapter': 'chat-completions',
+        'base_url': 'https://api.openai.com/v1',
+        'model': 'gpt-4o-mini'
+    })
+    assert changed_without_key.status_code == 400
+    assert changed_without_key.json()['error']['code'] == 'LLM_CONFIG'
+    assert 'test-secret-key' not in changed_without_key.text
+
+    changed_with_key = client.post('/api/llm/config', json={
+        'provider': 'openai',
+        'adapter': 'chat-completions',
+        'base_url': 'https://api.openai.com/v1',
+        'model': 'gpt-4o-mini',
+        'api_key': 'replacement-secret-key'
+    })
+    assert changed_with_key.status_code == 200
+    assert changed_with_key.json()['has_api_key'] is True
+    assert 'replacement-secret-key' not in changed_with_key.text
+
+
+def test_llm_config_allows_localhost_address_change_without_reentering_key(client, monkeypatch):
+    monkeypatch.setenv('LLM_BASE_URL', 'http://127.0.0.1:9000')
+    monkeypatch.setenv('LLM_MODEL', 'local-model')
+    monkeypatch.setenv('LLM_API_KEY', 'local-secret-key')
+    response = client.post('/api/llm/config', json={
+        'base_url': 'http://localhost:9001',
+        'model': 'local-model'
+    })
+    assert response.status_code == 200
+    assert response.json()['has_api_key'] is True
+    assert 'local-secret-key' not in response.text
+
+
+def test_llm_config_rejects_non_local_host(client):
+    response = client.get('/api/llm/config', headers={'host': 'example.invalid'})
+    assert response.status_code == 403
+    assert response.json()['error']['code'] == 'HOST_NOT_ALLOWED'
+    response = client.post('/api/llm/config', headers={'host': 'example.invalid'}, json={
+        'base_url': 'https://api.openai.com/v1',
+        'model': 'test-model',
+        'api_key': 'secret'
+    })
+    assert response.status_code == 403
+    assert response.json()['error']['code'] == 'HOST_NOT_ALLOWED'
+    assert 'secret' not in response.text
 
 
 def test_llm_connection_test_is_explicit_and_returns_no_secret(client, monkeypatch):

@@ -11,7 +11,9 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
   });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    let configPosts = 0;
     await page.route('**/api/llm/config', route => {
+      if (route.request().method() === 'POST') configPosts += 1;
       const config = route.request().method() === 'GET'
         ? { provider: 'openai', adapter: 'openai-responses', base_url: 'https://api.openai.com/v1', model: 'existing-model', configured: true, has_api_key: true }
         : { provider: 'openai', adapter: 'openai-responses', base_url: 'https://api.openai.com/v1', model: 'mock-model', configured: true, has_api_key: true };
@@ -90,8 +92,14 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     assert.match(state, /尚未验证/, '填写配置不应被显示为已经可用');
     const testButton = dialog.getByRole('button', { name: '测试连接' });
     const modelInput = dialog.locator('label').filter({ hasText: '模型名称' }).locator('input');
+    const baseUrlInput = dialog.locator('label').filter({ hasText: '接口地址' }).locator('input');
     await modelInput.fill('mock-model');
     assert.equal(await testButton.isDisabled(), true, '尚未保存的配置不能直接进行连接测试');
+    await baseUrlInput.fill('https://api.example.com/v1');
+    await dialog.getByRole('button', { name: '保存配置' }).click();
+    await dialog.getByRole('alert').getByText('修改接口地址时必须重新输入 API 密钥。').waitFor();
+    assert.equal(configPosts, 0, 'changing a remote base URL without a new key must be blocked in the UI');
+    await baseUrlInput.fill('https://api.openai.com/v1');
     await dialog.getByRole('button', { name: '保存配置' }).click();
     await dialog.getByRole('status').getByText('配置已保存，连接尚未验证').waitFor();
     assert.equal(await dialog.isVisible(), true, '保存后应留在配置页，以便立即测试连接');

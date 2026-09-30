@@ -5,6 +5,19 @@ import type { LLMConfig } from '../types';
 type Provider = LLMConfig['provider'];
 type Adapter = LLMConfig['adapter'];
 
+function normalizeBaseUrl(value: string): string {
+  return value.trim().replace(/\/+$/, '');
+}
+
+function isLoopbackHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]' || url.hostname === '::1');
+  } catch {
+    return false;
+  }
+}
+
 const PRESETS: Record<Provider, { label: string; description: string; baseUrl: string; model: string; adapter: Adapter }> = {
   deepseek: {
     label: 'DeepSeek',
@@ -29,6 +42,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
   const [model, setModel] = useState(PRESETS.deepseek.model);
   const [apiKey, setApiKey] = useState('');
   const [hasKey, setHasKey] = useState(false);
+  const [savedBaseUrl, setSavedBaseUrl] = useState('');
   const [configured, setConfigured] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [connectionTested, setConnectionTested] = useState(false);
@@ -59,6 +73,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
         setBaseUrl(config.base_url || PRESETS[config.provider].baseUrl);
         setModel(config.model || PRESETS[config.provider].model);
         setHasKey(config.has_api_key);
+        setSavedBaseUrl(config.base_url || '');
         setConfigured(config.configured);
       })
       .catch(err => {
@@ -82,6 +97,12 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
 
   async function save() {
     setError('');
+    const baseChanged = Boolean(savedBaseUrl) && normalizeBaseUrl(savedBaseUrl) !== normalizeBaseUrl(baseUrl);
+    const localAddressChange = isLoopbackHttpUrl(savedBaseUrl) && isLoopbackHttpUrl(baseUrl);
+    if (baseChanged && hasKey && !localAddressChange && !apiKey.trim()) {
+      setError('修改接口地址时必须重新输入 API 密钥。');
+      return;
+    }
     setBusy(true);
     try {
       const config = await apiPost<LLMConfig>('/api/llm/config', {
@@ -92,6 +113,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
         api_key: apiKey.trim() || undefined
       });
       setHasKey(config.has_api_key);
+      setSavedBaseUrl(config.base_url || baseUrl);
       setConfigured(config.configured);
       setDirty(false);
       setConnectionTested(false);

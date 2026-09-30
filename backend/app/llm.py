@@ -1,9 +1,11 @@
 """Stateless, evidence-bound adapter for configurable Chat Completions services."""
 import asyncio
+import ipaddress
 import json
 import os
 import re
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -13,6 +15,7 @@ from .matching import canonical
 from .models import Ability, StudentProfile
 
 LLM_ADAPTERS = {'openai-responses', 'chat-completions'}
+PLACEHOLDER_KEYS = {'replace-with-your-local-key', 'your-api-key', 'YOUR_API_KEY'}
 
 
 class AIError(Exception):
@@ -23,7 +26,7 @@ class AIError(Exception):
 
 def configured():
     values = [os.environ.get(k, '').strip() for k in ('LLM_BASE_URL', 'LLM_MODEL', 'LLM_API_KEY')]
-    return all(values) and values[2] not in {'replace-with-your-local-key', 'your-api-key', 'YOUR_API_KEY'}
+    return all(values) and values[2] not in PLACEHOLDER_KEYS
 
 
 def config_snapshot():
@@ -38,8 +41,32 @@ def config_snapshot():
         'base_url': base_url,
         'model': model,
         'configured': configured(),
-        'has_api_key': bool(key) and key not in {'replace-with-your-local-key', 'your-api-key', 'YOUR_API_KEY'},
+        'has_api_key': bool(key) and key not in PLACEHOLDER_KEYS,
     }
+
+
+def _is_loopback_http_url(value: str) -> bool:
+    try:
+        parsed = urlsplit(value)
+        host = parsed.hostname
+    except ValueError:
+        return False
+    if parsed.scheme.lower() != 'http' or not host:
+        return False
+    if host.lower() == 'localhost':
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _is_allowed_model_url(value: str) -> bool:
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    return bool(parsed.hostname) and (parsed.scheme.lower() == 'https' or _is_loopback_http_url(value))
 
 
 def update_config(base_url: str, model: str, api_key: str | None = None, adapter: str = 'chat-completions'):
@@ -52,13 +79,19 @@ def update_config(base_url: str, model: str, api_key: str | None = None, adapter
         raise AIError('LLM_CONFIG', '暂不支持该模型适配器。')
     endpoint = 'responses' if adapter == 'openai-responses' else 'chat/completions'
     probe = base_url if base_url.endswith('/' + endpoint) else base_url + '/' + endpoint
-    if not probe.startswith(('https://', 'http://127.0.0.1:', 'http://localhost:')):
+    if not _is_allowed_model_url(probe):
         raise AIError('LLM_CONFIG', '模型地址需使用 HTTPS，或本机回环 HTTP 地址。')
+    previous_base_url = os.environ.get('LLM_BASE_URL', '').strip().rstrip('/')
+    supplied_key = (api_key or '').strip()
+    base_changed = bool(previous_base_url) and previous_base_url != base_url
+    loopback_change = _is_loopback_http_url(previous_base_url) and _is_loopback_http_url(base_url)
+    if base_changed and not loopback_change and not supplied_key:
+        raise AIError('LLM_CONFIG', '修改接口地址时必须重新输入 API 密钥。')
     os.environ['LLM_BASE_URL'] = base_url
     os.environ['LLM_MODEL'] = model
     os.environ['LLM_ADAPTER'] = adapter
-    if api_key and api_key.strip():
-        os.environ['LLM_API_KEY'] = api_key.strip()
+    if supplied_key:
+        os.environ['LLM_API_KEY'] = supplied_key
     return config_snapshot()
 
 
@@ -75,7 +108,7 @@ async def call_json(instruction, payload):
         raise AIError('LLM_CONFIG', '暂不支持该模型适配器。')
     endpoint = 'responses' if adapter == 'openai-responses' else 'chat/completions'
     url = base if base.endswith('/' + endpoint) else base + '/' + endpoint
-    if not url.startswith(('https://', 'http://127.0.0.1:', 'http://localhost:')):
+    if not _is_allowed_model_url(url):
         raise AIError('LLM_CONFIG', '模型地址需使用 HTTPS，或本机回环 HTTP 地址。')
     if adapter == 'openai-responses':
         body = {

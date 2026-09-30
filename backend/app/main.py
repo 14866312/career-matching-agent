@@ -2,7 +2,9 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from ipaddress import ip_address
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Request, UploadFile
@@ -43,6 +45,22 @@ class LLMConfigUpdate(BaseModel):
 def error(request, code, message, status=400, retryable=False):
     request_id = getattr(request.state, 'request_id', uuid4().hex)
     return JSONResponse(status_code=status, content={'error': {'code': code, 'message': message, 'retryable': retryable, 'request_id': request_id}}, headers={'X-Request-ID': request_id, 'Cache-Control': 'no-store'})
+
+
+def _local_config_host(request: Request) -> bool:
+    raw_host = request.headers.get('host', '').strip()
+    try:
+        host = urlsplit('//' + raw_host).hostname
+    except ValueError:
+        return False
+    if not host:
+        return False
+    if host.lower() == 'localhost':
+        return True
+    try:
+        return ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 @app.middleware('http')
@@ -95,12 +113,16 @@ def health():
 
 
 @app.get('/api/llm/config')
-def llm_config():
+def llm_config(request: Request):
+    if not _local_config_host(request):
+        return error(request, 'HOST_NOT_ALLOWED', '模型配置只允许从本机访问。', 403)
     return config_snapshot()
 
 
 @app.post('/api/llm/config')
-def save_llm_config(payload: LLMConfigUpdate):
+def save_llm_config(request: Request, payload: LLMConfigUpdate):
+    if not _local_config_host(request):
+        return error(request, 'HOST_NOT_ALLOWED', '模型配置只允许从本机访问。', 403)
     return update_config(payload.base_url, payload.model, payload.api_key, payload.adapter)
 
 
