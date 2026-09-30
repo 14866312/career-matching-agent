@@ -114,9 +114,8 @@ export interface CareerPaths {
 }
 
 export interface MatchItem extends Requirement {
-  status: 'satisfied' | 'gap' | 'pending';
+  status: 'satisfied' | 'pending';
   pending_reason?: 'not_provided' | 'unconfirmed' | 'missing_evidence' | string;
-  gap_reason?: 'confirmed_absent' | string;
   student_level: number | null;
   student_evidence: string;
   contribution: number;

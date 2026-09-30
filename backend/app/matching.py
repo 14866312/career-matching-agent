@@ -370,7 +370,6 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
     # self-report or resume extraction can count as a present skill.
     status = 'satisfied' if ability is not None and level > 0 else 'pending'
     pending_reason = '' if status == 'satisfied' else 'not_provided'
-    gap_reason = ''
 
     contribution, contribution_type, basis, relations_used, shortfall = 0.0, 'none', '', [], False
     if status == 'satisfied':
@@ -421,7 +420,6 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
         'preferred': bool(preferred),
         'status': status,
         'pending_reason': pending_reason,
-        'gap_reason': gap_reason,
         'student_level': level if (ability is not None and level > 0) else None,
         'student_reported_level': level,
         'student_confirmed': confirmed,
@@ -442,7 +440,6 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
 def _summarize(items):
     total = len(items)
     satisfied = sum(1 for x in items if x['status'] == 'satisfied')
-    gap = sum(1 for x in items if x['status'] == 'gap')
     pending = sum(1 for x in items if x['status'] == 'pending')
     exact = sum(x['contribution'] for x in items if x['contribution_type'] == 'exact')
     related = sum(x['contribution'] for x in items if x['contribution_type'] == 'related')
@@ -454,7 +451,6 @@ def _summarize(items):
         'status_text': STATUS_TEXT[status],
         'required': total,
         'satisfied': satisfied,
-        'gap': gap,
         'pending': pending,
         'basic': basic,
         'enhanced': enhanced,
@@ -558,7 +554,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
             'total': len(preferred_items),
             'satisfied': sum(1 for x in preferred_items if x['status'] == 'satisfied'),
             'pending': sum(1 for x in preferred_items if x['status'] == 'pending'),
-            'gap': sum(1 for x in preferred_items if x['status'] == 'gap'),
             'matched_labels': [x['label'] for x in preferred_items if x['status'] == 'satisfied'],
             'missing_labels': [x['label'] for x in preferred_items if x['status'] != 'satisfied'],
             'note': '优先项只作为补充建议展示，不计入基础分与增强分的分母。',
