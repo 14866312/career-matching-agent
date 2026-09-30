@@ -4,10 +4,14 @@ Exit codes: 0 all steps passed, 1 a step failed, 2 local model configuration mis
 """
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
 import httpx
 ROOT = Path(__file__).resolve().parents[1]
+PLACEHOLDER_KEYS = {'replace-with-your-local-key', 'your-api-key', 'YOUR_API_KEY'}
 # Fictional names used only to probe session-name isolation. They are never printed.
 PROBE_NAME = '林晓'
 EDITED_NAME = '周述安'
@@ -15,6 +19,12 @@ EDITED_NAME = '周述安'
 
 class StepFailed(Exception):
     pass
+
+
+def local_model_configured():
+    load_dotenv(ROOT / '.env')
+    values = [os.environ.get(key, '').strip() for key in ('LLM_BASE_URL', 'LLM_MODEL', 'LLM_API_KEY')]
+    return all(values) and values[2] not in PLACEHOLDER_KEYS
 
 
 def _contains(value, *names):
@@ -104,6 +114,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='http://127.0.0.1:8000')
     args = parser.parse_args()
+    if not local_model_configured():
+        print(json.dumps({'status': 'not_verified', 'reason': 'Local model configuration missing. Configure .env and restart; live acceptance remains unpassed.'}))
+        return 2
     try:
         with httpx.Client(base_url=args.url, timeout=100, follow_redirects=False) as client:
             return run(client)

@@ -33,6 +33,13 @@ def test_missing_configuration_exits_2(monkeypatch):
     assert code == 2 and 'not_verified' in output
 
 
+def test_cli_missing_configuration_exits_2_before_connecting(monkeypatch, capsys):
+    monkeypatch.setattr(smoke, 'local_model_configured', lambda: False)
+    monkeypatch.setattr(smoke.sys, 'argv', ['smoke_live.py'])
+    assert smoke.main() == 2
+    assert 'not_verified' in capsys.readouterr().out
+
+
 def test_all_steps_pass_without_printing_names(monkeypatch):
     code, output = run_smoke(monkeypatch)
     assert code == 0, output
