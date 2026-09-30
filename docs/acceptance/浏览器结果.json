@@ -1,87 +1,77 @@
 {
-  "tested_at": "2026-09-28T04:12:11.901Z",
+  "tested_at": "2026-09-30T06:51:25.475Z",
   "ai": "MOCK ONLY — not real API acceptance",
   "base": "http://127.0.0.1:8011",
   "results": [
     {
-      "name": "Local draft restores profile and saved path, excludes resume review data, and clears completely",
+      "name": "Local draft restores profile and saved path, keeps resume name session-only, and clears completely",
       "status": "passed",
-      "ms": 18399
+      "ms": 5885
     },
     {
-      "name": "Six jobs, evidence detail and career paths",
+      "name": "Six jobs, job detail, and career paths",
       "status": "passed",
-      "ms": 5367
+      "ms": 1889
     },
     {
-      "name": "A confirmed profile can see recommendations without choosing a target",
+      "name": "A profile without a target can see recommendations",
       "status": "passed",
-      "ms": 982
+      "ms": 977
     },
     {
       "name": "Canonical aliases deduplicate and binary absence differs from missing evidence",
       "status": "passed",
-      "ms": 4130
+      "ms": 968
     },
     {
-      "name": "Manual profile, evidence confirmation and independent expected scores",
+      "name": "Manual profile, personal analysis, recommendations, and independent report scores",
       "status": "passed",
-      "ms": 1859
+      "ms": 3384
     },
     {
-      "name": "Changing only the target keeps profile confirmation and invalidates prior results",
+      "name": "Changing the target invalidates existing recommendations and report",
       "status": "passed",
-      "ms": 1022
+      "ms": 1728
     },
     {
-      "name": "Editing revokes confirmation and invalidates report/export",
+      "name": "Editing profile data invalidates report and export",
       "status": "passed",
-      "ms": 85
+      "ms": 838
     },
     {
-      "name": "Delayed profile response never overwrites newer input",
+      "name": "Delayed profile, report, and recommendation responses are discarded",
       "status": "passed",
-      "ms": 836
+      "ms": 5200
     },
     {
-      "name": "Delayed report discarded after selecting another job",
+      "name": "PDF, DOCX, and TXT resumes merge automatically while preserving manual values",
       "status": "passed",
-      "ms": 924
+      "ms": 3719
     },
     {
-      "name": "Delayed recommendations discarded after profile edit",
+      "name": "Delayed resume merging keeps the newest manual values",
       "status": "passed",
-      "ms": 1456
+      "ms": 988
     },
     {
-      "name": "PDF, DOCX and TXT candidates require item-by-item review before merging",
+      "name": "Invalid upload and upstream profile errors preserve editable input",
       "status": "passed",
-      "ms": 11199
+      "ms": 172
     },
     {
-      "name": "Delayed resume merges into newest manual values without escalation",
+      "name": "Resume profile, real samples in filters, reset, and a new target report",
       "status": "passed",
-      "ms": 1039
+      "ms": 4297
     },
     {
-      "name": "Invalid upload and upstream error preserve editable input",
+      "name": "A server version change invalidates existing match and report",
       "status": "passed",
-      "ms": 141
+      "ms": 165
     },
     {
-      "name": "Resume route, filters with actual samples, sort and new target report",
+      "name": "Zero skills, target outside top five, and narrow viewport remain usable",
       "status": "passed",
-      "ms": 3101
-    },
-    {
-      "name": "Health version change invalidates existing match and report",
-      "status": "passed",
-      "ms": 86
-    },
-    {
-      "name": "Zero skills, target outside top five and narrow viewport",
-      "status": "passed",
-      "ms": 5125
+      "ms": 2770
     }
   ],
   "page_errors": []
