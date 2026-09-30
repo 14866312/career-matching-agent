@@ -1,5 +1,4 @@
 """HTTP contract and privacy regression tests. AI functions are explicitly stubbed."""
-from io import BytesIO
 import pytest
 from fastapi.testclient import TestClient
 from backend.app import main

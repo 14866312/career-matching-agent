@@ -1,7 +1,6 @@
 """Contract tests for scripts/smoke_live.py. The model JSON is stubbed; this is not live evidence."""
 import importlib.util
 from pathlib import Path
-import pytest
 from fastapi.testclient import TestClient
 from backend.app import llm, main
 
