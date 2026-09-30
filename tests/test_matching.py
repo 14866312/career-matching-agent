@@ -10,14 +10,14 @@
 公式（人工独立计算，未调用被测实现）：
     基础分 = 已满足必需标签数 ÷ 必需标签总数 × 100
     增强分 = 逐项贡献之和 ÷ 要求总数 × 100
-    技能贡献 = min(学生等级 ÷ 要求等级, 1)
-    证书 / 通用素质贡献 = 明确满足为 1，否则为 0（不按等级折算）
+    精确提及且等级 > 0 的技能贡献 = 1（不按学生等级与要求等级折算）
+    证书 / 通用素质贡献 = 资料已提及且等级 > 0 为 1，否则为 0
     相关技能贡献 = min(关联权重, 0.25)，同一要求多个关联取最大值，不累加
     优先项 preferred 与未提及 unmentioned 都不进入分母
 
 排序契约：分数降序，同分直接按岗位 ID 升序，不再比较满足项数或要求项数。
-确认契约：StudentProfile.confirmed 是"整份画像是否已确认"的开关，由调用方在正式匹配前拦截；
-          评分函数只按每个 Ability.confirmed 计算，并回传 profile_confirmed。
+兼容契约：StudentProfile.confirmed、Ability.confirmed 和 evidence 仍保留在输入与结果中，
+          但不再作为匹配门槛或计分条件；评分函数回传 profile_confirmed 供旧调用方读取。
 分数比较用 pytest.approx(rel=1e-9) 吸收浮点表示差异；计数、状态、排序用精确比较。
 """
 
@@ -352,13 +352,13 @@ HAND_CASES = [
     {'case': 'C15 未确认仍计入-前端', 'job': 'frontend', 'skills': [('html', 3, False)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668, 'gap': 0, 'pending': 5}},
 
-    # C16 单项已确认：满足 1/6 → 16.666667；增强 1÷6×100 = 16.666667；其余 5 项待确认
-    {'case': 'C16 单项已确认-前端', 'job': 'frontend', 'skills': [('html', 3)],
+    # C16 单项资料已提及：满足 1/6 → 16.666667；其余 5 项资料未提及
+    {'case': 'C16 单项资料已提及-前端', 'job': 'frontend', 'skills': [('html', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
                 'gap': 0, 'pending': 5}},
 
-    # C17 旧等级0按未提及处理，不能推断用户不具备。
-    {'case': 'C17 已确认未掌握-前端', 'job': 'frontend', 'skills': [('html', 0), ('css', 3)],
+    # C17 旧等级0按资料未提及处理，不能推断用户不具备。
+    {'case': 'C17 等级0按资料未提及-前端', 'job': 'frontend', 'skills': [('html', 0), ('css', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
                 'gap': 0, 'pending': 5}},
 
@@ -367,7 +367,7 @@ HAND_CASES = [
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
                 'gap': 0, 'pending': 5, 'entries': {'html': 3}}},
 
-    # C19 额外标签不稀释：4 项要求满足 + 12 个无关已确认标签 → 仍是 4/6 = 66.666667
+    # C19 额外标签不稀释：4 项要求满足 + 12 个无关已提及标签 → 仍是 4/6 = 66.666667
     {'case': 'C19 多余标签不稀释-前端', 'job': 'frontend',
      'skills': [('html', 3), ('css', 3), ('javascript', 3), ('vue', 3), ('git', 3), ('spring-boot', 3),
                 ('spring-cloud', 3), ('sql', 3), ('mysql', 3), ('linux', 3), ('cpp', 3), ('data-structures', 3),
@@ -380,22 +380,22 @@ HAND_CASES = [
      'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'gap': 0, 'pending': 6,
                 'preferred_satisfied': 1}},
 
-    # C21 覆盖全但技能熟练度不足：满足 6/6 → 100.0；增强 (1+0.5+1+1+1+1)÷6×100 = 91.666667
-    {'case': 'C21 覆盖全但熟练度不足-技术支持', 'job': 'support',
+    # C21 所需标签全部提及：等级差异不改变贡献，基础分和增强分均为 100.0
+    {'case': 'C21 等级差异不改变贡献-技术支持', 'job': 'support',
      'skills': [('linux', 2), ('networking', 1), ('troubleshooting', 2), ('documentation', 2)],
      'qualities': [('communication', 2), ('teamwork', 2)],
      'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0,
                 'gap': 0, 'pending': 0, 'shortfall': 0, 'enhanced_display': 100.0}},
 
-    # C22 五项岗位：满足 5/5 → 100.0；增强 (1+0.5+1+1+1)÷5×100 = 90.0
-    {'case': 'C22 五项部分熟练度-实施', 'job': 'implementation',
+    # C22 五项岗位全部提及：满足 5/5，等级差异不改变贡献
+    {'case': 'C22 五项等级差异-实施', 'job': 'implementation',
      'skills': [('deployment', 3), ('sql', 1), ('documentation', 2)],
      'qualities': [('communication', 2), ('learning', 2)],
      'expect': {'required': 5, 'satisfied': 5, 'basic': 100.0, 'enhanced': 100.0,
                 'gap': 0, 'pending': 0, 'shortfall': 0}},
 
-    # C23 等级高于要求时贡献封顶为 1：cpp 等级3 / 要求2 → 满足 1/6 = 16.666667，增强同理
-    {'case': 'C23 等级封顶-C++', 'job': 'cpp', 'skills': [('cpp', 3)],
+    # C23 精确提及的等级高于要求时仍贡献 1：满足 1/6 = 16.666667
+    {'case': 'C23 精确提及贡献固定为1-C++', 'job': 'cpp', 'skills': [('cpp', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
                 'gap': 0, 'pending': 5}},
 
@@ -511,7 +511,7 @@ def test_every_frozen_job_is_fully_satisfiable_and_zeroable(frozen):
         assert empty['status_text'] == '可计算'
 
 
-def test_unconfirmed_does_not_count_and_related_is_separate(frozen):
+def test_related_credit_is_separate_from_satisfied_items(frozen):
     frozen()
     result = match_student(student([('spring-cloud', 2)]), job_of('java'))
     assert result['basic'] == 0
@@ -555,8 +555,8 @@ def test_legacy_confirmation_does_not_change_score(frozen):
     assert confirmed['input_version'] == match_student(student([('html', 3, True)]), job_of('frontend'))['input_version']
 
 
-def test_profile_confirmed_flag_is_reported_for_caller_gate(frozen):
-    """画像整体确认由调用方拦截；评分函数只按标签 confirmed 计算，并回传 profile_confirmed。"""
+def test_profile_confirmed_flag_is_reported_for_compatibility(frozen):
+    """画像确认字段只作为兼容元数据回传，不影响评分结果。"""
     frozen()
     unconfirmed = match_student(student([('html', 3)], confirmed=False), job_of('frontend'))
     confirmed = match_student(student([('html', 3)], confirmed=True), job_of('frontend'))
