@@ -6,6 +6,7 @@ export interface Ability {
   level: number;
   confirmed: boolean;
   evidence: string;
+  source?: 'resume' | 'manual';
 }
 
 export interface Intention {
@@ -23,10 +24,12 @@ export interface TagDef {
 
 export interface StudentProfile {
   major: string;
+  major_source?: 'resume' | 'manual';
   skills: Ability[];
   certificates: Ability[];
   qualities: Ability[];
   experiences: string;
+  experiences_source?: 'resume' | 'manual';
   intention: Intention;
   confirmed: boolean;
   advantages: string[];
@@ -126,7 +129,7 @@ export interface ProfileFocusTarget {
   tag_id: string;
   token: number;
   label: string;
-  reason: 'not_provided' | 'unconfirmed' | 'missing_evidence' | 'confirmed_absent';
+  reason: 'not_provided';
 }
 
 export interface DimResult {

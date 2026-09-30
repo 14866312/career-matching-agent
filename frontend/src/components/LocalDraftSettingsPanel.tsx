@@ -95,7 +95,7 @@ export default function LocalDraftSettingsPanel({
         <div className="local-draft-setting-card">
           <div>
             <strong>自动保存到本机浏览器</strong>
-            <p>保存能力档案、目标岗位、当前页面和已选成长路径，刷新后可以继续。</p>
+            <p>保存已整理的简历资料、目标岗位、当前页面和已选成长路径，刷新后可以继续。</p>
           </div>
           <label className="local-draft-switch">
             <span className="sr-only">自动保存到本机浏览器</span>
@@ -121,8 +121,8 @@ export default function LocalDraftSettingsPanel({
         <div className="local-draft-privacy">
           <strong>保存范围</strong>
           <ul>
-            <li>会保存能力档案、目标岗位、当前流程页面和已选成长路径。</li>
-            <li>不会保存简历姓名、原始简历文件、未审核候选、AI 报告或模型密钥。</li>
+            <li>会保存已整理的简历资料、目标岗位、当前流程页面和已选成长路径。</li>
+            <li>不会保存简历姓名、原始简历文件、AI 报告或模型密钥。</li>
             <li>关闭自动保存后，已有草稿仍会保留，直到你主动清除。</li>
           </ul>
         </div>

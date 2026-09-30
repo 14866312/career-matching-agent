@@ -187,19 +187,28 @@ class ProfileAnalysis(Output):
 
 
 async def generate_profile(student: StudentProfile):
-    verified = {canonical(a.tag_id): a for a in student.skills + student.certificates + student.qualities if a.confirmed and a.level > 0 and a.evidence.strip()}
-    instruction = '''根据学生自述整理能力画像。输出 {"strength_tag_ids":["confirmed_tags中的ID"],"improvements":["下一步的学习建议"]}。优势只能从confirmed_tags选择，不新增任何ID。不改变学生字段，不根据经历推断新技能。improvements最多4项，写未来活动，不陈述既有能力，不打分。'''
-    response = validate(ProfileAnalysis, await call_json(instruction, {'student': student.model_dump(exclude={'advantages', 'improvements'}), 'confirmed_tags': list(verified)}))
+    verified = {canonical(a.tag_id): a for a in student.skills + student.certificates + student.qualities if a.level > 0}
+    instruction = '''根据学生当前资料整理个人分析。输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}。优势只能从known_tags选择，不新增任何技能，不据经历推断熟练度。improvements最多4项，写未来活动，不陈述既有能力，不打分。'''
+    response = validate(ProfileAnalysis, await call_json(instruction, {'student': student.model_dump(exclude={'advantages', 'improvements'}), 'known_tags': list(verified)}))
     if any(tag_id not in verified for tag_id in response.strength_tag_ids):
-        raise AIError('LLM_EVIDENCE', '模型新增了未经确认或缺少证据的能力，结果已拦截，请重试。', True)
+        raise AIError('LLM_EVIDENCE', '模型新增了资料中没有的能力，结果已拦截，请重试。', True)
     for line in response.improvements:
         check_future_text(line)
     output = student.model_copy(deep=True)
-    output.confirmed = False
     ids = list(dict.fromkeys(response.strength_tag_ids))
-    output.advantages = ['已自述并确认：' + verified[tag].label for tag in ids]
+    output.advantages = ['可作为展示重点：' + verified[tag].label for tag in ids]
     output.improvements = response.improvements
-    return {'profile': output.model_dump(), 'analysis': {'summary': output.advantages, 'evidence_quotes': [verified[tag].evidence for tag in ids], 'notice': '优势引用已确认的自述证据；学习方向为AI建议，请核对后再次确认画像。'}, 'mode': 'live'}
+    summary = []
+    if student.major.strip():
+        summary.append('所学专业：' + student.major.strip())
+    for label, abilities in [('资料提及的技能', student.skills), ('资料提及的证书', student.certificates), ('资料提及的通用素质', student.qualities)]:
+        names = list(dict.fromkeys(item.label for item in abilities if item.level > 0))
+        if names:
+            summary.append(label + '：' + '、'.join(names))
+    if student.experiences.strip():
+        summary.append('项目 / 实习经历：' + student.experiences.strip()[:300])
+    summary.extend(output.advantages)
+    return {'profile': output.model_dump(), 'analysis': {'summary': summary, 'evidence_quotes': [verified[tag].evidence for tag in ids if verified[tag].evidence], 'notice': '以上技能和经历来自当前资料；展示重点和学习方向为 AI 建议，请结合实际情况判断。'}, 'mode': 'live'}
 
 
 class Activity(Output):
@@ -216,7 +225,7 @@ async def generate_advice(student, job, match):
     needs = [x for x in match['items'] if x['status'] != 'satisfied' or x['contribution'] < 1]
     candidates = needs or match['items']
     allowed = {x['tag_id']: x for x in candidates}
-    instruction = '''根据确定性匹配事实选择学习重点并给具体活动。输出 {"focus":"补充证据或加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。只给未来建议，不陈述既有能力，不输出分数或就业保证。待确认项先建议自查证据；相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
+    instruction = '''根据确定性匹配事实选择学习重点并给具体活动。输出 {"focus":"补充证据或加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。只给未来建议，不陈述既有能力，不输出分数或就业保证。未提及项先建议核实实际经历，不能推断用户不具备；相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
     plan = validate(AdvicePlan, await call_json(instruction, {'intention': student.intention.model_dump(), 'major': student.major, 'job': job['name'], 'candidate_tags': list(allowed), 'facts': [{k: x[k] for k in ('tag_id', 'label', 'status', 'contribution', 'related_only')} for x in match['items']]}))
     seen = set()
     directions, steps = [], []
@@ -226,12 +235,12 @@ async def generate_advice(student, job, match):
         seen.add(activity.tag_id)
         row = allowed[activity.tag_id]
         label = row['label']
-        direction = '先核实自述与作品证据' if row['status'] == 'pending' else ('补齐基础并实践' if row['status'] == 'gap' else '提升独立实践能力')
+        direction = '核实是否有相关经历并补充资料' if row['status'] == 'pending' else '提升独立实践能力'
         directions.append(label + '：' + direction)
         for step in activity.steps:
             check_future_text(step)
             steps.append(label + '：' + step)
-    fit = f'当前已确认覆盖 {match["satisfied"]}/{match["required"]} 项必需要求；{len(match["pending_items"])} 项待确认，{len(match["gap_items"])} 项明确未掌握。AI建议重点：{plan.focus}。'
+    fit = f'当前资料提及 {match["satisfied"]}/{match["required"]} 项必需要求；{len(match["pending_items"])} 项尚未在资料中提及，不代表不具备。AI建议重点：{plan.focus}。'
     return {'fit_evaluation': fit, 'learning_directions': directions, 'learning_steps': steps}
 
 
@@ -361,6 +370,6 @@ async def extract_resume(text):
                 # Preserve the verified source window, rather than the model's
                 # possibly truncated quote, for later human confirmation.
                 evidence = _without_resume_name(windows[0], name)
-                getattr(profile, dim).append(Ability(tag_id=tag_id, label=tag['label'], level=1, confirmed=False, evidence=evidence))
+                getattr(profile, dim).append(Ability(tag_id=tag_id, label=tag['label'], level=1, confirmed=False, evidence=evidence, source='resume'))
                 seen.add(tag_id)
-    return {'name': name, 'profile': profile.model_dump(), 'notice': f'已按原文预填，能力等级暂为1且全部待确认。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字。请补充程度并核对证据。', 'mode': 'live'}
+    return {'name': name, 'profile': profile.model_dump(), 'notice': f'已从原文提取可识别的资料。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字；未提及的技能不代表不具备。', 'mode': 'live'}

@@ -10,8 +10,8 @@ from backend.app import llm
 from backend.app.main import app
 
 async def fake_json(instruction, payload):
-    if 'confirmed_tags' in payload:
-        return {'strength_tag_ids':payload['confirmed_tags'][:3], 'improvements':['通过一个课程练习补充可核对的作品证据。']}
+    if 'known_tags' in payload:
+        return {'strength_tag_ids':payload['known_tags'][:3], 'improvements':['通过一个课程练习记录学习过程和成果。']}
     if 'candidate_tags' in payload:
         return {'focus':'补充证据', 'activities':[{'tag_id':tag,'steps':['完成一次课程练习，并记录步骤与结果。']} for tag in payload['candidate_tags'][:3]]}
     text = payload['resume_text']

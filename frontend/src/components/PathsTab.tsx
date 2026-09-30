@@ -30,6 +30,17 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
   const userSelected = useRef(false);
   const handledFocusToken = useRef<number | null>(null);
   const previousTargetJobId = useRef(targetJobId);
+  // 最新值引用：恢复本机草稿时 targetJobId / savedSelection 同时变化，
+  // 读旧闭包会把已保存的路径覆盖成未保存的默认聚焦。
+  const savedSelectionRef = useRef(savedSelection);
+  savedSelectionRef.current = savedSelection;
+  const selectedJobIdRef = useRef(selectedJobId);
+  selectedJobIdRef.current = selectedJobId;
+
+  function savedSelectionFor(target: string): PathSelection | null {
+    const saved = savedSelectionRef.current;
+    return saved && (!target || saved.targetJobId === target) ? saved : null;
+  }
 
   useEffect(() => {
     if (active && !data && !loading && error == null) void load();
@@ -40,6 +51,13 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
     if (previousTargetJobId.current !== targetJobId) {
       previousTargetJobId.current = targetJobId;
       userSelected.current = false;
+      // 刷新后草稿里的路径与目标岗位一致：保留已保存的路线，不写入默认聚焦。
+      const restored = savedSelectionFor(targetJobId);
+      if (restored) {
+        setSelectedJobId(restored.jobId);
+        setSelectedEdgeId(restored.edgeId);
+        return;
+      }
       const preferredId = targetJobId && data?.nodes.some(node => node.job_id === targetJobId)
         ? targetJobId
         : jobs.find(job => data?.nodes.some(node => node.job_id === job.id))?.id || data?.nodes[0]?.job_id || '';
@@ -74,11 +92,13 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
     try {
       const d = await apiGet<CareerPaths>('/api/career-paths');
       setData(d);
-      const preferredId = savedSelectionForTarget?.jobId || targetJobId;
+      // 用 ref 读取最新草稿与当前聚焦：请求返回时可能刚刚恢复了本机草稿。
+      const saved = savedSelectionFor(targetJobId);
+      const preferredId = saved?.jobId || targetJobId;
       const preferredHasPath = preferredId && d.nodes.some(node => node.job_id === preferredId);
       const fallbackId = (preferredHasPath ? preferredId : '') || jobs.find(job => d.nodes.some(node => node.job_id === job.id))?.id || d.nodes[0]?.job_id || '';
       setSelectedJobId(current => current || fallbackId);
-      if (!savedSelectionForTarget && !selectedJobId && fallbackId) onSelectionChange({ jobId: fallbackId, edgeId: null, savedAt: null, targetJobId });
+      if (!saved && !selectedJobIdRef.current && fallbackId) onSelectionChange({ jobId: fallbackId, edgeId: null, savedAt: null, targetJobId });
     } catch (e) {
       setError(e);
       showToast('路径加载失败：' + errMessage(e), 'err');

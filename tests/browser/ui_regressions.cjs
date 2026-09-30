@@ -65,7 +65,7 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     await page.keyboard.press('Escape');
     await page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true }).waitFor({ state: 'detached' });
 
-    await page.getByRole('tab', { name: /能力档案/ }).click();
+    await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
     await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
     console.log('资料页诊断:', JSON.stringify({
       url: page.url(),

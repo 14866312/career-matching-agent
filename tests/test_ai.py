@@ -281,28 +281,33 @@ async def test_profile_cannot_invent_strength(fake_http):
 async def test_profile_binds_strength_to_student_evidence(fake_http):
     calls = fake_http([{'strength_tag_ids': ['java'], 'improvements': ['完善接口测试并整理项目复盘']}])
     result = await llm.generate_profile(profile())
-    assert result['profile']['confirmed'] is False
+    assert result['profile']['confirmed'] is True
     assert result['analysis']['evidence_quotes'] == ['用Java编写课程管理接口']
-    assert result['analysis']['summary'] == ['已自述并确认：Java']
+    assert result['analysis']['summary'] == ['资料提及的技能：Java', '可作为展示重点：Java']
     assert result['profile']['skills'] == profile().model_dump()['skills']
     assert calls[0]['messages'][0]['role'] == 'system'
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('ability', [
-    Ability(tag_id='java', label='Java', level=2, confirmed=False, evidence='Java课程项目'),
-    Ability(tag_id='java', label='Java', level=0, confirmed=True, evidence='尚未掌握Java'),
-    Ability(tag_id='java', label='Java', level=2, confirmed=True, evidence=''),
+@pytest.mark.parametrize('ability,allowed', [
+    (Ability(tag_id='java', label='Java', level=2, confirmed=False, evidence='Java课程项目'), True),
+    (Ability(tag_id='java', label='Java', level=0, confirmed=True, evidence='尚未掌握Java'), False),
+    (Ability(tag_id='java', label='Java', level=2, confirmed=True, evidence=''), True),
 ])
-async def test_profile_unverified_abilities_cannot_be_strengths(fake_http, ability):
+async def test_profile_uses_positive_skills_without_confirmation_or_evidence(fake_http, ability, allowed):
     calls = fake_http([{'strength_tag_ids': ['java'], 'improvements': []}])
     student = StudentProfile(skills=[ability])
     original = student.model_dump()
-    with pytest.raises(llm.AIError) as exc:
-        await llm.generate_profile(student)
-    assert exc.value.code == 'LLM_EVIDENCE' and len(calls) == 1
+    if allowed:
+        result = await llm.generate_profile(student)
+        assert '可作为展示重点：Java' in result['analysis']['summary']
+    else:
+        with pytest.raises(llm.AIError) as exc:
+            await llm.generate_profile(student)
+        assert exc.value.code == 'LLM_EVIDENCE'
+    assert len(calls) == 1
     assert student.model_dump() == original
-    assert json.loads(calls[0]['messages'][1]['content'])['confirmed_tags'] == []
+    assert json.loads(calls[0]['messages'][1]['content'])['known_tags'] == (['java'] if allowed else [])
 
 
 @pytest.mark.asyncio
@@ -557,8 +562,8 @@ async def test_report_pending_directions_and_intention_use_supplied_facts(fake_h
     result = await llm.generate_advice(student, {'name': 'Java开发工程师'}, match)
     sent = json.loads(calls[0]['messages'][1]['content'])
     assert sent['intention'] == {'target_job_id': 'java', 'city': '南京'}
-    assert result['learning_directions'] == ['Java：先核实自述与作品证据']
-    assert '0/1' in result['fit_evaluation'] and '1 项待确认' in result['fit_evaluation']
+    assert result['learning_directions'] == ['Java：核实是否有相关经历并补充资料']
+    assert '0/1' in result['fit_evaluation'] and '1 项尚未在资料中提及' in result['fit_evaluation']
     assert json.dumps(match, sort_keys=True) == original
 
 

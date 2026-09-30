@@ -21,14 +21,14 @@ const START_POINTS: Array<{
     id: 'resume',
     eyebrow: '已有材料',
     title: '我有简历',
-    description: '先导入简历，系统只把识别结果列成候选，逐项接受后才会进入档案。',
+    description: '导入简历后，系统提取专业、经历和技能；你可以按需修改或删除。',
     action: '从简历开始'
   },
   {
     id: 'manual',
     eyebrow: '从零开始',
     title: '我没有简历',
-    description: '直接填写专业、经历和能力，适合边想边整理，目标岗位也可以稍后再选。',
+    description: '直接填写专业、经历和技能，随后生成个人报告；目标岗位可以稍后再选。',
     action: '手动建立档案'
   },
   {
@@ -41,17 +41,17 @@ const START_POINTS: Array<{
 ];
 
 const FLOW_STEPS = [
-  { number: '1', title: '了解岗位', detail: '可以选一个目标，也可以跳过。' },
-  { number: '2', title: '整理档案', detail: '核对能力，并补充可验证的证据。' },
-  { number: '3', title: '看匹配结果', detail: '区分待补充、待确认和明确差距。' },
-  { number: '4', title: '开始行动', detail: '查看建议，或保存一条成长路径。' }
+  { number: '1', title: '导入或填写资料', detail: '从简历提取技能，也能直接手动填写。' },
+  { number: '2', title: '生成个人报告', detail: '查看技能、经历与提升方向。' },
+  { number: '3', title: '匹配岗位', detail: '查看岗位要求与当前资料的对应情况。' },
+  { number: '4', title: '查看针对性建议', detail: '选定岗位后生成建议，按需探索成长路径。' }
 ];
 
 const ROUTE_STEPS = [
-  { number: '01', title: '了解岗位', detail: '先定方向' },
-  { number: '02', title: '整理档案', detail: '补齐证据' },
-  { number: '03', title: '查看匹配', detail: '看清差距' },
-  { number: '04', title: '开始行动', detail: '选择下一步' }
+  { number: '01', title: '整理资料', detail: '导入或填写' },
+  { number: '02', title: '个人报告', detail: '认识自己' },
+  { number: '03', title: '岗位匹配', detail: '了解岗位' },
+  { number: '04', title: '行动建议', detail: '明确下一步' }
 ];
 
 function focusableElements(container: HTMLElement | null): HTMLElement[] {
@@ -172,8 +172,8 @@ export default function OnboardingWizard({
           <>
             <div className="onboarding-wizard-intro">
               <span className="onboarding-section-label">四步路线</span>
-              <h2 id="onboarding-wizard-title">把“我该做什么”变成下一步</h2>
-              <p id="onboarding-wizard-description">你不需要一次准备完整。先选一个最接近现在状态的入口，系统会把岗位、档案、匹配和行动建议串起来；目标岗位也可以稍后再选。</p>
+              <h2 id="onboarding-wizard-title">从简历到下一步求职行动</h2>
+              <p id="onboarding-wizard-description">先导入简历或手动填写资料，查看个人分析，再匹配岗位和获取建议。也可以先浏览岗位；目标岗位不是开始的前提。</p>
             </div>
 
             {autosaveChoicePending && (
@@ -182,7 +182,7 @@ export default function OnboardingWizard({
                   <span className="onboarding-section-label">使用偏好</span>
                   <strong id="onboarding-storage-title">要在这台浏览器自动保存吗？</strong>
                   <p>{autosaveAvailable
-                    ? '会保存能力档案、目标岗位、当前页面和已选成长路径。简历姓名、未审核候选、原文件、AI 报告和模型密钥不会保存。'
+                    ? '会保存已整理的简历资料、目标岗位、当前页面和已选成长路径。简历姓名、原文件、AI 报告和模型密钥不会保存。'
                     : '当前浏览器不允许本机存储。你仍可继续使用，数据只保留在本次会话中。'}</p>
                 </div>
                 <div className="onboarding-storage-actions">
@@ -246,7 +246,7 @@ export default function OnboardingWizard({
                   <span className="onboarding-section-label">使用偏好</span>
                   <strong id="onboarding-storage-title-final">先确认本机保存方式</strong>
                   <p>{autosaveAvailable
-                    ? '完成选择后才能开始使用。会保存能力档案、目标岗位、当前页面和已选成长路径；简历姓名、未审核候选、原文件、AI 报告和模型密钥不会保存。'
+                    ? '完成选择后才能开始使用。会保存已整理的简历资料、目标岗位、当前页面和已选成长路径；简历姓名、原文件、AI 报告和模型密钥不会保存。'
                     : '当前浏览器不允许本机存储。选择继续后，数据只保留在本次会话中。'}</p>
                 </div>
                 <div className="onboarding-storage-actions">
@@ -263,11 +263,11 @@ export default function OnboardingWizard({
                 </li>
               ))}
             </ol>
-            <p className="onboarding-confirmation-note">每一步都可以返回修改。简历识别结果会先进入审核清单，只有你确认过的内容才会进入能力档案。</p>
+            <p className="onboarding-confirmation-note">每一步都可以返回修改。重新导入简历会更新提取的内容，并保留手动补充的信息。</p>
             <div className="onboarding-principles">
-              <div><b>简历先审核</b><span>识别出的每项经历、能力和证据都要由你接受或跳过。</span></div>
-              <div><b>能力要确认</b><span>补充证据后确认档案，才会参与匹配。</span></div>
-              <div><b>差距有去处</b><span>待补充和明确差距会带你回到资料、建议或成长路径。</span></div>
+              <div><b>技能可修改</b><span>提取有误时直接修改或删除；缺少内容时手动添加。</span></div>
+              <div><b>个人报告</b><span>根据当前资料梳理技能、经历和提升方向。</span></div>
+              <div><b>岗位建议</b><span>选择感兴趣的岗位，查看匹配依据及针对性行动建议。</span></div>
             </div>
             <footer className="onboarding-wizard-footer onboarding-wizard-footer-final">
               <button className="onboarding-skip-button" type="button" disabled={!canLeave} onClick={() => onFinish('skipped')}>跳过教程</button>

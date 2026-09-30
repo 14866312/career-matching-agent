@@ -25,18 +25,18 @@ const EMPTY_STUDENT: StudentProfile = {
 };
 
 type TabId = 'jobs' | 'profile' | 'paths' | 'matches';
-type WorkflowAnchor = 'report-matrix' | 'report-advice';
+type WorkflowAnchor = 'profile-source' | 'profile-report' | 'report-matrix' | 'report-advice';
 
 const TABS: Array<{ id: TabId; label: string; code: string }> = [
   { id: 'jobs', label: '职业探索', code: '01' },
-  { id: 'profile', label: '能力档案', code: '02' },
+  { id: 'profile', label: '简历与个人报告', code: '02' },
   { id: 'matches', label: '匹配报告', code: '03' },
   { id: 'paths', label: '成长路径', code: '04' }
 ];
 
 function workflowStepForTab(tab: TabId, reportFreshness?: ReportFreshness): 0 | 1 | 2 | 3 {
   if (tab === 'jobs') return 0;
-  if (tab === 'profile') return 1;
+  if (tab === 'profile') return 0;
   if (tab === 'matches') return reportFreshness === 'current' || reportFreshness === 'stale' ? 3 : 2;
   return 3;
 }
@@ -115,16 +115,10 @@ export default function App() {
   }, [tab]);
 
   const navigateWorkflowStep = useCallback((stepIndex: number) => {
-    if (stepIndex === 0) {
-      setWorkflowFocus(0);
-      setWorkflowAnchor(null);
-      navigateTo('jobs');
-      return;
-    }
-    if (stepIndex === 1) {
-      setWorkflowFocus(1);
-      setWorkflowAnchor(null);
+    if (stepIndex === 0 || stepIndex === 1) {
+      setWorkflowAnchor(stepIndex === 0 ? 'profile-source' : 'profile-report');
       navigateTo('profile');
+      setWorkflowFocus(stepIndex);
       return;
     }
 
@@ -137,7 +131,8 @@ export default function App() {
   }, [navigateTo, tab]);
 
   useEffect(() => {
-    if (tab !== 'matches' || !workflowAnchor) return;
+    if (!workflowAnchor || !((tab === 'matches' && workflowAnchor.startsWith('report-')) ||
+      (tab === 'profile' && workflowAnchor.startsWith('profile-')))) return;
     const anchor = workflowAnchor;
     let attempts = 0;
     let timer = 0;
@@ -165,7 +160,7 @@ export default function App() {
     setStudentRev(revRef.current);
   }, []);
 
-  // 编辑路径：任何字段修改都会撤销整体确认，并清空基于旧输入的 AI 分析
+  // 编辑路径：任何字段修改都会清空基于旧输入的 AI 分析
   // 与优势/待提升标签，避免旧结论残留。
   const editStudent = useCallback((fn: (s: StudentProfile) => { next: StudentProfile; notes?: string[] }): string[] => {
     const cur = studentRef.current;
@@ -300,19 +295,6 @@ export default function App() {
     setDraftStatus(cleared ? '本机草稿已清除，流程已重置。' : '无法清除本机草稿；本次流程已重置。');
   }, [applyStudent, storage]);
 
-  const confirmProfile = useCallback(() => {
-    const current = studentRef.current;
-    const confirm = (items: typeof current.skills) => items.map(item => ({ ...item, confirmed: true }));
-    applyStudent({
-      ...current,
-      skills: confirm(current.skills),
-      certificates: confirm(current.certificates),
-      qualities: confirm(current.qualities),
-      confirmed: true
-    });
-    showToast('画像已确认，可前往「匹配报告」查看匹配');
-  }, [applyStudent, showToast]);
-
   const loadHealth = useCallback(async () => {
     try {
       setHealth(await apiGet<HealthResp>('/api/health'));
@@ -348,7 +330,7 @@ export default function App() {
     if (current.intention.target_job_id !== id) {
       applyStudent({ ...current, intention: { ...current.intention, target_job_id: id } });
     }
-    showToast('目标岗位已设为 ' + name + '；档案确认保留，旧匹配与报告需要刷新');
+    showToast('目标岗位已设为 ' + name + '；旧匹配与岗位建议需要刷新');
     navigateTo('profile');
   }, [applyStudent, navigateTo, showToast]);
 
@@ -372,18 +354,22 @@ export default function App() {
     report: reportFreshness
   });
   const workflowSteps = [
-    { id: 'jobs' as TabId, label: '目标岗位', state: workflow.target === 'chosen' ? '已选择' : '可跳过' },
-    { id: 'profile' as TabId, label: '能力档案', state: workflow.profile === 'ready' ? '已确认' : workflow.profile === 'empty' ? '待填写' : '待确认' },
-    { id: 'matches' as TabId, label: '匹配结果', state: workflow.match === 'current' ? '最新' : workflow.match === 'stale' ? '已过期' : workflow.match === 'not_run' ? '待计算' : '待确认档案' },
-    { id: 'matches' as TabId, label: '行动建议', state: workflow.report === 'current' ? '已生成' : workflow.report === 'stale' ? '已过期' : workflow.report === 'not_generated' ? '可生成' : '等待最新匹配' }
+    { label: '导入或填写资料', state: workflow.profile === 'ready' ? '已填写' : '待填写' },
+    { label: '个人分析报告', state: analysis ? '已生成' : workflow.profile === 'ready' ? '可生成' : '待填写资料' },
+    { label: '岗位匹配', state: workflow.match === 'current' ? '最新' : workflow.match === 'stale' ? '已过期' : workflow.match === 'not_run' ? '待计算' : '待填写资料' },
+    { label: '行动建议', state: workflow.report === 'current' ? '已生成' : workflow.report === 'stale' ? '已过期' : workflow.report === 'not_generated' ? '可生成' : '等待最新匹配' }
   ];
   const activeWorkflowStep = workflowFocus ?? workflowStepForTab(tab, reportFreshness);
-  const continueLabel = workflow.next === 'profile' ? '继续整理档案' : workflow.next === 'matches'
-    ? (matchFreshness === 'stale' ? '刷新匹配结果' : '查看岗位匹配')
-    : (reportFreshness === 'stale' ? '更新行动建议' : reportFreshness === 'current' ? '查看行动建议' : '生成行动建议');
+  const nextWorkflowStep = workflow.profile === 'empty' ? 0
+    : !analysis && activeWorkflowStep === 0 ? 1
+      : workflow.match !== 'current' ? 2 : 3;
+  const continueLabel = nextWorkflowStep === 0 ? '导入简历或填写资料'
+    : nextWorkflowStep === 1 ? '查看个人报告'
+      : nextWorkflowStep === 2 ? (matchFreshness === 'stale' ? '刷新岗位匹配' : '查看岗位匹配')
+        : (reportFreshness === 'stale' ? '更新行动建议' : '查看行动建议');
   const continueWorkflow = useCallback(() => {
-    navigateWorkflowStep(workflow.next === 'profile' ? 1 : workflow.next === 'matches' ? 2 : 3);
-  }, [navigateWorkflowStep, workflow.next]);
+    navigateWorkflowStep(nextWorkflowStep);
+  }, [navigateWorkflowStep, nextWorkflowStep]);
   return (
     <div className="exploration-shell">
       <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
@@ -459,7 +445,7 @@ export default function App() {
             targetJobId={student.intention.target_job_id}
           />
         </div>
-        <div id="page-profile" className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="能力档案">
+        <div id="page-profile" className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="简历与个人报告">
           <ProfileTab
             student={student}
             resumeName={resumeName}
@@ -467,7 +453,6 @@ export default function App() {
             updateStudent={updateStudent}
             editStudent={editStudent}
             replaceStudent={replaceStudent}
-            confirmProfile={confirmProfile}
             revRef={revRef}
             jobs={jobs}
             analysis={analysis}
@@ -492,10 +477,6 @@ export default function App() {
             showToast={showToast}
             onGoProfile={() => navigateTo('profile')}
             onGoProfileFocus={target => { setProfileFocus({ ...target, token: Date.now() }); navigateTo('profile'); }}
-            onGoPaths={jobId => {
-              if (jobId) setPathFocusRequest({ jobId, token: Date.now() });
-              navigateTo('paths');
-            }}
             onFreshnessChange={(match, report) => { setMatchFreshness(match); setReportFreshness(report); }}
           />
         </div>

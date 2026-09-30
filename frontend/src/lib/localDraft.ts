@@ -43,7 +43,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isAbility(value: unknown): value is Ability {
   return isRecord(value) && typeof value.tag_id === 'string' && typeof value.label === 'string' &&
     typeof value.level === 'number' && Number.isFinite(value.level) &&
-    typeof value.confirmed === 'boolean' && typeof value.evidence === 'string';
+    typeof value.confirmed === 'boolean' && typeof value.evidence === 'string' &&
+    (value.source === undefined || value.source === 'resume' || value.source === 'manual');
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -53,6 +54,8 @@ function isStringArray(value: unknown): value is string[] {
 function isStudentProfile(value: unknown): value is StudentProfile {
   if (!isRecord(value) || !isRecord(value.intention)) return false;
   return typeof value.major === 'string' && typeof value.experiences === 'string' &&
+    (value.major_source === undefined || value.major_source === 'resume' || value.major_source === 'manual') &&
+    (value.experiences_source === undefined || value.experiences_source === 'resume' || value.experiences_source === 'manual') &&
     typeof value.intention.target_job_id === 'string' && typeof value.intention.city === 'string' &&
     typeof value.confirmed === 'boolean' && isStringArray(value.advantages) &&
     isStringArray(value.improvements) && DIMENSIONS.every(key =>
@@ -76,19 +79,24 @@ function isLocalDraft(value: unknown): value is LocalDraft {
 }
 
 export function sanitizeStudent(student: StudentProfile): StudentProfile {
-  const copyAbilities = (items: Ability[]) => items.map(item => ({
+  // Old drafts may contain level=0 entries created by the removed “不具备”
+  // workflow. They are not evidence of a skill and must not reappear as tags.
+  const copyAbilities = (items: Ability[]) => items.filter(item => item.level > 0).map(item => ({
     tag_id: item.tag_id,
     label: item.label,
     level: item.level,
     confirmed: item.confirmed,
-    evidence: item.evidence
+    evidence: item.evidence,
+    source: item.source
   }));
   return {
     major: student.major,
+    major_source: student.major_source,
     skills: copyAbilities(student.skills),
     certificates: copyAbilities(student.certificates),
     qualities: copyAbilities(student.qualities),
     experiences: student.experiences,
+    experiences_source: student.experiences_source,
     intention: { target_job_id: student.intention.target_job_id, city: student.intention.city },
     confirmed: student.confirmed,
     // These are generated analysis, not editable profile fields. Keep them out

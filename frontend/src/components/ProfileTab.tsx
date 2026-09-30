@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiGet, apiPost, apiPostForm, errMessage } from '../api';
 import type { Ability, Dimension, JobSummary, ProfileResp, ResumeResp, StudentProfile, TagDef } from '../types';
-import { levelLabel } from '../format';
 import { EmptyState, ErrorBox } from './ui';
-import { createResumeCandidates, mergeAcceptedResumeCandidates, resumeCandidateConflict, type CandidateDecision, type ResumeCandidate } from '../lib/resumeReview';
+import { mergeResumeProfile } from '../lib/resumeImport';
 import type { ProfileFocusTarget } from '../types';
 
 export interface DimensionConfig {
@@ -20,20 +19,20 @@ export const DIM_CONFIGS: DimensionConfig[] = [
   { key: 'qualities', label: '通用素质', max: 50, levels: false, placeholder: '例如：客户沟通、文档编写' }
 ];
 
-function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove, focusTarget, onFocusHandled }: {
+function TagEditor({ cfg, items, dict, onAdd, onRename, onRemove, focusTarget, onFocusHandled }: {
   cfg: DimensionConfig;
   items: Ability[];
   dict: TagDef[];
   onAdd: (text: string) => void;
-  onPatch: (index: number, patch: Partial<Ability>) => void;
+  onRename: (index: number, text: string) => void;
   onRemove: (index: number) => void;
   focusTarget: ProfileFocusTarget | null;
   onFocusHandled: () => void;
 }) {
   const [text, setText] = useState('');
-  const [evOpen, setEvOpen] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const knownIds = new Set(dict.map(t => t.id));
   const listId = 'dict-' + cfg.key;
   const submit = () => {
     if (!text.trim()) return;
@@ -42,19 +41,8 @@ function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove, focusTarget, on
   };
   useEffect(() => {
     if (!focusTarget || focusTarget.dimension !== cfg.key) return;
-    const existing = items.find(item => item.tag_id.toLowerCase() === focusTarget.tag_id.toLowerCase());
-    if (!existing || focusTarget.reason === 'not_provided') {
-      setText(focusTarget.label);
-      window.setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      const key = existing.tag_id;
-      setEvOpen(open => ({ ...open, [key]: true }));
-      window.setTimeout(() => {
-        const evidence = document.getElementById('evidence-' + cfg.key + '-' + encodeURIComponent(key));
-        evidence?.focus();
-        evidence?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 0);
-    }
+    setText(focusTarget.label);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
     onFocusHandled();
   }, [cfg.key, focusTarget?.token]);
   return (
@@ -83,68 +71,22 @@ function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove, focusTarget, on
         <button type="button" onClick={submit} aria-label={'确认添加' + cfg.label}>添加</button>
       </div>
       <div className="tag-list" aria-live="polite">
-        {items.length === 0 && <span className="tag-empty">暂无内容：可手动添加，或导入简历后确认</span>}
+        {items.length === 0 && <span className="tag-empty">暂无内容，可从简历提取或手动添加。</span>}
         {items.map((x, i) => {
-          const known = knownIds.has(x.tag_id);
-          const open = !!evOpen[x.tag_id];
           return (
-            <div className={'tag-row' + (open ? ' expanded' : '')} key={x.tag_id + i}>
-              <span className={'editable-tag' + (x.evidence ? ' has-evidence' : '')}>
-                <span className="tag-label">{x.label}</span>
-                {!known && (
-                  <span className="pill warn" title="该标签不在岗位要求字典中，可能无法计入匹配分，建议改用字典中的标签">
-                    未入字典
-                  </span>
-                )}
-                {x.evidence && (
-                  <span className="evidence-dot" tabIndex={0} role="img" aria-label="有原文证据" title={'原文证据：' + x.evidence}>◆</span>
-                )}
-                <span className={'pill ' + (x.confirmed && x.level === 0 ? 'warn' : x.confirmed && x.evidence.trim() ? 'ok' : 'pending')}>
-                  {!x.confirmed ? '待确认' : x.level === 0 ? '已确认不具备' : !x.evidence.trim() ? '缺少证据' : '已确认有证据'}
-                </span>
-                {cfg.levels ? (
-                  <select
-                    value={x.level}
-                    aria-label={x.label + ' 熟练度'}
-                    onChange={e => onPatch(i, { level: Number(e.target.value) })}
-                  >
-                    {[0, 1, 2, 3].map(v => <option key={v} value={v}>{v} · {levelLabel(v)}</option>)}
-                  </select>
-                ) : (
-                  <select
-                    value={x.level >= 1 ? 1 : 0}
-                    aria-label={x.label + ' 具备情况'}
-                    onChange={e => onPatch(i, { level: Number(e.target.value) })}
-                  >
-                    <option value={1}>1 · 具备</option>
-                    <option value={0}>0 · 不具备</option>
-                  </select>
-                )}
-                <button
-                  type="button"
-                  className={'tag-evidence-toggle' + (open ? ' open' : '')}
-                  aria-expanded={open}
-                  aria-label={(open ? '收起 ' : '编辑 ') + x.label + ' 证据'}
-                  onClick={() => setEvOpen(o => ({ ...o, [x.tag_id]: !o[x.tag_id] }))}
-                >
-                  证据
-                </button>
-                <button type="button" aria-label={'移除 ' + x.label} onClick={() => onRemove(i)}>×</button>
-              </span>
-              {open && (
-                <div className="tag-evidence">
-                  <input
-                    id={'evidence-' + cfg.key + '-' + encodeURIComponent(x.tag_id)}
-                    tabIndex={0}
-                    value={x.evidence}
-                    maxLength={3000}
-                    placeholder="粘贴支持该能力的原文片段（可选），如项目、课程、获奖记录"
-                    aria-label={x.label + ' 证据内容'}
-                    onChange={e => onPatch(i, { evidence: e.target.value })}
-                  />
-                  <span className="mono">{x.evidence.length}/3000</span>
-                </div>
-              )}
+            <div className="tag-row" key={x.tag_id + i}>
+              {editing === i ? <div className="tag-row-edit">
+                <input autoFocus value={editText} maxLength={100} aria-label={'修改 ' + x.label}
+                  onChange={e => setEditText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onRename(i, editText); setEditing(null); } if (e.key === 'Escape') setEditing(null); }} />
+                <button type="button" onClick={() => { onRename(i, editText); setEditing(null); }}>保存</button>
+                <button type="button" onClick={() => setEditing(null)}>取消</button>
+              </div> : <div className="editable-tag">
+                <span className="tag-label" title={x.evidence || undefined}>{x.label}</span>
+                <small>{x.source === 'resume' ? '简历提取' : '手动补充'}</small>
+                <button type="button" aria-label={'修改 ' + x.label} onClick={() => { setEditing(i); setEditText(x.label); }}>修改</button>
+                <button type="button" aria-label={'删除 ' + x.label} onClick={() => onRemove(i)}>删除</button>
+              </div>}
             </div>
           );
         })}
@@ -153,14 +95,13 @@ function TagEditor({ cfg, items, dict, onAdd, onPatch, onRemove, focusTarget, on
   );
 }
 
-export default function ProfileTab({ student, resumeName, setResumeName, updateStudent, editStudent, replaceStudent, confirmProfile, revRef, jobs, analysis, setAnalysis, showToast, onGoMatches, onSetTargetJob, sourceModeRequest, onSourceModeRequestHandled, focusTarget, onFocusHandled }: {
+export default function ProfileTab({ student, resumeName, setResumeName, updateStudent, editStudent, replaceStudent, revRef, jobs, analysis, setAnalysis, showToast, onGoMatches, onSetTargetJob, sourceModeRequest, onSourceModeRequestHandled, focusTarget, onFocusHandled }: {
   student: StudentProfile;
   resumeName: string;
   setResumeName: (name: string) => void;
   updateStudent: (fn: (s: StudentProfile) => StudentProfile) => void;
   editStudent: (fn: (s: StudentProfile) => { next: StudentProfile; notes?: string[] }) => string[];
   replaceStudent: (s: StudentProfile) => void;
-  confirmProfile: () => void;
   revRef: { current: number };
   jobs: JobSummary[];
   analysis: ProfileResp['analysis'] | null;
@@ -173,7 +114,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   focusTarget: ProfileFocusTarget | null;
   onFocusHandled: () => void;
 }) {
-  const [resumeStatus, setResumeStatus] = useState('支持文本型 PDF / DOCX / TXT（≤5MB）；导入后请整理能力标签与证据，带证据的能力才计分');
+  const [resumeStatus, setResumeStatus] = useState('支持文本型 PDF / DOCX / TXT（≤5MB）；导入后可补充或修改提取结果。');
   const [resumeError, setResumeError] = useState<unknown>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
@@ -181,17 +122,11 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   const [submitMsg, setSubmitMsg] = useState('');
   const [tags, setTags] = useState<TagDef[]>([]);
   const [sourceMode, setSourceMode] = useState<'resume' | 'manual'>('resume');
-  const [resumeCandidates, setResumeCandidates] = useState<ResumeCandidate[]>([]);
-  const [resumeDecisions, setResumeDecisions] = useState<Record<string, CandidateDecision>>({});
   const [focusNotice, setFocusNotice] = useState('');
 
   useEffect(() => {
     if (!focusTarget) return;
-    const reasonText = focusTarget.reason === 'not_provided' ? '尚未填写；请先自评并补充该项。'
-      : focusTarget.reason === 'unconfirmed' ? '尚未确认；请核对该项后确认档案。'
-      : focusTarget.reason === 'missing_evidence' ? '缺少证据；请补充原文依据后确认档案。'
-      : '已确认不具备；可查看成长路径安排补齐计划。';
-    setFocusNotice('已定位「' + focusTarget.label + '」：' + reasonText);
+    setFocusNotice('岗位要求提到「' + focusTarget.label + '」。若你具备这项技能，可在这里补充。');
   }, [focusTarget?.token]);
 
   useEffect(() => {
@@ -218,7 +153,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
 
   async function handleResume(file: File) {
     if (submitBusy) {
-      showToast('画像正在生成，请等它完成后再导入简历', 'err');
+      showToast('个人报告正在生成，请等它完成后再导入简历', 'err');
       return;
     }
     setResumeError(null);
@@ -237,11 +172,17 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       const form = new FormData();
       form.append('file', file);
       const d = await apiPostForm<ResumeResp>('/api/resume/parse', form);
-      const candidates = createResumeCandidates(d);
-      setResumeCandidates(candidates);
-      setResumeDecisions({});
-      setResumeStatus(d.notice + '（解析 ' + d.text_length + ' 字符）；候选仅保存在当前会话，逐项审核并确认后才会合并。');
-      showToast('简历已解析，请逐项审核候选内容');
+      let applied = 0;
+      let notes: string[] = [];
+      editStudent(current => {
+        const result = mergeResumeProfile(current, d);
+        applied = result.appliedCount;
+        notes = result.notes;
+        return { next: result.student };
+      });
+      setResumeName(d.name || '');
+      setResumeStatus(d.notice + '（解析 ' + d.text_length + ' 字符），已更新 ' + applied + ' 项。请检查并按需修改。' + (notes.length ? ' ' + notes.join('；') + '。' : ''));
+      showToast('简历提取结果已更新，可直接修改');
     } catch (e) {
       setResumeError(e);
       setResumeStatus('解析失败：' + errMessage(e) + '（已填写内容保持不变，可重试或手动录入）');
@@ -249,24 +190,6 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
     } finally {
       setResumeBusy(false);
     }
-  }
-
-  function completeResumeReview() {
-    if (!resumeCandidates.length || resumeCandidates.some(candidate => !resumeDecisions[candidate.id])) return;
-    const accepted = resumeCandidates.filter(candidate => resumeDecisions[candidate.id] === 'accept');
-    let notes: string[] = [];
-    let mergedName: string | null = null;
-    editStudent(current => {
-      const result = mergeAcceptedResumeCandidates(current, resumeName, accepted);
-      notes = result.notes;
-      mergedName = result.resumeName;
-      return { next: result.student };
-    });
-    if (mergedName) setResumeName(mergedName);
-    setResumeCandidates([]);
-    setResumeDecisions({});
-    setResumeStatus('审核完成，已接受 ' + accepted.length + ' 项、跳过 ' + (resumeCandidates.length - accepted.length) + ' 项。' + (notes.length ? ' 冲突已保留档案现有值：' + notes.join('、') : ''));
-    showToast('简历审核完成；新增能力仍需你核对并确认');
   }
 
   function addAbility(dim: Dimension, text: string) {
@@ -285,17 +208,26 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       if (list.length >= cfg.max) return { next: s, notes: ['max'] };
       if (list.some(x => x.tag_id.toLowerCase() === normKey)) return { next: s, notes: ['dup'] };
       const entry: Ability = hit
-        ? { tag_id: hit.id, label: hit.label, level: dim === 'skills' ? 2 : 1, confirmed: true, evidence: '' }
-        : { tag_id: key.slice(0, 80), label: text.slice(0, 100), level: dim === 'skills' ? 2 : 1, confirmed: true, evidence: '' };
+        ? { tag_id: hit.id, label: hit.label, level: 1, confirmed: true, evidence: '', source: 'manual' }
+        : { tag_id: key.slice(0, 80), label: text.slice(0, 100), level: 1, confirmed: true, evidence: '', source: 'manual' };
       return { next: { ...s, [dim]: [...list, entry] } };
     });
     if (notes.includes('max')) showToast(cfg.label + '已达上限 ' + cfg.max + ' 项', 'err');
     else if (notes.includes('dup')) showToast(cfg.label + '「' + (hit ? hit.label : text) + '」已存在', 'err');
   }
 
-  function patchAbility(dim: Dimension, index: number, patch: Partial<Ability>) {
+  function renameAbility(dim: Dimension, index: number, text: string) {
+    const label = text.trim();
+    if (!label) return;
+    const key = label.toLowerCase();
+    const hit = tags.filter(t => t.dimension === dim).find(t => t.id.toLowerCase() === key || t.label.toLowerCase() === key || t.aliases.some(a => a.toLowerCase() === key));
+    const tagId = hit?.id ?? key.slice(0, 80);
+    if (student[dim].some((item, i) => i !== index && item.tag_id.toLowerCase() === tagId.toLowerCase())) {
+      showToast('该项目已存在', 'err');
+      return;
+    }
     updateStudent(s => {
-      const list = s[dim].map((x, i) => (i === index ? { ...x, ...patch } : x));
+      const list = s[dim].map((x, i) => (i === index ? { ...x, tag_id: tagId, label: hit?.label ?? label.slice(0, 100), level: Math.max(1, x.level), source: 'manual' as const } : x));
       return { ...s, [dim]: list };
     });
   }
@@ -306,57 +238,53 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
 
   async function handleSubmit() {
     if (resumeBusy) {
-      showToast('简历正在解析，请等解析完成后再生成画像', 'err');
+      showToast('简历正在解析，请等解析完成后再生成个人分析', 'err');
       return;
     }
     setSubmitError(null);
     setSubmitBusy(true);
-    setSubmitMsg('正在整理能力画像…模型未配置或网络异常时会在这里提示，你的输入不会丢失。');
+    setSubmitMsg('正在生成个人分析报告…');
     const reqRev = revRef.current;
     try {
       const d = await apiPost<ProfileResp>('/api/student/profile', student);
       if (revRef.current !== reqRev) {
         // 请求期间用户又编辑了输入：旧响应直接丢弃，绝不覆盖新输入。
-        showToast('画像生成期间输入已修改，本次结果未应用，请重新生成', 'err');
+        showToast('资料在生成期间已修改，本次结果未应用，请重新生成', 'err');
         return;
       }
       replaceStudent(d.profile);
       setAnalysis(d.analysis);
-      setSubmitMsg('画像已生成。请核对标签与证据，然后点击「确认完整画像」，确认后才能匹配。');
-      showToast('能力画像已生成');
+      setSubmitMsg('个人分析报告已根据当前资料更新。');
+      showToast('个人分析报告已生成');
     } catch (err) {
       setSubmitError(err);
       setSubmitMsg('');
-      showToast('画像生成失败：' + errMessage(err), 'err');
+      showToast('个人分析报告生成失败：' + errMessage(err), 'err');
     } finally {
       setSubmitBusy(false);
     }
   }
 
   const abilityItems = [...student.skills, ...student.certificates, ...student.qualities];
-  const waitingConfirmation = abilityItems.filter(item => !item.confirmed).length;
-  const missingEvidence = abilityItems.filter(item => item.confirmed && item.level > 0 && !item.evidence.trim()).length;
-  const confirmedAbsent = abilityItems.filter(item => item.confirmed && item.level === 0).length;
-  const verified = abilityItems.filter(item => item.confirmed && item.level > 0 && item.evidence.trim()).length;
-  const total = abilityItems.length;
+  const total = abilityItems.filter(item => item.level > 0).length;
 
   return (
     <div className="profile-stitch">
       <section className="profile-stitch-hero">
-        <h2>我的能力档案与凭证核验</h2>
+        <h2>简历分析与个人报告</h2>
         <div className="profile-meta-line">
           <span>专业 · {student.major || '待填写'}</span>
           <label className="profile-target-select">目标岗位（可选）<select value={student.intention.target_job_id} onChange={e => onSetTargetJob(e.target.value, jobs.find(j => j.id === e.target.value)?.name || '未选择')}><option value="">先建档，之后可选</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
-          <span>档案 · {student.confirmed ? '已确认' : '待确认'}</span>
+          <span>已整理 {total} 项能力信息</span>
         </div>
-        <div className="profile-stitch-progress" aria-label="能力画像流程">
+        <div className="profile-stitch-progress" aria-label="简历分析流程">
           <div className="is-current"><b>01</b><span>导入简历</span></div>
           <div className={total > 0 ? 'is-current' : ''}><b>02</b><span>整理能力</span></div>
-          <div className={analysis ? 'is-current' : ''}><b>03</b><span>完成能力画像</span></div>
+          <div className={analysis ? 'is-current' : ''}><b>03</b><span>个人分析报告</span></div>
         </div>
       </section>
-      <form className="profile-flow" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="能力画像表单">
-        <section className="profile-step profile-source-step">
+      <form className="profile-flow" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="简历分析表单">
+        <section id="profile-source" className="profile-step profile-source-step">
           <header><p>第 1 步 · 导入简历与项目经历</p><h3>导入简历与项目经历</h3></header>
           <div className="profile-source-actions" role="tablist" aria-label="资料录入方式">
             <button className={sourceMode === 'resume' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'resume'} onClick={() => setSourceMode('resume')}>导入现有简历</button>
@@ -369,51 +297,55 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
             </button>
             <label className="profile-name-field">简历姓名
               <input aria-label="简历姓名" value={resumeName} maxLength={80} placeholder="未识别时可手动填写" onChange={e => setResumeName(e.target.value)} />
-              <small>请核对或修改；仅保存在当前会话，不参与画像评分或报告。</small>
+              <small>请核对或修改；仅保存在当前会话，不参与匹配计算。</small>
             </label>
             <p className="profile-resume-status">{resumeStatus}</p>
-            {resumeCandidates.length > 0 && <section className="resume-review" aria-label="简历候选审核">
-              <header><h4>逐项审核简历候选</h4><p>接受或跳过每项后，再确认合并。审核清单只保存在当前会话。</p></header>
-              <div className="resume-review-list">{resumeCandidates.map(candidate => {
-                const conflict = resumeCandidateConflict(candidate, student, resumeName);
-                const label = candidate.kind === 'name' ? '简历姓名' : candidate.kind === 'major' ? '专业' : candidate.kind === 'experiences' ? '项目 / 实习经历' : DIM_CONFIGS.find(config => config.key === candidate.dimension)!.label;
-                const content = candidate.kind === 'ability'
-                  ? candidate.value.label + ' · 建议等级 ' + candidate.value.level + ' · ' + (candidate.value.evidence || '没有提取到证据')
-                  : candidate.value;
-                return <article key={candidate.id} className="resume-review-item"><div><b>{label}</b><p>{content}</p>{conflict && <small className="resume-conflict">冲突：{conflict}</small>}{candidate.kind === 'name' && <small>仅保存在当前会话，不写入本机草稿。</small>}</div><div className="resume-review-actions"><button type="button" className={resumeDecisions[candidate.id] === 'accept' ? 'selected' : ''} aria-pressed={resumeDecisions[candidate.id] === 'accept'} onClick={() => setResumeDecisions(d => ({ ...d, [candidate.id]: 'accept' }))}>接受</button><button type="button" className={resumeDecisions[candidate.id] === 'skip' ? 'selected' : ''} aria-pressed={resumeDecisions[candidate.id] === 'skip'} onClick={() => setResumeDecisions(d => ({ ...d, [candidate.id]: 'skip' }))}>跳过</button></div></article>;
-              })}</div>
-              <button type="button" className="primary-button" disabled={resumeCandidates.some(candidate => !resumeDecisions[candidate.id])} onClick={completeResumeReview}>确认并合并已接受项（{Object.values(resumeDecisions).filter(value => value === 'accept').length}）</button>
-            </section>}
             {resumeError != null && <ErrorBox error={resumeError} />}
-            <p className="profile-source-hint">已导入的内容会保留在当前画像中；需要修改专业、城市或经历时，切换到“手动录入资料”即可继续编辑。</p>
+            <p className="profile-source-hint">提取结果已填入下方技能清单。专业、城市或经历可在“手动录入资料”中修改；重新导入会更新简历提取项，并保留手动补充内容。</p>
           </> : <div className="profile-manual-panel">
             <p className="profile-source-hint">直接填写你的背景信息，完成后在下方整理能力标签。已导入的简历内容不会被清空。</p>
             <div className="profile-basic-grid">
-              <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value }))} /></label>
+              <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value, major_source: 'manual' }))} /></label>
               <label>意向城市<input value={student.intention.city} maxLength={80} placeholder="例如：上海" onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} /></label>
-              <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value }))} /></label>
+              <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value, experiences_source: 'manual' }))} /></label>
             </div>
           </div>}
         </section>
         <section className="profile-step profile-skill-step">
-          <header><p>第 2 步 · 整理能力与证据</p><h3>选择你掌握的核心能力</h3><span>已录入 {abilityItems.length} 项 · 有证据且已确认 {verified} 项</span></header>
+          <header><p>第 2 步 · 整理技能信息</p><h3>检查提取结果，按需补充</h3><span>当前资料包含 {total} 项技能、证书与通用素质</span></header>
           {focusNotice && <p className="profile-focus-notice" role="status">{focusNotice}</p>}
-          <div className="profile-state-counts" aria-label="档案项目状态"><span>待确认 <b>{waitingConfirmation}</b></span><span>缺少证据 <b>{missingEvidence}</b></span><span>已确认不具备 <b>{confirmedAbsent}</b></span></div>
-          <p className="profile-step-copy">列表中的能力就是你准备纳入画像的内容；请补充熟练度和证据，最后统一确认整份画像。</p>
-          <div className="profile-editor-stack">{DIM_CONFIGS.map(cfg => <TagEditor key={cfg.key} cfg={cfg} items={student[cfg.key]} dict={tags.filter(t => t.dimension === cfg.key)} onAdd={text => addAbility(cfg.key, text)} onPatch={(i, patch) => patchAbility(cfg.key, i, patch)} onRemove={i => removeAbility(cfg.key, i)} focusTarget={focusTarget} onFocusHandled={onFocusHandled} />)}</div>
+          <p className="profile-step-copy">简历未提及的能力不等于不具备。发现遗漏时直接添加；发现不准确时修改或删除。</p>
+          <div className="profile-editor-stack">{DIM_CONFIGS.map(cfg => <TagEditor key={cfg.key} cfg={cfg} items={student[cfg.key]} dict={tags.filter(t => t.dimension === cfg.key)} onAdd={text => addAbility(cfg.key, text)} onRename={(i, text) => renameAbility(cfg.key, i, text)} onRemove={i => removeAbility(cfg.key, i)} focusTarget={focusTarget} onFocusHandled={onFocusHandled} />)}</div>
           {tags.length === 0 && <p className="soft-note">标签字典未加载：新加标签可能无法与岗位要求对应，刷新页面可重试。</p>}
         </section>
-        <section className="profile-step profile-result-step">
-          <header><p>第 3 步 · 个人能力画像</p><h3>能力状态与画像摘要</h3><span>请分别处理未确认、缺少证据和不具备项目</span></header>
-          <div className="profile-assessment-card">
-            <div className="profile-score-column"><span>能力整理状态</span><p>已确认且有证据：{verified} 项</p><p>待确认：{waitingConfirmation} 项</p><p>缺少证据：{missingEvidence} 项</p><p>已确认不具备：{confirmedAbsent} 项</p><p>岗位要求中尚未填写的项目会在匹配结果中单独列出。</p></div>
-            <div className="profile-radar" aria-label="能力画像维度示意，不参与匹配分计算"><div className="radar-grid"><i /><i /><i /></div><div className="radar-shape" /><span className="r1">专业技能</span><span className="r2">项目经验</span><span className="r3">通用素质</span><span className="r4">证书凭证</span><span className="r5">目标清晰度</span></div>
-          </div>
-          {total === 0 && !analysis ? <EmptyState symbol="◎" title="你的能力雷达还在等待"><p>填写资料或导入简历后生成能力画像。</p></EmptyState> : <div className="profile-analysis-list">{analysis?.summary.map((s, i) => <div className="profile-analysis-item" key={i}><b>{String(i + 1).padStart(2, '0')}</b><span>{s}</span></div>)}{student.advantages.map((s, i) => <div className="profile-analysis-item" key={'a' + i}><b>✓</b><span>{s}</span></div>)}{student.improvements.map((s, i) => <div className="profile-analysis-item is-gap" key={'g' + i}><b>!</b><span>{s}</span></div>)}</div>}
-          {analysis && analysis.evidence_quotes.length > 0 && <details className="profile-evidence"><summary>查看 AI 使用的原文依据 · {analysis.evidence_quotes.length} 条</summary>{analysis.evidence_quotes.map((q, i) => <blockquote key={i}>「{q}」</blockquote>)}</details>}
-          {submitError != null && <ErrorBox error={submitError} onRetry={() => void handleSubmit()} retryLabel="重试生成画像" />}<p className="form-message" aria-live="polite">{submitMsg}</p>
+        <section id="profile-report" className="profile-step profile-result-step">
+          <header><p>第 3 步 · 个人分析</p><h3>个人分析报告</h3><span>整理当前资料中的技能、经历与提升方向；岗位契合度在下一步单独计算</span></header>
+          {analysis ? <div className="profile-analysis-list" aria-label="个人分析结果">
+            <article className="profile-analysis-group">
+              <h4>当前资料</h4>
+              {student.major && <p>专业：{student.major}</p>}
+              {student.experiences && <p>项目 / 实习经历：{student.experiences}</p>}
+              {!student.major && !student.experiences && <p>尚未填写专业或项目经历，可随时补充。</p>}
+            </article>
+            <article className="profile-analysis-group">
+              <h4>技能清单</h4>
+              {DIM_CONFIGS.map(cfg => student[cfg.key].length > 0 && <p key={cfg.key}>{cfg.label}：{student[cfg.key].map(item => item.label).join('、')}</p>)}
+              {total === 0 && <p>当前资料尚未提及技能、证书或通用素质；这不代表你不具备。</p>}
+            </article>
+            <article className="profile-analysis-group">
+              <h4>可展示的优势</h4>
+              {student.advantages.length > 0 ? student.advantages.map((item, i) => <p key={i}>{item}</p>) : <p>当前资料尚不足以归纳展示重点，可补充真实经历后重新生成。</p>}
+            </article>
+            <article className="profile-analysis-group">
+              <h4>下一步提升</h4>
+              {student.improvements.length > 0 ? student.improvements.map((item, i) => <p key={i}>{item}</p>) : <p>本次没有生成具体学习建议。</p>}
+            </article>
+            <p className="soft-note">{analysis.notice}</p>
+          </div> : <EmptyState symbol="◎" title="根据你的资料生成分析"><p>填写或导入资料后点击“生成个人分析报告”。没有模型配置时，仍可直接查看岗位匹配。</p></EmptyState>}
+          {analysis && analysis.evidence_quotes.length > 0 && <details className="profile-evidence"><summary>查看相关简历原文 · {analysis.evidence_quotes.length} 条</summary>{analysis.evidence_quotes.map((q, i) => <blockquote key={i}>「{q}」</blockquote>)}</details>}
+          {submitError != null && <ErrorBox error={submitError} onRetry={() => void handleSubmit()} retryLabel="重试生成个人报告" />}<p className="form-message" aria-live="polite">{submitMsg}</p>
         </section>
-        <div className="profile-action-dock"><div><i className={student.confirmed ? 'ok' : ''} /><span><b>{student.confirmed ? '能力档案已确认' : '能力档案待确认'}</b><small>{student.confirmed ? '可以查看岗位推荐；没有目标岗位也可继续' : '核对档案后确认，即可查看推荐和匹配'}</small></span></div><button className="ghost-button" type="submit" disabled={submitBusy || resumeBusy}>{submitBusy ? '正在整理…' : '生成能力画像'}</button><button className="ghost-button" type="button" disabled={student.confirmed || submitBusy || resumeBusy} onClick={confirmProfile}>确认完整画像</button><button className="primary-button" type="button" disabled={!student.confirmed} onClick={onGoMatches}>查看岗位匹配 <span>→</span></button></div>
+        <div className="profile-action-dock"><div><span><b>资料可随时修改</b><small>修改后重新生成个人报告或刷新岗位匹配即可。</small></span></div><button className="ghost-button" type="submit" disabled={submitBusy || resumeBusy}>{submitBusy ? '正在生成…' : '生成个人分析报告'}</button><button className="primary-button" type="button" onClick={onGoMatches}>查看岗位匹配</button></div>
       </form>
     </div>
   );

@@ -17,35 +17,38 @@ def student():
 
 
 @pytest.mark.parametrize('route', ['/api/matches', '/api/recommendations', '/api/reports'])
-def test_confirmation_gate(client, route):
+def test_confirmation_is_not_a_gate(client, route, monkeypatch):
     candidate = student()
     candidate['confirmed'] = False
     payload = {'student': candidate}
     if route != '/api/recommendations':
         payload['job_id'] = 'java'
+    if route == '/api/reports':
+        async def advice(*_args):
+            return {'fit_evaluation': '按当前资料核对', 'learning_directions': [], 'learning_steps': []}
+        monkeypatch.setattr(main, 'generate_advice', advice)
 
     response = client.post(route, json=payload)
-    assert response.status_code == 400
-    assert response.json()['error']['code'] == 'PROFILE_UNCONFIRMED'
-    assert response.headers['x-request-id'] == response.json()['error']['request_id']
+    assert response.status_code == 200
+    assert 'error' not in response.json()
 
 
-def test_unadopted_or_unsupported_ability_stays_out_of_basic_match(client):
+def test_positive_skill_counts_without_confirmation_or_evidence(client):
     candidate = student()
     candidate['skills'][0]['confirmed'] = False
     unadopted = client.post('/api/matches', json={'job_id': 'java', 'student': candidate})
     assert unadopted.status_code == 200
     java = next(item for item in unadopted.json()['items'] if item['tag_id'] == 'java')
-    assert java['status'] == 'pending'
-    assert java not in unadopted.json()['satisfied_items']
+    assert java['status'] == 'satisfied'
+    assert java in unadopted.json()['satisfied_items']
 
     candidate['skills'][0]['confirmed'] = True
     candidate['skills'][0]['evidence'] = ' '
     unsupported = client.post('/api/matches', json={'job_id': 'java', 'student': candidate})
     assert unsupported.status_code == 200
     java = next(item for item in unsupported.json()['items'] if item['tag_id'] == 'java')
-    assert java['status'] == 'pending'
-    assert java not in unsupported.json()['satisfied_items']
+    assert java['status'] == 'satisfied'
+    assert java in unsupported.json()['satisfied_items']
 
 
 @pytest.mark.parametrize('body', [{'student': {'private-resume-secret': 'secret-text'}, 'job_id': 'java'}, {'student': {'skills': [{'tag_id': 'java', 'label': 'Java', 'level': 99}]}, 'job_id': 'java'}])
@@ -193,7 +196,7 @@ def test_upload_boundary(client):
     assert r.status_code == 413 and r.json()['error']['code'] == 'FILE_TOO_LARGE'
 
 
-def test_export_uses_same_half_up_display_as_chart():
+def test_export_uses_same_half_up_display_as_match():
     from backend.app.matching import match_student
     from backend.app.models import Ability
     tags = ['java', 'sql', 'html', 'css', 'javascript', 'vue', 'linux', 'mysql']
@@ -201,10 +204,10 @@ def test_export_uses_same_half_up_display_as_chart():
         {'tag_id': tag, 'dimension': 'skills', 'required_level': 2, 'required': True} for tag in tags]}
     s = StudentProfile(confirmed=True, skills=[Ability(tag_id=tag, label=tag, level=1 if i == 0 else 0, confirmed=True, evidence='course exercise') for i, tag in enumerate(tags)])
     m = match_student(s, job)
-    assert m['enhanced'] == 6.25
-    assert m['enhanced_display'] == 6.3
+    assert m['enhanced'] == 12.5
+    assert m['enhanced_display'] == 12.5
     report = main.export_report(s, job, m, {'fit_evaluation': 'test', 'learning_directions': [], 'learning_steps': []})
-    assert '增强匹配度：6.3%' in report
+    assert '增强匹配度：12.5%' in report
 
 
 def test_generic_failure_never_echoes_secret(client, monkeypatch, caplog):

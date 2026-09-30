@@ -89,11 +89,6 @@ async def http_error_handler(request: Request, exc: HTTPException):
     return error(request, 'NOT_FOUND' if exc.status_code == 404 else 'HTTP_ERROR', '找不到该资源。' if exc.status_code == 404 else '请求格式或方法无效。', exc.status_code)
 
 
-def require_confirmed(student):
-    if not student.confirmed:
-        raise AIError('PROFILE_UNCONFIRMED', '请先检查并确认完整能力画像，再进行匹配或生成建议。')
-
-
 @app.get('/api/health')
 def health():
     return {'status': 'ok', 'data_version': dataset()['version'], 'algorithm_version': ALGORITHM_VERSION, 'llm_configured': configured(), 'llm_model': os.environ.get('LLM_MODEL', ''), 'source_file': dataset()['source_file']}
@@ -167,18 +162,16 @@ async def resume_parse(file: UploadFile = File(...)):
 
 @app.post('/api/matches')
 def matches(payload: MatchRequest, request: Request):
-    require_confirmed(payload.student)
     job = get_job(payload.job_id)
     if not job:
         return error(request, 'JOB_NOT_FOUND', '找不到目标岗位。', 404)
     result = match_student(payload.student, job)
-    result['notice'] = '基础分只计算已确认标签的覆盖率；待确认项不算满足。增强分的相关基础不代表已经掌握。'
+    result['notice'] = '匹配依据简历及手动填写的技能；资料未提及不代表不具备，可继续补充。'
     return result
 
 
 @app.post('/api/recommendations')
 def recommendation(payload: RecommendationRequest):
-    require_confirmed(payload.student)
     return recommendations(payload.student, payload.filters, payload.sort_by)
 
 
@@ -187,13 +180,28 @@ def export_report(student, job, match, advice):
         return '无法计算' if value is None else f'{value:.1f}%'
     def labels(key):
         return '、'.join(x['label'] for x in match[key]) or '无'
-    lines = ['大学生职业规划建议', f'目标岗位：{job["name"]}', f'专业：{student.major or "未填写"}', f'意向城市：{student.intention.city or "未限制"}', f'基础匹配度：{score(match["basic_display"])}（{match["satisfied"]}/{match["required"]}）', f'增强匹配度：{score(match["enhanced_display"])}', f'已满足：{labels("satisfied_items")}', f'明确差距：{labels("gap_items")}', f'待确认：{labels("pending_items")}', '相关基础（不等于已掌握）：' + ('、'.join(x['label'] for x in match['items'] if x['related_only']) or '无'), '', '契合度评价：' + advice['fit_evaluation'], '', '学习方向：', *['- ' + x for x in advice['learning_directions']], '', '具体学习活动：', *['- ' + x for x in advice['learning_steps']], '', f'输入版本：{match["input_version"]}', f'算法版本：{match["algorithm_version"]}', f'数据版本：{match["data_version"]}', '招聘信息为赛题样本，不表示仍在招聘；建议不保证录用或薪资。']
+    lines = [
+        '大学生职业规划建议', f'目标岗位：{job["name"]}',
+        f'专业：{student.major or "未填写"}',
+        f'意向城市：{student.intention.city or "未限制"}',
+        f'基础匹配度：{score(match["basic_display"])}（{match["satisfied"]}/{match["required"]}）',
+        f'增强匹配度：{score(match["enhanced_display"])}',
+        f'资料已提及：{labels("satisfied_items")}',
+        f'资料未提及（不代表不具备）：{labels("pending_items")}',
+        '相关基础（不等于已掌握）：' + ('、'.join(x['label'] for x in match['items'] if x['related_only']) or '无'),
+        '', '契合度评价：' + advice['fit_evaluation'],
+        '', '学习方向：', *['- ' + x for x in advice['learning_directions']],
+        '', '具体学习活动：', *['- ' + x for x in advice['learning_steps']],
+        '', f'输入版本：{match["input_version"]}',
+        f'算法版本：{match["algorithm_version"]}',
+        f'数据版本：{match["data_version"]}',
+        '招聘信息为赛题样本，不表示仍在招聘；建议不保证录用或薪资。',
+    ]
     return chr(10).join(lines)
 
 
 @app.post('/api/reports')
 async def report(payload: MatchRequest, request: Request):
-    require_confirmed(payload.student)
     job = get_job(payload.job_id)
     if not job:
         return error(request, 'JOB_NOT_FOUND', '找不到目标岗位。', 404)

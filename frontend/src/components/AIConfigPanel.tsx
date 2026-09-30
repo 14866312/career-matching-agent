@@ -129,7 +129,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
         <button className="ai-config-close" type="button" aria-label="关闭 AI 模型配置" onClick={onClose} disabled={busy}>×</button>
         <p className="ai-config-kicker">MODEL CONNECTION</p>
         <h2 id="ai-config-title">AI 模型配置</h2>
-        <p className="ai-config-lead">配置用于简历解析、能力画像和成长建议的模型接口。可选择 Chat Completions 或 Responses 协议；测试连接只发送一条不含个人资料的短请求，密钥只发送到本机后端，不会回显。</p>
+        <p className="ai-config-lead">配置用于简历解析、个人分析报告和岗位建议的模型接口。可选择 Chat Completions 或 Responses 协议；测试连接只发送一条不含个人资料的短请求，密钥只发送到本机后端，不会回显。</p>
 
         <div className="ai-provider-grid" aria-label="模型服务预设">
           {(Object.keys(PRESETS) as Provider[]).map(key => (
