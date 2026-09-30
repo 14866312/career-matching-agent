@@ -37,7 +37,7 @@ def test_missing_configuration_exits_2(monkeypatch):
 def test_all_steps_pass_without_printing_names(monkeypatch):
     code, output = run_smoke(monkeypatch)
     assert code == 0, output
-    for step in ('live_resume_pdf_empty_name', 'name_returned', 'name_not_in_profile', 'name_rejected_by_scoring', 'name_not_in_report'):
+    for step in ('live_resume_pdf_empty_name', 'name_returned', 'name_not_in_profile', 'name_edit', 'name_rejected_by_scoring', 'name_not_in_report'):
         assert f'"step": "{step}",\n      "status": "passed"' in output
     assert smoke.PROBE_NAME not in output and smoke.EDITED_NAME not in output
     assert '图书借阅' not in output  # no resume text

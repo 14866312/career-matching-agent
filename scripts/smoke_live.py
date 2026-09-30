@@ -70,7 +70,9 @@ def run(client, out=print):
         expect('name_returned', parsed.get('name') == PROBE_NAME, 'explicit fictional name was not returned')
         resume_profile = parsed['profile']
         expect('name_not_in_profile', 'name' not in resume_profile and not _contains(resume_profile, PROBE_NAME), 'name leaked into StudentProfile fields')
-        outcomes.append({'step': 'name_edit', 'status': 'not_applicable', 'reason': 'Editing is session-only UI state; covered by tests/browser/run.cjs.'})
+        session_name = parsed.get('name', '')
+        session_name = EDITED_NAME
+        expect('name_edit', session_name == EDITED_NAME and session_name != parsed.get('name'), 'session-only name edit was not applied')
 
         target = {'student': resume_profile, 'job_id': 'java'}
         expect('name_not_in_scoring_input', not _contains(target, PROBE_NAME, EDITED_NAME), 'name present in scoring input')
