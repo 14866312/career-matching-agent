@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MatchesTab from '../components/MatchesTab';
 import { apiPost } from '../api';
-import { recommendationsFor, student } from './componentFixtures';
+import { recommendationFor, recommendationsFor, report, student } from './componentFixtures';
+import type { MatchItem } from '../types';
 
 vi.mock('../api', async importOriginal => {
   const actual = await importOriginal<typeof import('../api')>();
@@ -89,8 +90,9 @@ describe('MatchesTab integration', () => {
     expect(apiPost).toHaveBeenCalledTimes(1);
   });
 
-  it('marks recommendations stale after the profile revision changes', async () => {
+  it('refreshes stale recommendations through the in-page action after the profile revision changes', async () => {
     vi.mocked(apiPost).mockResolvedValue(recommendationsFor());
+    const user = userEvent.setup();
     const { freshness, rerender } = renderMatches();
     expect((await screen.findAllByRole('heading', { name: '前端工程师' })).length).toBeGreaterThan(0);
 
@@ -110,5 +112,62 @@ describe('MatchesTab integration', () => {
 
     expect(await screen.findByText('简历或资料已变化；旧匹配与建议已过期，请刷新匹配结果。')).toBeInTheDocument();
     expect(freshness).toHaveBeenLastCalledWith('stale', 'not_generated');
+    await user.click(screen.getByRole('button', { name: '更新过期结果' }));
+    await waitFor(() => expect(freshness).toHaveBeenLastCalledWith('current', 'not_generated'));
+    expect(apiPost).toHaveBeenCalledTimes(2);
+    expect(apiPost).toHaveBeenLastCalledWith('/api/recommendations', expect.objectContaining({
+      student: expect.objectContaining({ major: '软件工程' })
+    }), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(screen.queryByRole('button', { name: '更新过期结果' })).not.toBeInTheDocument();
+  });
+
+  it('updates the overview and discards the previous report when another candidate is selected', async () => {
+    const missing: MatchItem = {
+      tag_id: 'vue', label: 'Vue', dimension: 'skills', required_level: 1,
+      status: 'pending', pending_reason: 'not_provided', student_level: null, student_evidence: '',
+      contribution: 0.25, enhancement_basis: 'related', related_only: false
+    };
+    const nextCandidate = recommendationFor('数据分析师');
+    nextCandidate.job_id = 'data-analyst';
+    nextCandidate.match = {
+      ...nextCandidate.match, job_id: nextCandidate.job_id, input_version: 'input-2',
+      basic: 50, enhanced: 62.5, required: 2, pending_items: [missing],
+      items: [...nextCandidate.match.items, missing]
+    };
+    vi.mocked(apiPost)
+      .mockResolvedValueOnce({ ...recommendationsFor(), items: [recommendationFor(), nextCandidate], candidate_count: 2 })
+      .mockResolvedValueOnce(report);
+    const user = userEvent.setup();
+    renderMatches();
+    await screen.findByRole('button', { name: /数据分析师/ });
+    await user.click(screen.getByRole('button', { name: '生成岗位建议' }));
+    expect(await screen.findByRole('button', { name: '导出报告TXT' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: /数据分析师/ }));
+    const overview = screen.getByRole('region', { name: '岗位匹配概览' });
+    expect(within(overview).getByRole('heading', { name: '数据分析师' })).toBeInTheDocument();
+    expect(within(overview).getByText('50')).toBeInTheDocument();
+    expect(within(overview).getByText('62.5')).toBeInTheDocument();
+    expect(within(overview).getByText('1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /数据分析师/, pressed: true })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '导出报告TXT' })).not.toBeInTheDocument();
+    expect(screen.queryByText(report.advice.fit_evaluation)).not.toBeInTheDocument();
+  });
+
+  it('opens and focuses the filters from the empty result action so the user can recover', async () => {
+    vi.mocked(apiPost)
+      .mockResolvedValueOnce({ ...recommendationsFor(), items: [], candidate_count: 0 })
+      .mockResolvedValue(recommendationsFor());
+    const user = userEvent.setup();
+    renderMatches();
+    await user.click(await screen.findByRole('button', { name: '调整筛选条件' }));
+    expect(screen.getByLabelText('城市')).toBeVisible();
+    expect(screen.getByLabelText('城市')).toHaveFocus();
+    await user.type(screen.getByLabelText('城市'), '上海');
+    await user.click(screen.getByRole('button', { name: '应用筛选' }));
+    expect((await screen.findAllByRole('heading', { name: '前端工程师' })).length).toBeGreaterThan(0);
+    expect(apiPost).toHaveBeenLastCalledWith('/api/recommendations', expect.objectContaining({
+      filters: expect.objectContaining({ city: '上海' })
+    }), expect.anything());
   });
 });

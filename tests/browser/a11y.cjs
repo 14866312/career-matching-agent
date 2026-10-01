@@ -27,6 +27,9 @@ function formatViolations(violations) {
 }
 
 async function scan(page, state) {
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    .map(animation => animation.finished.catch(() => {}))));
   const result = await new AxeBuilder({ page }).analyze();
   const blocking = result.violations.filter(violation => blockingImpacts.has(violation.impact));
   assert.deepEqual(blocking, [], state + ' 存在严重无障碍问题：\n' + formatViolations(blocking));
@@ -109,6 +112,31 @@ async function closeOnboarding(page) {
     await page.getByRole('button', { name: '生成岗位建议', exact: true }).click();
     await page.locator('.report').waitFor();
     await scan(page, '匹配报告');
+
+    await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
+    await page.getByLabel('专业', { exact: true }).fill('计算机科学与技术');
+    await page.getByRole('tab', { name: '匹配报告', exact: true }).click();
+    const refreshStale = page.getByRole('button', { name: '更新过期结果', exact: true });
+    await refreshStale.waitFor();
+    await scan(page, '过期匹配与刷新');
+    await refreshStale.click();
+    await page.getByText('匹配结果最新', { exact: true }).waitFor();
+
+    await page.route('**/api/recommendations', route => route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { code: 'CURRENT_ERROR', message: '模拟服务繁忙，请稍后重试。', retryable: true, request_id: 'a11y-only' }
+      })
+    }), { times: 1 });
+    await page.getByRole('button', { name: '刷新匹配结果', exact: true }).click();
+    const retry = page.getByRole('button', { name: '重新计算推荐', exact: true });
+    await retry.waitFor();
+    await retry.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    await scan(page, '推荐错误与重试');
+    await retry.click();
+    await page.getByText('匹配结果最新', { exact: true }).waitFor();
 
     await context.close();
   } finally {

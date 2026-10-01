@@ -110,6 +110,17 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     assert.equal(optionStyle.color, 'rgb(244, 244, 244)', '目标岗位选项文字应有足够对比度');
     assert.equal(optionStyle.backgroundColor, 'rgb(24, 24, 24)', '目标岗位下拉菜单应使用深色背景');
 
+    await page.getByLabel('专业', { exact: true }).fill('软件工程');
+    await page.getByRole('tab', { name: '匹配报告', exact: true }).click();
+    await page.locator('.alternative-grid > button').first().waitFor();
+    const contents = page.getByRole('navigation', { name: '匹配报告目录', exact: true });
+    for (const [label, sectionId] of [['能力摘要', 'report-dimensions'], ['岗位要求', 'report-matrix'], ['岗位建议', 'report-advice']]) {
+      await contents.getByRole('link', { name: label, exact: true }).click();
+      assert.equal(await page.getByRole('tab', { name: '匹配报告', exact: true }).getAttribute('aria-selected'), 'true', '目录跳转必须保留匹配页面');
+      assert.equal(new URL(page.url()).hash, '#matches', '页内目录不能改变应用的页面路由');
+      assert.equal(await page.locator('#' + sectionId).evaluate(section => section === document.activeElement), true, '目录跳转应将键盘焦点移至目标内容');
+    }
+
     await page.getByRole('button', { name: /AI 模型配置/ }).click();
     const dialog = page.getByRole('dialog', { name: 'AI 模型配置' });
     await dialog.waitFor();
