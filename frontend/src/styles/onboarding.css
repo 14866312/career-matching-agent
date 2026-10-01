@@ -1,0 +1,400 @@
+/* The process navigator stays deliberately small; explanations live in the
+   re-openable onboarding dialog above. */
+.onboarding-trigger {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  color: #d8d8d8;
+  background: rgba(255, 255, 255, .025);
+  font: 500 13px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, color .2s ease;
+}
+
+.onboarding-trigger span {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.onboarding-trigger:hover { color: #ffffff; border-color: rgba(235, 235, 235, .55); background: rgba(235, 235, 235, .08); }
+
+.workflow-guide {
+  top: 50%;
+  right: clamp(12px, 2.5vw, 34px);
+  bottom: auto;
+  width: 74px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(16, 16, 16, .86);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(255, 255, 255, .025);
+  transform: translateY(-50%);
+}
+
+.workflow-guide ol {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+}
+
+.workflow-guide-step,
+.workflow-guide.is-collapsed .workflow-guide-step {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  color: #a2a2a2;
+  background: rgba(255, 255, 255, .035);
+  text-align: center;
+}
+
+.workflow-guide-step .workflow-step-number,
+.workflow-guide.is-collapsed .workflow-step-number {
+  width: auto;
+  height: auto;
+  border: 0;
+  color: inherit;
+  font-size: 16px;
+}
+
+.workflow-guide li.is-done .workflow-guide-step { border-color: rgba(182, 182, 182, .45); }
+.workflow-guide li.is-done .workflow-step-number { color: #c9c9c9; }
+.workflow-guide li.is-stale .workflow-guide-step { border-color: rgba(181, 181, 181, .72); }
+.workflow-guide li.is-stale .workflow-step-number { color: #c4c4c4; }
+.workflow-guide-step[aria-current="step"] { color: #111111; border-color: #f5f5f5; background: #f5f5f5; box-shadow: 0 0 0 3px rgba(245, 245, 245, .1); }
+.workflow-guide-step[aria-current="step"] .workflow-step-number { color: #111111; }
+
+.workflow-guide-next {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  width: 58px;
+  min-height: 54px;
+  margin: 9px auto 0;
+  padding: 6px 4px;
+  border: 1px solid rgba(235, 235, 235, .42);
+  border-radius: 12px;
+  color: #ebebeb;
+  background: rgba(235, 235, 235, .075);
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.workflow-guide-next:hover { border-color: rgba(235, 235, 235, .78); background: rgba(235, 235, 235, .15); transform: translateY(-1px); }
+.workflow-guide-next-mark { display: block; width: 22px; height: 22px; color: #f5f5f5; }
+.workflow-guide-next-copy { display: grid; gap: 2px; min-width: 0; }
+.workflow-guide-next-copy small { color: #f5f5f5; font-size: 14px; font-weight: 650; line-height: 1.2; }
+.workflow-guide-next-copy b { display: none; }
+
+.workflow-guide-next:is(:hover, :focus-visible)::after {
+  content: attr(aria-label);
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  width: max-content;
+  max-width: 180px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 8px;
+  color: #f5f5f5;
+  background: rgba(16, 16, 16, .96);
+  font-size: 13px;
+  line-height: 1.3;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.onboarding-wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 42px);
+  background: rgba(0, 0, 0, .78);
+  backdrop-filter: blur(12px) saturate(120%);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.onboarding-wizard {
+  width: min(900px, 100%);
+  max-height: min(880px, calc(100vh - 32px));
+  overflow: auto;
+  padding: clamp(26px, 4vw, 42px);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 26px;
+  color: var(--stitch-text);
+  background:
+    radial-gradient(circle at 92% 0%, rgba(235, 235, 235, .08), transparent 30%),
+    linear-gradient(145deg, rgba(29, 29, 29, .99), rgba(11, 11, 11, .99));
+  box-shadow: 0 30px 110px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .035);
+  overscroll-behavior: contain;
+  touch-action: auto;
+}
+
+.onboarding-wizard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.onboarding-wizard-kicker {
+  margin: 0;
+  color: #ebebeb;
+  font: 500 12px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .16em;
+}
+
+.onboarding-wizard-progress {
+  margin: 8px 0 0;
+  color: #959595;
+  font: 500 12px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+.onboarding-wizard-close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 50%;
+  color: #cbcbcb;
+  background: rgba(255, 255, 255, .035);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.onboarding-wizard-close:hover { color: #ffffff; border-color: rgba(255, 255, 255, .36); background: rgba(255, 255, 255, .08); }
+.onboarding-wizard-close:disabled { opacity: .35; cursor: not-allowed; }
+
+.onboarding-wizard-intro { max-width: 700px; margin-top: 28px; }
+.onboarding-wizard-intro h2 { margin: 0; color: #ffffff; font-size: clamp(34px, 5vw, 58px); font-weight: 350; letter-spacing: -.06em; line-height: 1.08; }
+.onboarding-wizard-intro p:not(.onboarding-wizard-kicker) { margin: 18px 0 0; color: #d0d0d0; font-size: 16px; line-height: 1.75; }
+
+.onboarding-section-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #959595;
+  font: 500 12px/1.2 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.onboarding-route-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 27px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding-route-preview li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding-right: 16px;
+}
+
+.onboarding-route-number {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 50%;
+  color: #f2f2f2;
+  font: 600 12px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+.onboarding-route-copy { display: grid; gap: 3px; min-width: 0; }
+.onboarding-route-copy strong { overflow: hidden; color: #ececec; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.onboarding-route-copy small { color: #b4b4b4; font-size: 12px; line-height: 1.35; }
+.onboarding-route-line { position: absolute; top: 14px; left: 42px; right: 9px; border-top: 1px solid rgba(255, 255, 255, .14); transform: translateX(0); }
+
+.onboarding-choice-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.onboarding-choice-heading .onboarding-section-label { margin: 0; }
+.onboarding-choice-heading strong { color: #f4f4f4; font-size: 16px; font-weight: 600; }
+.onboarding-choice-heading small { color: #b4b4b4; font-size: 13px; }
+
+.onboarding-start-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.onboarding-start-card {
+  display: grid;
+  align-content: start;
+  min-height: 196px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 16px;
+  color: #dcdcdc;
+  background: rgba(255, 255, 255, .035);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.onboarding-start-card:hover { transform: translateY(-3px); border-color: rgba(235, 235, 235, .55); background: rgba(235, 235, 235, .07); }
+.onboarding-start-card.is-selected { border-color: #ebebeb; background: rgba(235, 235, 235, .1); box-shadow: 0 0 0 3px rgba(235, 235, 235, .09); }
+.onboarding-start-eyebrow { color: #b4b4b4; font: 500 12px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .08em; }
+.onboarding-start-card strong { margin-top: 20px; color: #ffffff; font-size: 22px; font-weight: 550; }
+.onboarding-start-card > span:not(.onboarding-start-eyebrow) { margin-top: 11px; color: #d0d0d0; font-size: 14px; line-height: 1.6; }
+.onboarding-start-card em { display: inline-flex; align-items: center; gap: 10px; align-self: end; margin-top: auto; padding-top: 18px; color: #f5f5f5; font-size: 14px; font-style: normal; font-weight: 600; }
+.onboarding-action-arrow { display: inline-block; width: 20px; height: 20px; flex: none; }
+
+.onboarding-storage-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(235, 235, 235, .25);
+  border-radius: 14px;
+  background: rgba(235, 235, 235, .055);
+}
+
+.onboarding-storage-choice strong { color: #f8f8f8; font-size: 15px; font-weight: 600; }
+.onboarding-storage-choice p { max-width: 530px; margin: 6px 0 0; color: #d0d0d0; font-size: 13px; line-height: 1.6; }
+.onboarding-storage-actions { display: flex; flex: none; flex-wrap: wrap; gap: 8px; }
+.onboarding-storage-actions button { min-height: 42px; font-size: 14px; white-space: nowrap; }
+.onboarding-storage-actions .ghost-button { color: #f2f2f2; border-color: rgba(255, 255, 255, .5); background: rgba(255, 255, 255, .04); }
+.onboarding-storage-actions .ghost-button:hover { border-color: #f2f2f2; background: rgba(255, 255, 255, .1); }
+
+.onboarding-wizard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.onboarding-wizard-footer > span { color: #b4b4b4; font-size: 13px; line-height: 1.6; }
+.onboarding-skip-button,
+.onboarding-back-button { padding: 8px 0; border: 0; color: #d0d0d0; background: transparent; font-size: 14px; cursor: pointer; }
+.onboarding-skip-button:hover,
+.onboarding-back-button:hover { color: #ffffff; }
+.onboarding-skip-button:disabled { opacity: .4; cursor: not-allowed; }
+.onboarding-back-button { margin-bottom: 18px; color: #ebebeb; }
+
+.onboarding-flow-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding-confirmation-note {
+  margin: 16px 0 0;
+  padding: 11px 13px;
+  border-left: 2px solid rgba(255, 255, 255, .32);
+  color: #b4b4b4;
+  background: rgba(255, 255, 255, .035);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.onboarding-flow-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.onboarding-flow-number {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid rgba(235, 235, 235, .45);
+  border-radius: 50%;
+  color: #ebebeb;
+  font: 600 14px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+.onboarding-flow-list li > span:last-child { display: grid; gap: 4px; }
+.onboarding-flow-list strong { color: #f8f8f8; font-size: 15px; font-weight: 600; }
+.onboarding-flow-list small { color: #d0d0d0; font-size: 13px; line-height: 1.45; }
+
+.onboarding-principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.onboarding-principles div { padding: 15px; border-left: 2px solid #ebebeb; background: rgba(235, 235, 235, .055); }
+.onboarding-principles b { display: block; color: #ffffff; font-size: 14px; }
+.onboarding-principles span { display: block; margin-top: 7px; color: #d0d0d0; font-size: 13px; line-height: 1.6; }
+.onboarding-wizard-footer-final { justify-content: flex-end; }
+.onboarding-wizard-footer-final .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 210px; min-height: 48px; margin-top: 0; font-size: 15px; }
+.onboarding-wizard-footer-final .onboarding-skip-button { white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .onboarding-trigger { padding-inline: 10px; }
+  .workflow-guide { right: 12px; }
+}
+
+@media (max-width: 680px) {
+  .exploration-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .onboarding-trigger,
+  .settings-trigger,
+  .model-config-trigger { padding: 0 10px; font-size: 11px; }
+  .workflow-guide { right: 10px; padding: 6px; }
+  .workflow-guide-step,
+  .workflow-guide.is-collapsed .workflow-guide-step { width: 42px; height: 42px; min-height: 42px; }
+  .workflow-guide-next { width: 58px; min-height: 52px; }
+  .onboarding-wizard { max-height: calc(100vh - 24px); padding: 24px 18px; border-radius: 20px; }
+  .onboarding-route-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 0; }
+  .onboarding-route-preview li { padding-right: 12px; }
+  .onboarding-route-line { display: none; }
+  .onboarding-start-grid,
+  .onboarding-principles { grid-template-columns: 1fr; }
+  .onboarding-flow-list { grid-template-columns: 1fr; }
+  .onboarding-start-card { min-height: 0; }
+  .onboarding-choice-heading { display: grid; gap: 5px; }
+  .onboarding-storage-choice { display: grid; }
+  .onboarding-storage-actions { display: grid; }
+  .onboarding-storage-actions button { width: 100%; white-space: normal; }
+  .onboarding-wizard-footer { align-items: flex-start; flex-direction: column; }
+  .onboarding-wizard-footer-final { align-items: stretch; }
+  .onboarding-wizard-footer-final .primary-button { width: 100%; }
+}

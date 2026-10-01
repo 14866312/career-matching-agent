@@ -1,10 +1,16 @@
 /* Focused regressions for the native job selector, local draft settings, guide, and model configuration state. */
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 
 (async () => {
+  const root = path.resolve(__dirname, '../..');
+  const indexHtml = await fs.readFile(path.join(root, 'frontend', 'index.html'), 'utf8');
+  assert.doesNotMatch(indexHtml, /fonts\.(googleapis|gstatic)\.com/, 'the app entry must not load remote fonts');
+
   const browser = await chromium.launch({
     channel: process.env.PW_CHANNEL === 'chromium' ? undefined : process.env.PW_CHANNEL || 'msedge',
     headless: true
@@ -20,6 +26,26 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(config) });
     });
     await page.goto(base);
+    const fontResources = await page.evaluate(() => (
+      performance.getEntriesByType('resource')
+        .map(entry => entry.name)
+        .filter(url => /fonts\.(googleapis|gstatic)\.com/.test(url))
+    ));
+    assert.deepEqual(fontResources, [], 'the app must not request remote font resources');
+
+    const reducedContext = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+      reducedMotion: 'reduce'
+    });
+    try {
+      const reducedPage = await reducedContext.newPage();
+      await reducedPage.goto(base);
+      const reducedAnimation = await reducedPage.locator('.exploration-pages .panel.active').evaluate(element => getComputedStyle(element).animationName);
+      assert.equal(reducedAnimation, 'none', 'reduced-motion users must not receive the page entry animation');
+    } finally {
+      await reducedContext.close();
+    }
+
     assert.equal(await page.locator('.singularity-intro').count(), 0, 'the removed cosmic intro must not render');
     await page.locator('.exploration-header').waitFor();
 
@@ -87,6 +113,7 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     await page.getByRole('button', { name: /AI 模型配置/ }).click();
     const dialog = page.getByRole('dialog', { name: 'AI 模型配置' });
     await dialog.waitFor();
+    await dialog.getByRole('status').getByText('配置已保存，连接尚未验证').waitFor();
     const state = (await dialog.locator('.ai-config-state').innerText()).trim();
     console.log('模型配置状态:', state);
     assert.match(state, /尚未验证/, '填写配置不应被显示为已经可用');

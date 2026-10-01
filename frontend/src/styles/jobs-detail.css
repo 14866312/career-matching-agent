@@ -1,0 +1,94 @@
+/* Jobs: hero viewport, metric card, then stacked editorial role cards. */
+.jobs-stitch-hero {
+  min-height: calc(100vh - 64px);
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(105px, 15vh, 165px) 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.jobs-stitch-hero h2 {
+  margin: 28px 0 18px;
+  color: #ffffff;
+  font-size: clamp(48px, 6.3vw, 78px);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -.065em;
+}
+.jobs-stitch-hero > p { max-width: 560px; margin: 0; color: var(--stitch-muted); font-size: 15px; line-height: 1.85; }
+.jobs-stitch-stats {
+  width: min(100%, 690px);
+  margin: 55px 0 0;
+  padding: 38px 42px 22px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--stitch-line);
+  border-radius: 30px;
+  background: linear-gradient(160deg, rgba(29, 29, 29, .8), rgba(8, 8, 8, .9));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .07);
+}
+.jobs-stitch-stats > div { min-width: 0; padding: 0 20px; display: flex; flex-direction: column; align-items: center; }
+.jobs-stitch-stats > div + div:not(.jobs-stats-action) { border-left: 1px solid var(--stitch-line); }
+.jobs-stitch-stats span { color: #787878; font: 400 9px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .11em; text-transform: uppercase; }
+.jobs-stitch-stats strong { margin: 9px 0 6px; color: #ffffff; font: 300 49px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: -.08em; }
+.jobs-stitch-stats strong.is-text { margin: 16px 0 13px; font: 400 22px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -.04em; }
+.jobs-stitch-stats strong small { margin-left: 4px; color: #858585; font-size: 13px; font-weight: 400; letter-spacing: 0; }
+.jobs-stitch-stats em { color: #626262; font-size: 10px; font-style: normal; }
+.jobs-stats-action {
+  grid-column: 1 / -1;
+  margin-top: 31px;
+  padding: 22px 0 0 !important;
+  border-top: 1px solid var(--stitch-line);
+  flex-direction: row !important;
+  justify-content: space-between;
+}
+.jobs-stats-action > span { text-align: left; text-transform: none; letter-spacing: 0; }
+.jobs-stats-action a { padding: 8px 15px; border-radius: 999px; color: #111111; background: #f5f5f5; font-size: 11px; font-weight: 600; text-decoration: none; }
+.jobs-stats-action a b { margin-left: 5px; }
+.jobs-stitch-section { max-width: 960px; margin: 0 auto; padding: 110px 24px 260px; }
+.jobs-stitch-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 36px; text-align: center; }
+.jobs-stitch-section-head > div { flex: 1; padding-left: 250px; }
+.jobs-stitch-kicker { color: #656565; font: 400 9px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .16em; }
+.jobs-stitch-section-head h3 { margin: 16px 0 10px; color: #f5f5f5; font-size: 34px; font-weight: 400; letter-spacing: -.045em; }
+.jobs-stitch-section-head p { margin: 0; color: #777777; font-size: 12px; }
+.jobs-stitch-search { width: 215px; height: 40px; padding: 0 13px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--stitch-line); border-radius: 999px; background: rgba(255, 255, 255, .025); color: #676767; }
+.jobs-stitch-search input { width: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: #eeeeee; font-size: 11px; }
+.jobs-stitch-note { margin: 26px 0 54px; text-align: center; color: #505050; font-size: 10px; }
+.jobs-stitch-list { display: grid; gap: 74px; }
+.jobs-stitch-card {
+  width: 100%;
+  padding: 30px 34px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 22px 34px;
+  text-align: left;
+  border: 1px solid var(--stitch-line);
+  border-radius: 24px;
+  color: var(--stitch-text);
+  background: linear-gradient(145deg, rgba(23, 23, 23, .78), rgba(8, 8, 8, .92));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .36), inset 0 1px rgba(255, 255, 255, .055);
+  cursor: pointer;
+  transition: transform .25s ease, border-color .25s ease, background .25s ease;
+}
+.jobs-stitch-card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, .18); background: linear-gradient(145deg, rgba(29, 29, 29, .86), rgba(10, 10, 10, .95)); }
+.jobs-stitch-card.is-target { border-color: rgba(255, 255, 255, .22); }
+.jobs-stitch-card-top { display: flex; align-items: center; gap: 9px; }
+.jobs-stitch-family,
+.jobs-stitch-level { padding: 5px 8px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #9b9b9b; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .06em; }
+.jobs-stitch-title-row h4 { margin: 15px 0 7px; color: #ffffff; font-size: 25px; font-weight: 500; letter-spacing: -.045em; }
+.jobs-card-main > p { max-width: 600px; margin: 0; color: #808080; font-size: 12px; line-height: 1.75; }
+.jobs-card-score { align-self: center; text-align: right; }
+.jobs-card-score strong { display: block; color: #ffffff; font: 300 36px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: -.06em; }
+.jobs-card-score strong small { margin-left: 4px; color: #787878; font-size: 11px; letter-spacing: 0; }
+.jobs-card-score span { display: block; margin: 8px 0 11px; color: #676767; font-size: 9px; }
+.jobs-card-score i { width: 100%; height: 2px; display: block; overflow: hidden; background: rgba(255, 255, 255, .08); }
+.jobs-card-score i b { height: 100%; display: block; background: #e9e9e9; }
+.jobs-stitch-divider { grid-column: 1 / -1; height: 1px; background: var(--stitch-line); }
+.jobs-card-metrics { grid-column: 1 / -1; display: flex; gap: 38px; color: #626262; font-size: 10px; }
+.jobs-card-metrics b { color: #d5d5d5; font: 400 11px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.jobs-card-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.jobs-stitch-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.jobs-stitch-pills span { padding: 5px 8px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #747474; font-size: 9px; }
+.jobs-card-link { color: #eeeeee; font-size: 10px; white-space: nowrap; }

@@ -1,0 +1,65 @@
+/* Stitch-inspired profile page. Existing form state, API calls and validation stay in ProfileTab. */
+.profile-stitch {
+  --stitch-bg: #111111;
+  --stitch-card: #181818;
+  --stitch-card-hover: #202020;
+  --stitch-line: rgba(255, 255, 255, 0.1);
+  --stitch-text: #f5f5f5;
+  --stitch-muted: #929292;
+  --stitch-accent: #ebebeb;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+  border-radius: 18px;
+  min-height: 720px;
+  margin: -20px -12px;
+  padding: 74px clamp(22px, 5vw, 78px) 90px;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-stitch::before {
+  content: "";
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  top: -300px;
+  left: -180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(235, 235, 235, 0.09), transparent 68%);
+  pointer-events: none;
+}
+
+.profile-stitch-hero { text-align: center; padding: 15px 0 58px; }
+.profile-stitch-hero h2 { color: var(--stitch-text); font-size: clamp(42px, 7vw, 72px); line-height: 1.02; letter-spacing: -0.07em; font-weight: 300; margin: 22px 0 20px; }
+.profile-stitch-hero h2 span { background: linear-gradient(180deg, #ffffff, #747474); background-clip: text; -webkit-background-clip: text; color: transparent; }
+.profile-stitch-hero > p { color: var(--stitch-muted); max-width: 560px; margin: 0 auto; font-size: 14px; line-height: 1.8; }
+.profile-stitch-progress { display: inline-grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); margin-top: 34px; border: 1px solid var(--stitch-line); border-radius: 16px; background: rgba(255, 255, 255, .035); overflow: hidden; text-align: left; }
+.profile-stitch-progress div { min-width: 110px; padding: 15px 18px; display: flex; flex-direction: column; gap: 3px; }
+.profile-stitch-progress div + div { border-left: 1px solid var(--stitch-line); }
+.profile-stitch-progress b { color: var(--stitch-muted); font: 10px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.profile-stitch-progress span { color: var(--stitch-muted); font-size: 12px; }
+.profile-stitch-progress .is-current b, .profile-stitch-progress .is-current span { color: var(--stitch-accent); }
+.profile-stitch .tag-editor { border-top: 1px solid var(--stitch-line); padding-top: 18px; }
+.profile-stitch .editor-title { color: var(--stitch-text); }
+.profile-stitch .tag-list { gap: 8px; }
+.profile-stitch .editable-tag { background: rgba(235, 235, 235, .08); border-color: rgba(235, 235, 235, .25); color: #eeeeee; }
+.profile-stitch .editable-tag select { background: #222222; color: var(--stitch-text); border-color: var(--stitch-line); }
+.profile-stitch .tag-empty { color: var(--stitch-muted); }
+.profile-stitch .item-block { border-top-color: var(--stitch-line); }
+.profile-stitch .item, .profile-stitch .req-item { background: rgba(255, 255, 255, .035); border-color: var(--stitch-line); color: #d0d0d0; }
+.profile-stitch .req-item summary { color: var(--stitch-text); }
+.profile-stitch .req-quote { background: rgba(255, 255, 255, .035); border-left-color: var(--stitch-accent); color: var(--stitch-muted); }
+.profile-stitch .primary-button { background: var(--stitch-accent); color: #111111; }
+.profile-stitch .ghost-button { color: var(--stitch-accent); border-color: rgba(235, 235, 235, .4); background: transparent; }
+.profile-stitch .error-box { background: rgba(93, 93, 93, .15); border-color: rgba(172, 172, 172, .35); color: #cbcbcb; }
+
+@media (max-width: 800px) {
+}
+
+@media (max-width: 560px) {
+  .profile-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+  .profile-stitch-hero { padding-bottom: 45px; }
+  .profile-stitch-hero h2 { font-size: 46px; }
+  .profile-stitch-progress { width: 100%; }
+  .profile-stitch-progress div { min-width: 0; padding: 13px 10px; }
+}

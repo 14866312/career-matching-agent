@@ -152,7 +152,7 @@ npm.cmd --prefix frontend run build                            # 类型检查并
 
 样例重建命令会改写 samples 中已提交的虚构文件，仅在更新样例时运行；日常功能改动不要执行。PDF 工具依赖与应用运行依赖分开，不影响正常安装或启动。
 
-改了前端代码后，要重新 build 并重启 `./start.ps1` 才能看到效果。开发时也可以运行 `npm.cmd --prefix frontend run dev`，在 http://localhost:5173 热更新预览（需要后端同时在 8000 端口运行）。
+改了前端代码后，要重新 build 并重启 `./start.ps1` 才能看到效果。开发时也可以运行 `npm.cmd --prefix frontend run dev`，在 http://localhost:5173 热更新预览（需要后端同时在 8000 端口运行）。前端样式按级联顺序拆分在 `frontend/src/styles/`，`frontend/src/styles.css` 只负责按顺序导入；界面使用系统字体栈，不请求外部字体服务。
 
 浏览器端到端测试：
 
@@ -160,7 +160,7 @@ npm.cmd --prefix frontend run build                            # 类型检查并
 npm.cmd ci --prefix tests/browser
 .venv/Scripts/python.exe tests/e2e_server.py   # 终端一：测试专用服务器（端口 8011，AI 返回固定假数据）
 npm.cmd --prefix tests/browser test            # 终端二：默认使用本机 Edge，设置 PW_CHANNEL=chromium 可切换
-npm.cmd --prefix tests/browser run test:ui     # 聚焦检查本机草稿、键盘焦点和模型配置状态
+npm.cmd --prefix tests/browser run test:ui     # 聚焦检查本机草稿、键盘焦点、模型配置、离线字体与减弱动效
 ~~~
 
 浏览器测试默认把截图、导出报告和结果写入 `docs/acceptance/`；设置 `E2E_OUTPUT_DIR` 可改写到临时目录，CI 使用该方式避免修改仓库验收文件。测试服务器只把 AI 的返回换成假数据，匹配、文件解析和报告生成都是真实代码；但它不能证明真实 AI 调用可用。要检查真实模型，先正常启动服务，再运行 `.venv/Scripts/python.exe scripts/smoke_live.py`（缺少配置时退出码为 2，失败为 1，成功为 0）。
