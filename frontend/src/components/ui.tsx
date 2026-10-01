@@ -34,12 +34,40 @@ export function JobModal({ open, onClose, title, children }: { open: boolean; on
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
+    const bodyStyle = document.body.style;
+    const documentStyle = document.documentElement.style;
+    const previousBodyOverflow = bodyStyle.overflow;
+    const previousDocumentOverflow = documentStyle.overflow;
+    const previousBodyPaddingRight = bodyStyle.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const activePanel = closeRef.current?.closest<HTMLElement>('.panel');
+    const previousPanelAnimation = activePanel?.style.animation ?? '';
+    const previousPanelTransform = activePanel?.style.transform ?? '';
+    documentStyle.overflow = 'hidden';
+    bodyStyle.overflow = 'hidden';
+    if (scrollbarWidth > 0) bodyStyle.paddingRight = scrollbarWidth + 'px';
+    // The page panels use an entrance transform. A fixed modal inside a
+    // transformed ancestor is positioned against that long panel instead of
+    // the viewport, which can place the dialog outside the visible screen.
+    if (activePanel) {
+      activePanel.style.animation = 'none';
+      activePanel.style.transform = 'none';
+    }
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      documentStyle.overflow = previousDocumentOverflow;
+      bodyStyle.overflow = previousBodyOverflow;
+      bodyStyle.paddingRight = previousBodyPaddingRight;
+      if (activePanel) {
+        activePanel.style.animation = previousPanelAnimation;
+        activePanel.style.transform = previousPanelTransform;
+      }
+    };
   }, [open, onClose]);
   if (!open) return null;
   return (

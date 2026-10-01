@@ -6,6 +6,7 @@ export interface Ability {
   level: number;
   confirmed: boolean;
   evidence: string;
+  source?: 'resume' | 'manual';
 }
 
 export interface Intention {
@@ -23,10 +24,12 @@ export interface TagDef {
 
 export interface StudentProfile {
   major: string;
+  major_source?: 'resume' | 'manual';
   skills: Ability[];
   certificates: Ability[];
   qualities: Ability[];
   experiences: string;
+  experiences_source?: 'resume' | 'manual';
   intention: Intention;
   confirmed: boolean;
   advantages: string[];
@@ -111,12 +114,21 @@ export interface CareerPaths {
 }
 
 export interface MatchItem extends Requirement {
-  status: 'satisfied' | 'gap' | 'pending';
+  status: 'satisfied' | 'pending';
+  pending_reason?: 'not_provided' | 'unconfirmed' | 'missing_evidence' | string;
   student_level: number | null;
   student_evidence: string;
   contribution: number;
   enhancement_basis: string;
   related_only: boolean;
+}
+
+export interface ProfileFocusTarget {
+  dimension: Dimension;
+  tag_id: string;
+  token: number;
+  label: string;
+  reason: 'not_provided';
 }
 
 export interface DimResult {
@@ -141,7 +153,6 @@ export interface MatchResult {
   dimensions: DimResult[];
   items: MatchItem[];
   satisfied_items: MatchItem[];
-  gap_items: MatchItem[];
   pending_items: MatchItem[];
   notice?: string;
 }
@@ -201,6 +212,17 @@ export interface HealthResp {
   source_file: string;
 }
 
+export type LLMAdapter = 'openai-responses' | 'chat-completions';
+
+export interface LLMConfig {
+  provider: 'deepseek' | 'openai';
+  adapter: LLMAdapter;
+  base_url: string;
+  model: string;
+  configured: boolean;
+  has_api_key: boolean;
+}
+
 export interface ProfileAnalysis {
   summary: string[];
   evidence_quotes: string[];
@@ -214,6 +236,7 @@ export interface ProfileResp {
 }
 
 export interface ResumeResp {
+  name: string;
   profile: StudentProfile;
   notice: string;
   mode: string;

@@ -3,7 +3,8 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "test": "node run.cjs"
+    "test": "node run.cjs",
+    "test:ui": "node ui_regressions.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

@@ -2,7 +2,9 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from ipaddress import ip_address
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Request, UploadFile
@@ -14,9 +16,10 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartParser
 
 from .data import dataset, get_job
-from .llm import AIError, extract_resume, generate_advice, generate_profile, configured
+from .llm import AIError, call_json, config_snapshot, extract_resume, generate_advice, generate_profile, configured, update_config
 from .matching import ALGORITHM_VERSION, match_student, recommendations
 from .models import MatchRequest, RecommendationRequest, StudentProfile
+from pydantic import BaseModel, Field
 from .resume import MAX_BYTES, extract_text
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,9 +34,33 @@ app = FastAPI(title='Career Compass', version='1.1.0')
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'], allow_methods=['GET', 'POST'], allow_headers=['Content-Type'])
 
 
+class LLMConfigUpdate(BaseModel):
+    provider: str = Field(default='openai', max_length=40)
+    adapter: str = Field(default='chat-completions', max_length=80)
+    base_url: str = Field(min_length=1, max_length=500)
+    model: str = Field(min_length=1, max_length=160)
+    api_key: str | None = Field(default=None, max_length=1000)
+
+
 def error(request, code, message, status=400, retryable=False):
     request_id = getattr(request.state, 'request_id', uuid4().hex)
     return JSONResponse(status_code=status, content={'error': {'code': code, 'message': message, 'retryable': retryable, 'request_id': request_id}}, headers={'X-Request-ID': request_id, 'Cache-Control': 'no-store'})
+
+
+def _local_config_host(request: Request) -> bool:
+    raw_host = request.headers.get('host', '').strip()
+    try:
+        host = urlsplit('//' + raw_host).hostname
+    except ValueError:
+        return False
+    if not host:
+        return False
+    if host.lower() == 'localhost':
+        return True
+    try:
+        return ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 @app.middleware('http')
@@ -80,14 +107,31 @@ async def http_error_handler(request: Request, exc: HTTPException):
     return error(request, 'NOT_FOUND' if exc.status_code == 404 else 'HTTP_ERROR', '找不到该资源。' if exc.status_code == 404 else '请求格式或方法无效。', exc.status_code)
 
 
-def require_confirmed(student):
-    if not student.confirmed:
-        raise AIError('PROFILE_UNCONFIRMED', '请先检查并确认完整能力画像，再进行匹配或生成建议。')
-
-
 @app.get('/api/health')
 def health():
     return {'status': 'ok', 'data_version': dataset()['version'], 'algorithm_version': ALGORITHM_VERSION, 'llm_configured': configured(), 'llm_model': os.environ.get('LLM_MODEL', ''), 'source_file': dataset()['source_file']}
+
+
+@app.get('/api/llm/config')
+def llm_config(request: Request):
+    if not _local_config_host(request):
+        return error(request, 'HOST_NOT_ALLOWED', '模型配置只允许从本机访问。', 403)
+    return config_snapshot()
+
+
+@app.post('/api/llm/config')
+def save_llm_config(request: Request, payload: LLMConfigUpdate):
+    if not _local_config_host(request):
+        return error(request, 'HOST_NOT_ALLOWED', '模型配置只允许从本机访问。', 403)
+    return update_config(payload.base_url, payload.model, payload.api_key, payload.adapter)
+
+
+@app.post('/api/llm/test')
+async def test_llm_connection():
+    result = await call_json('只返回 {"ok": true}，不要附加其他内容。', {'purpose': 'connectivity_test'})
+    if result.get('ok') is not True:
+        raise AIError('LLM_INVALID_OUTPUT', '连接测试未收到预期确认，请核对模型兼容性和适配器。')
+    return {'connected': True, 'model': os.environ.get('LLM_MODEL', '')}
 
 
 @app.get('/api/tags')
@@ -140,18 +184,16 @@ async def resume_parse(file: UploadFile = File(...)):
 
 @app.post('/api/matches')
 def matches(payload: MatchRequest, request: Request):
-    require_confirmed(payload.student)
     job = get_job(payload.job_id)
     if not job:
         return error(request, 'JOB_NOT_FOUND', '找不到目标岗位。', 404)
     result = match_student(payload.student, job)
-    result['notice'] = '基础分只计算已确认标签的覆盖率；待确认项不算满足。增强分的相关基础不代表已经掌握。'
+    result['notice'] = '匹配依据简历及手动填写的技能；资料未提及不代表不具备，可继续补充。'
     return result
 
 
 @app.post('/api/recommendations')
 def recommendation(payload: RecommendationRequest):
-    require_confirmed(payload.student)
     return recommendations(payload.student, payload.filters, payload.sort_by)
 
 
@@ -160,13 +202,28 @@ def export_report(student, job, match, advice):
         return '无法计算' if value is None else f'{value:.1f}%'
     def labels(key):
         return '、'.join(x['label'] for x in match[key]) or '无'
-    lines = ['大学生职业规划建议', f'目标岗位：{job["name"]}', f'专业：{student.major or "未填写"}', f'意向城市：{student.intention.city or "未限制"}', f'基础匹配度：{score(match["basic_display"])}（{match["satisfied"]}/{match["required"]}）', f'增强匹配度：{score(match["enhanced_display"])}', f'已满足：{labels("satisfied_items")}', f'明确差距：{labels("gap_items")}', f'待确认：{labels("pending_items")}', '相关基础（不等于已掌握）：' + ('、'.join(x['label'] for x in match['items'] if x['related_only']) or '无'), '', '契合度评价：' + advice['fit_evaluation'], '', '学习方向：', *['- ' + x for x in advice['learning_directions']], '', '具体学习活动：', *['- ' + x for x in advice['learning_steps']], '', f'输入版本：{match["input_version"]}', f'算法版本：{match["algorithm_version"]}', f'数据版本：{match["data_version"]}', '招聘信息为赛题样本，不表示仍在招聘；建议不保证录用或薪资。']
+    lines = [
+        '大学生职业规划建议', f'目标岗位：{job["name"]}',
+        f'专业：{student.major or "未填写"}',
+        f'意向城市：{student.intention.city or "未限制"}',
+        f'基础匹配度：{score(match["basic_display"])}（{match["satisfied"]}/{match["required"]}）',
+        f'增强匹配度：{score(match["enhanced_display"])}',
+        f'资料已提及：{labels("satisfied_items")}',
+        f'资料未提及（不代表不具备）：{labels("pending_items")}',
+        '相关基础（不等于已掌握）：' + ('、'.join(x['label'] for x in match['items'] if x['related_only']) or '无'),
+        '', '契合度评价：' + advice['fit_evaluation'],
+        '', '学习方向：', *['- ' + x for x in advice['learning_directions']],
+        '', '具体学习活动：', *['- ' + x for x in advice['learning_steps']],
+        '', f'输入版本：{match["input_version"]}',
+        f'算法版本：{match["algorithm_version"]}',
+        f'数据版本：{match["data_version"]}',
+        '招聘信息为赛题样本，不表示仍在招聘；建议不保证录用或薪资。',
+    ]
     return chr(10).join(lines)
 
 
 @app.post('/api/reports')
 async def report(payload: MatchRequest, request: Request):
-    require_confirmed(payload.student)
     job = get_job(payload.job_id)
     if not job:
         return error(request, 'JOB_NOT_FOUND', '找不到目标岗位。', 404)

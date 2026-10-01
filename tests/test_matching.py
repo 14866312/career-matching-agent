@@ -10,14 +10,14 @@
 公式（人工独立计算，未调用被测实现）：
     基础分 = 已满足必需标签数 ÷ 必需标签总数 × 100
     增强分 = 逐项贡献之和 ÷ 要求总数 × 100
-    技能贡献 = min(学生等级 ÷ 要求等级, 1)
-    证书 / 通用素质贡献 = 明确满足为 1，否则为 0（不按等级折算）
+    精确提及且等级 > 0 的技能贡献 = 1（不按学生等级与要求等级折算）
+    证书 / 通用素质贡献 = 资料已提及且等级 > 0 为 1，否则为 0
     相关技能贡献 = min(关联权重, 0.25)，同一要求多个关联取最大值，不累加
     优先项 preferred 与未提及 unmentioned 都不进入分母
 
 排序契约：分数降序，同分直接按岗位 ID 升序，不再比较满足项数或要求项数。
-确认契约：StudentProfile.confirmed 是"整份画像是否已确认"的开关，由调用方在正式匹配前拦截；
-          评分函数只按每个 Ability.confirmed 计算，并回传 profile_confirmed。
+兼容契约：StudentProfile.confirmed、Ability.confirmed 和 evidence 仍保留在输入与结果中，
+          但不再作为匹配门槛或计分条件；评分函数回传 profile_confirmed 供旧调用方读取。
 分数比较用 pytest.approx(rel=1e-9) 吸收浮点表示差异；计数、状态、排序用精确比较。
 """
 
@@ -283,148 +283,148 @@ def dimension_of(result, dimension):
 HAND_CASES = [
     # C01 零技能：6 项要求全部未填写 → 满足 0/6，基础分 0.0，增强分 0.0
     {'case': 'C01 零技能-前端', 'job': 'frontend', 'skills': [],
-     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'gap': 0, 'pending': 6, 'related': 0}},
+     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'pending': 6, 'related': 0}},
 
     # C02 两项等级3：满足 2/6 → 2÷6×100 = 33.333333；增强 2×1÷6×100 同上
     {'case': 'C02 两项已掌握-前端', 'job': 'frontend', 'skills': [('html', 3), ('css', 3)],
      'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 33.333333333333336,
-                'gap': 0, 'pending': 4, 'basic_display': 33.3, 'enhanced_display': 33.3}},
+                'pending': 4, 'basic_display': 33.3, 'enhanced_display': 33.3}},
 
     # C03 四项等级3：满足 4/6 → 66.666667；增强 4×1÷6×100 同上
     {'case': 'C03 四项已掌握-前端', 'job': 'frontend', 'skills': [('html', 3), ('css', 3), ('javascript', 3), ('vue', 3)],
      'expect': {'required': 6, 'satisfied': 4, 'basic': 66.66666666666667, 'enhanced': 66.66666666666667,
-                'gap': 0, 'pending': 2, 'basic_display': 66.7, 'enhanced_display': 66.7}},
+                'pending': 2, 'basic_display': 66.7, 'enhanced_display': 66.7}},
 
     # C05 熟练度不足：满足 1/6 → 16.666667；增强 min(1/3,1)=0.333333 → 0.333333÷6×100 = 5.555556
     {'case': 'C05 等级1低于要求3-前端', 'job': 'frontend', 'skills': [('html', 1)],
-     'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 5.555555555555555,
-                'gap': 0, 'pending': 5, 'shortfall': 1, 'enhanced_display': 5.6}},
+     'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
+                'pending': 5, 'shortfall': 0, 'enhanced_display': 16.7}},
 
     # C06 等级2+等级1（要求3）：满足 2/6 → 33.333333；增强 (0.666667+0.333333)÷6×100 = 16.666667
     {'case': 'C06 熟练度混合-前端', 'job': 'frontend', 'skills': [('html', 2), ('css', 1)],
-     'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 16.666666666666664,
-                'gap': 0, 'pending': 4, 'shortfall': 2}},
+     'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 33.333333333333336,
+                'pending': 4, 'shortfall': 0}},
 
     # C07 达到要求等级全覆盖：满足 6/6 → 100.0；增强 (1+1+1+1+1+1)÷6×100 = 100.0
     {'case': 'C07 六项全满足-前端', 'job': 'frontend',
      'skills': [('html', 3), ('css', 3), ('javascript', 3), ('vue', 3)],
      'qualities': [('communication', 2), ('teamwork', 2)],
-     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0, 'gap': 0, 'pending': 0}},
+     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0, 'pending': 0}},
 
     # C08 通用素质不按等级折算（明确满足即为 1）：满足 2/6 → 33.333333；增强 (1+1)÷6×100 = 33.333333
     {'case': 'C08 通用素质满足即为1-前端', 'job': 'frontend', 'qualities': [('communication', 2), ('teamwork', 1)],
      'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 33.333333333333336,
-                'gap': 0, 'pending': 4, 'shortfall': 0}},
+                'pending': 4, 'shortfall': 0}},
 
     # C09 仅相关基础：满足 0/6 → 0.0；增强 spring-cloud→spring-boot 0.25 → 0.25÷6×100 = 4.166667
     {'case': 'C09 关联技能-后端', 'job': 'java', 'skills': [('spring-cloud', 2)],
      'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 4.166666666666667,
-                'gap': 0, 'pending': 6, 'related': 1, 'enhanced_display': 4.2}},
+                'pending': 6, 'related': 1, 'enhanced_display': 4.2}},
 
     # C10 精确优先，不叠加：spring-boot 等级1 → 满足 1/6 = 16.666667；增强 min(1/2,1)=0.5（不加 0.25）
     {'case': 'C10 精确匹配优先于关联-后端', 'job': 'java',
      'skills': [('spring-boot', 1), ('spring-cloud', 3)],
-     'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 8.333333333333334,
-                'gap': 0, 'pending': 5, 'related': 0, 'shortfall': 1}},
+     'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
+                'pending': 5, 'related': 0, 'shortfall': 0}},
 
     # C11 两项技能等级3：满足 2/6 → 33.333333；增强 (1+1)÷6×100 = 33.333333
     {'case': 'C11 数据库两项-后端', 'job': 'java', 'skills': [('mysql', 3), ('sql', 3)],
      'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 33.333333333333336,
-                'gap': 0, 'pending': 4}},
+                'pending': 4}},
 
     # C12 关联到测试岗的 sql：满足 0/6 → 0.0；增强 0.25÷6×100 = 4.166667
     {'case': 'C12 关联技能-测试岗', 'job': 'testing', 'skills': [('mysql', 3)],
      'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 4.166666666666667,
-                'gap': 0, 'pending': 6, 'related': 1}},
+                'pending': 6, 'related': 1}},
 
     # C13 react→vue 关联：满足 0/6 → 0.0；增强 0.25÷6×100 = 4.166667
     {'case': 'C13 关联技能-Vue', 'job': 'frontend', 'skills': [('react', 2)],
      'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 4.166666666666667,
-                'gap': 0, 'pending': 6, 'related': 1}},
+                'pending': 6, 'related': 1}},
 
     # C14 别名归一后视为同一标签（不算推理）：HTML5/css3/JS/vue.js → 满足 4/6 = 66.666667，无关联贡献
     {'case': 'C14 别名归一-前端', 'job': 'frontend',
      'skills': [('HTML5', 3), ('css3', 3), ('JS', 3), ('vue.js', 3)],
      'expect': {'required': 6, 'satisfied': 4, 'basic': 66.66666666666667, 'enhanced': 66.66666666666667,
-                'gap': 0, 'pending': 2, 'related': 0}},
+                'pending': 2, 'related': 0}},
 
-    # C15 未确认不计满足：html 未确认 → 满足 0/6 → 0.0；增强 0.0；6 项全部待确认
-    {'case': 'C15 未确认不计满足-前端', 'job': 'frontend', 'skills': [('html', 3, False)],
-     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'gap': 0, 'pending': 6}},
+    # C15 旧确认字段不影响匹配：资料提及 HTML → 满足 1/6
+    {'case': 'C15 未确认仍计入-前端', 'job': 'frontend', 'skills': [('html', 3, False)],
+     'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668, 'pending': 5}},
 
-    # C16 单项已确认：满足 1/6 → 16.666667；增强 1÷6×100 = 16.666667；其余 5 项待确认
-    {'case': 'C16 单项已确认-前端', 'job': 'frontend', 'skills': [('html', 3)],
+    # C16 单项资料已提及：满足 1/6 → 16.666667；其余 5 项资料未提及
+    {'case': 'C16 单项资料已提及-前端', 'job': 'frontend', 'skills': [('html', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
-                'gap': 0, 'pending': 5}},
+                'pending': 5}},
 
-    # C17 已确认不具备 = 差距项（不是待确认）：html 等级0 → 差距 1；满足 1/6 → 16.666667
-    {'case': 'C17 已确认未掌握-前端', 'job': 'frontend', 'skills': [('html', 0), ('css', 3)],
+    # C17 旧等级0按资料未提及处理，不能推断用户不具备。
+    {'case': 'C17 等级0按资料未提及-前端', 'job': 'frontend', 'skills': [('html', 0), ('css', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
-                'gap': 1, 'pending': 4}},
+                'pending': 5}},
 
     # C18 重复标签只计一次：html 出现三次 → 满足 1/6 = 16.666667（若重复计数会变成 3/8）
     {'case': 'C18 重复标签只计一次-前端', 'job': 'frontend', 'skills': [('html', 3), ('html', 3), ('HTML5', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
-                'gap': 0, 'pending': 5, 'entries': {'html': 3}}},
+                'pending': 5, 'entries': {'html': 3}}},
 
-    # C19 额外标签不稀释：4 项要求满足 + 12 个无关已确认标签 → 仍是 4/6 = 66.666667
+    # C19 额外标签不稀释：4 项要求满足 + 12 个无关已提及标签 → 仍是 4/6 = 66.666667
     {'case': 'C19 多余标签不稀释-前端', 'job': 'frontend',
      'skills': [('html', 3), ('css', 3), ('javascript', 3), ('vue', 3), ('git', 3), ('spring-boot', 3),
                 ('spring-cloud', 3), ('sql', 3), ('mysql', 3), ('linux', 3), ('cpp', 3), ('data-structures', 3),
                 ('algorithms', 3), ('test-cases', 3), ('networking', 3), ('troubleshooting', 3)],
      'expect': {'required': 6, 'satisfied': 4, 'basic': 66.66666666666667, 'enhanced': 66.66666666666667,
-                'gap': 0, 'pending': 2, 'extra': 12}},
+                'pending': 2, 'extra': 12}},
 
     # C20 证书是优先项：java 岗位 cet4 属 preferred → 满足 0/6 = 0.0，增强 0.0，优先项满足 1
     {'case': 'C20 优先项不计入分母-后端', 'job': 'java', 'certificates': [('cet4', 1)],
-     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'gap': 0, 'pending': 6,
+     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'pending': 6,
                 'preferred_satisfied': 1}},
 
-    # C21 覆盖全但技能熟练度不足：满足 6/6 → 100.0；增强 (1+0.5+1+1+1+1)÷6×100 = 91.666667
-    {'case': 'C21 覆盖全但熟练度不足-技术支持', 'job': 'support',
+    # C21 所需标签全部提及：等级差异不改变贡献，基础分和增强分均为 100.0
+    {'case': 'C21 等级差异不改变贡献-技术支持', 'job': 'support',
      'skills': [('linux', 2), ('networking', 1), ('troubleshooting', 2), ('documentation', 2)],
      'qualities': [('communication', 2), ('teamwork', 2)],
-     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 91.66666666666666,
-                'gap': 0, 'pending': 0, 'shortfall': 1, 'enhanced_display': 91.7}},
+     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0,
+                'pending': 0, 'shortfall': 0, 'enhanced_display': 100.0}},
 
-    # C22 五项岗位：满足 5/5 → 100.0；增强 (1+0.5+1+1+1)÷5×100 = 90.0
-    {'case': 'C22 五项部分熟练度-实施', 'job': 'implementation',
+    # C22 五项岗位全部提及：满足 5/5，等级差异不改变贡献
+    {'case': 'C22 五项等级差异-实施', 'job': 'implementation',
      'skills': [('deployment', 3), ('sql', 1), ('documentation', 2)],
      'qualities': [('communication', 2), ('learning', 2)],
-     'expect': {'required': 5, 'satisfied': 5, 'basic': 100.0, 'enhanced': 90.0,
-                'gap': 0, 'pending': 0, 'shortfall': 1}},
+     'expect': {'required': 5, 'satisfied': 5, 'basic': 100.0, 'enhanced': 100.0,
+                'pending': 0, 'shortfall': 0}},
 
-    # C23 等级高于要求时贡献封顶为 1：cpp 等级3 / 要求2 → 满足 1/6 = 16.666667，增强同理
-    {'case': 'C23 等级封顶-C++', 'job': 'cpp', 'skills': [('cpp', 3)],
+    # C23 精确提及的等级高于要求时仍贡献 1：满足 1/6 = 16.666667
+    {'case': 'C23 精确提及贡献固定为1-C++', 'job': 'cpp', 'skills': [('cpp', 3)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
-                'gap': 0, 'pending': 5}},
+                'pending': 5}},
 
     # C24 跨维度同名标签按标签字典归属：communication 填在技能列表仍算通用素质 → 满足 1/6 = 16.666667
     {'case': 'C24 字典维度优先-前端', 'job': 'frontend', 'skills': [('communication', 2)],
      'expect': {'required': 6, 'satisfied': 1, 'basic': 16.666666666666668, 'enhanced': 16.666666666666668,
-                'gap': 0, 'pending': 5, 'unknown': 0}},
+                'pending': 5, 'unknown': 0}},
 
     # C25 字典外标签不参与评分：kotlin 不在标签字典 → 满足 0/6 = 0.0，单列未知标签，不算多余优势
     {'case': 'C25 字典外标签-前端', 'job': 'frontend', 'skills': [('kotlin', 3)],
-     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'gap': 0, 'pending': 6,
+     'expect': {'required': 6, 'satisfied': 0, 'basic': 0.0, 'enhanced': 0.0, 'pending': 6,
                 'unknown': 1, 'extra': 0}},
 
     # C26 测试岗全覆盖：满足 6/6 → 100.0；增强 6×1÷6×100 = 100.0
     {'case': 'C26 测试岗全覆盖', 'job': 'testing',
      'skills': [('test-cases', 2), ('functional-testing', 2), ('api-testing', 2), ('sql', 2)],
      'qualities': [('communication', 2), ('teamwork', 2)],
-     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0, 'gap': 0, 'pending': 0}},
+     'expect': {'required': 6, 'satisfied': 6, 'basic': 100.0, 'enhanced': 100.0, 'pending': 0}},
 
     # C27 三项：cpp3 + 数据结构1 + 团队协作2 → 满足 3/6 = 50.0；增强 (1+0.5+1)÷6×100 = 41.666667
     {'case': 'C27 三项部分熟练度-C++', 'job': 'cpp',
      'skills': [('cpp', 3), ('data-structures', 1)], 'qualities': [('teamwork', 2)],
-     'expect': {'required': 6, 'satisfied': 3, 'basic': 50.0, 'enhanced': 41.66666666666667,
-                'gap': 0, 'pending': 3, 'shortfall': 1, 'basic_display': 50.0, 'enhanced_display': 41.7}},
+     'expect': {'required': 6, 'satisfied': 3, 'basic': 50.0, 'enhanced': 50.0,
+                'pending': 3, 'shortfall': 0, 'basic_display': 50.0, 'enhanced_display': 50.0}},
 
     # C28 两项：满足 2/6 → 33.333333；增强 (1+1)÷6×100 = 33.333333
     {'case': 'C28 两项-技术支持', 'job': 'support', 'skills': [('linux', 2), ('documentation', 2)],
      'expect': {'required': 6, 'satisfied': 2, 'basic': 33.333333333333336, 'enhanced': 33.333333333333336,
-                'gap': 0, 'pending': 4}},
+                'pending': 4}},
 ]
 
 
@@ -439,8 +439,6 @@ def test_hand_computed_match_cases(case, frozen):
     assert result['satisfied'] == expect['satisfied']
     assert result['basic'] == pytest.approx(expect['basic'], rel=1e-9)
     assert result['enhanced'] == pytest.approx(expect['enhanced'], rel=1e-9)
-    if 'gap' in expect:
-        assert result['gap'] == expect['gap']
     if 'pending' in expect:
         assert result['pending'] == expect['pending']
     if 'related' in expect:
@@ -511,7 +509,7 @@ def test_every_frozen_job_is_fully_satisfiable_and_zeroable(frozen):
         assert empty['status_text'] == '可计算'
 
 
-def test_unconfirmed_does_not_count_and_related_is_separate(frozen):
+def test_related_credit_is_separate_from_satisfied_items(frozen):
     frozen()
     result = match_student(student([('spring-cloud', 2)]), job_of('java'))
     assert result['basic'] == 0
@@ -534,30 +532,29 @@ def test_relation_credit_never_enters_satisfied_items(frozen):
     assert result['related_credit'] == pytest.approx(0.25, rel=1e-9)
 
 
-def test_explicit_zero_keeps_gap_with_related_background(frozen):
+def test_legacy_zero_is_unmentioned_with_related_background(frozen):
     frozen()
     result = match_student(student([('vue', 0), ('react', 3)]), job_of('frontend'))
     vue = item_of(result, 'vue')
-    assert vue['status'] == 'gap'
+    assert vue['status'] == 'pending'
     assert vue['contribution'] == 0.25
     assert vue['related_only'] is True
     assert result['basic'] == 0
     assert not result['satisfied_items']
-    assert 'vue' in [x['tag_id'] for x in result['gap_items']]
+    assert 'vue' in [x['tag_id'] for x in result['pending_items']]
 
 
-def test_confirmation_changes_input_version_and_score(frozen):
+def test_legacy_confirmation_does_not_change_score(frozen):
     frozen()
     unconfirmed = match_student(student([('html', 3, False)]), job_of('frontend'))
     confirmed = match_student(student([('html', 3, True)]), job_of('frontend'))
-    assert unconfirmed['basic'] == 0.0
-    assert confirmed['basic'] == pytest.approx(16.666666666666668, rel=1e-9)
+    assert unconfirmed['basic'] == confirmed['basic'] == pytest.approx(16.666666666666668, rel=1e-9)
     assert unconfirmed['input_version'] != confirmed['input_version']
     assert confirmed['input_version'] == match_student(student([('html', 3, True)]), job_of('frontend'))['input_version']
 
 
-def test_profile_confirmed_flag_is_reported_for_caller_gate(frozen):
-    """画像整体确认由调用方拦截；评分函数只按标签 confirmed 计算，并回传 profile_confirmed。"""
+def test_profile_confirmed_flag_is_reported_for_compatibility(frozen):
+    """画像确认字段只作为兼容元数据回传，不影响评分结果。"""
     frozen()
     unconfirmed = match_student(student([('html', 3)], confirmed=False), job_of('frontend'))
     confirmed = match_student(student([('html', 3)], confirmed=True), job_of('frontend'))
@@ -596,8 +593,8 @@ def test_dimensions_do_not_average_and_not_applicable_is_not_zero(frozen):
     assert [x['id'] for x in result['dimensions']] == ['skills', 'certificates', 'qualities']
 
 
-def test_only_skills_are_graded_by_proficiency(frozen):
-    """证书与通用素质维持"明确满足为 1"，只有技能按 min(等级/要求等级, 1) 折算。"""
+def test_reported_positive_skills_do_not_get_unverified_proficiency_scores(frozen):
+    """各类已提及能力贡献为 1，不用简历文本猜测熟练度。"""
     job = synth_job('mixed', ['html'])
     job['requirements'].append({'tag_id': 'communication', 'label': '沟通表达', 'dimension': 'qualities',
                                 'requirement': 'required', 'required_level': 2})
@@ -605,10 +602,10 @@ def test_only_skills_are_graded_by_proficiency(frozen):
     result = match_student(student([('html', 1)], qualities=[('communication', 1)]), job_of('mixed'))
     assert result['satisfied'] == 2
     assert result['basic'] == 100.0
-    assert item_of(result, 'html')['contribution'] == 0.5
+    assert item_of(result, 'html')['contribution'] == 1.0
     assert item_of(result, 'communication')['contribution'] == 1.0
-    assert result['enhanced'] == 75.0
-    assert len(result['weak_proficiency_items']) == 1
+    assert result['enhanced'] == 100.0
+    assert len(result['weak_proficiency_items']) == 0
 
 
 def test_preferred_and_unmentioned_never_enter_denominator(frozen):
@@ -674,7 +671,7 @@ def test_required_level_falls_back_to_text_keyword(frozen):
     familiar_result = match_student(student([('html', 1)]), job_of('familiar'))
     assert familiar_result['items'][0]['required_level'] == 2
     assert familiar_result['items'][0]['required_level_source'] == 'text_keyword'
-    assert familiar_result['items'][0]['contribution'] == 0.5
+    assert familiar_result['items'][0]['contribution'] == 1.0
     beginner_result = match_student(student([('html', 1)]), job_of('beginner'))
     assert beginner_result['items'][0]['required_level'] == 1
     assert beginner_result['items'][0]['required_level_source'] == 'text_keyword'
@@ -930,16 +927,16 @@ def test_recommendation_is_repeatable(frozen):
 
 
 def test_recommendation_sort_by_enhanced_can_reorder(frozen):
-    frozen(jobs=[synth_job('best_basic', ['html']), synth_job('best_enhanced', ['css', 'javascript', 'vue'])])
-    profile = student([('html', 1), ('css', 2), ('javascript', 2)])
+    frozen(jobs=[synth_job('best_basic', ['html']), synth_job('best_enhanced', ['vue'])])
+    profile = student([('react', 1)])
     by_basic = recommendations(profile, Filters(), 'basic')
     by_enhanced = recommendations(profile, Filters(), 'enhanced')
     assert [x['job_id'] for x in by_basic['items']] == ['best_basic', 'best_enhanced']
     assert [x['job_id'] for x in by_enhanced['items']] == ['best_enhanced', 'best_basic']
-    assert by_basic['items'][0]['match']['basic'] == 100.0
-    assert by_basic['items'][0]['match']['enhanced'] == 50.0
-    assert by_enhanced['items'][0]['match']['basic'] == pytest.approx(66.66666666666667, rel=1e-9)
-    assert by_enhanced['items'][0]['match']['enhanced'] == pytest.approx(66.66666666666667, rel=1e-9)
+    assert by_basic['items'][0]['match']['basic'] == 0.0
+    assert by_basic['items'][0]['match']['enhanced'] == 0.0
+    assert by_enhanced['items'][0]['match']['basic'] == 0.0
+    assert by_enhanced['items'][0]['match']['enhanced'] == 25.0
     assert by_basic['sort_by'] == 'basic'
     assert by_enhanced['sort_by'] == 'enhanced'
 
@@ -951,13 +948,12 @@ def test_recommendation_items_expose_shared_match_and_reason_facts(frozen):
     item = result['items'][0]
     assert item['job_id'] == 'frontend'
     assert item['match'] == match_student(profile, job_of('frontend'))
-    assert item['reason'].startswith('已满足：')
-    assert '主要差距：' in item['reason']
-    assert '熟练度待提升：CSS' in item['reason']
-    assert '仅有相关基础' in item['reason']
+    assert item['reason'].startswith('资料已提及：')
+    assert '资料未提及（不代表不具备）：' in item['reason']
+    assert '资料提及相关技能' in item['reason']
     facts = item['reason_facts']
     assert facts['satisfied_labels'] == ['HTML', 'CSS']
-    assert facts['proficiency_shortfall_labels'] == ['CSS']
+    assert facts['proficiency_shortfall_labels'] == []
     assert facts['related_base_labels'] == ['Vue']
     assert facts['algorithms']['algorithm'] == matching.ALGORITHM_VERSION
     assert item['samples'] and item['samples'][0]['city'] == '北京'
@@ -1061,39 +1057,39 @@ def test_production_recommendation_smoke():
 
 
 @pytest.mark.parametrize('dimension,tag', [('skills', 'java'), ('certificates', 'cet4'), ('qualities', 'communication')])
-def test_missing_evidence_is_pending(frozen, dimension, tag):
+def test_positive_ability_needs_no_evidence(frozen, dimension, tag):
     job = synth_job('evidence', [tag])
     frozen([job])
     profile = StudentProfile(**{dimension: [Ability(tag_id=tag, label=tag, level=3, confirmed=True, evidence=' ')]})
     result = match_student(profile, job)
-    assert result['basic'] == result['enhanced'] == 0
-    assert result['items'][0]['pending_reason'] == 'missing_evidence'
+    assert result['basic'] == result['enhanced'] == 100
+    assert result['items'][0]['status'] == 'satisfied'
 
 
-def test_related_skill_requires_evidence(frozen):
+def test_related_skill_needs_no_evidence(frozen):
     job = synth_job('evidence', ['vue'])
     frozen([job])
     profile = student(['react'])
     profile.skills[0].evidence = ''
-    assert match_student(profile, job)['enhanced'] == 0
+    assert match_student(profile, job)['enhanced'] == 25
 
 
-def test_duplicate_prefers_confirmed_evidenced_ability(frozen):
+def test_duplicate_positive_skill_counts_once(frozen):
     job = synth_job('evidence', ['java'])
     frozen([job])
     profile = student([('java', 1), ('java', 3)])
     profile.skills[1].evidence = ''
     result = match_student(profile, job)
     assert result['basic'] == 100
-    assert result['enhanced'] == 50
+    assert result['enhanced'] == 100
 
 
-def test_explicit_absence_needs_no_positive_evidence(frozen):
+def test_legacy_level_zero_is_not_assumed_absent(frozen):
     job = synth_job('evidence', ['java'])
     frozen([job])
     profile = student([('java', 0)])
     profile.skills[0].evidence = ''
-    assert match_student(profile, job)['items'][0]['status'] == 'gap'
+    assert match_student(profile, job)['items'][0]['status'] == 'pending'
 
 
 def test_production_salary_filter_finds_monthly_records():

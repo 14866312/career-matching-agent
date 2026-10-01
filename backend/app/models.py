@@ -2,11 +2,9 @@
 
 评分字段语义（与 backend/app/matching.py 的口径一致，改动前请先同步主 Agent）：
 
-- Ability.confirmed：用户是否确认该标签。未确认的标签只进入"待确认"，不计入满足项。
-- Ability.level：0=未掌握（已确认则为差距项），1=了解，2=能够在指导下使用，3=能够独立使用。
-- Ability.evidence：能力的证据原文；正能力缺少证据时归为待确认，不计满足或相关贡献。
-- StudentProfile.confirmed：整份画像是否已由用户确认。正式匹配应由调用方在确认为真后发起；
-  匹配函数只按每个 Ability.confirmed 评分，并把 profile_confirmed 回传给调用方用于拦截。
+- Ability.level：保留旧数据的熟练度字段；当前匹配只根据是否在资料中提及技能判断，不推断熟练度。
+- Ability.confirmed / StudentProfile.confirmed：兼容旧草稿，不作为匹配或生成报告的门槛。
+- Ability.evidence：可选简历摘录，不要求用户补证据。
 - Filters.city：按样本招聘记录的城市筛选；归一化后比较（去空格、取分隔符前一段、去结尾"市"）。
 - Filters.salary_min / salary_max：与样本薪资做区间重叠判定，且只在计薪周期等于 salary_period 的
   样本内比较，日薪与月薪不作换算；未设置薪资条件时保留薪资未知的样本。
@@ -28,8 +26,9 @@ class Ability(StrictModel):
     tag_id: str = Field(min_length=1, max_length=80, description='规范标签 ID；别名会在匹配时归一为字典中的规范 ID')
     label: str = Field(min_length=1, max_length=100, description='展示用标签名')
     level: int = Field(default=2, ge=0, le=3, description='0=未掌握，1=了解，2=能够在指导下使用，3=能够独立使用')
-    confirmed: bool = Field(default=False, description='用户是否确认；未确认只进入待确认项，不计入满足项')
-    evidence: str = Field(default='', max_length=3000, description='能力证据原文；正能力需有证据才计满足或相关贡献')
+    confirmed: bool = Field(default=False, description='旧草稿兼容字段；不再用于匹配门槛')
+    evidence: str = Field(default='', max_length=3000, description='可选的简历原文摘录')
+    source: Literal['resume', 'manual'] = Field(default='manual', description='技能来源，用于重新导入简历时更新提取结果')
 
 
 class Intention(StrictModel):
@@ -39,12 +38,14 @@ class Intention(StrictModel):
 
 class StudentProfile(StrictModel):
     major: str = Field(default='', max_length=120)
+    major_source: Literal['resume', 'manual'] = 'manual'
     skills: list[Ability] = Field(default_factory=list, max_length=100, description='专业技能标签')
     certificates: list[Ability] = Field(default_factory=list, max_length=50, description='证书标签')
     qualities: list[Ability] = Field(default_factory=list, max_length=50, description='通用素质标签')
     experiences: str = Field(default='', max_length=12000)
+    experiences_source: Literal['resume', 'manual'] = 'manual'
     intention: Intention = Field(default_factory=Intention)
-    confirmed: bool = Field(default=False, description='画像整体确认状态；正式匹配、推荐和报告API必须为真，条目仍独立确认')
+    confirmed: bool = Field(default=False, description='旧草稿兼容字段；不再作为操作门槛')
     advantages: list[str] = Field(default_factory=list, max_length=20)
     improvements: list[str] = Field(default_factory=list, max_length=20)
 

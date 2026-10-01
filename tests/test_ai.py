@@ -20,13 +20,14 @@ def fake_http(monkeypatch):
     monkeypatch.setenv('LLM_BASE_URL', 'https://example.invalid/v1')
     monkeypatch.setenv('LLM_MODEL', 'test-model')
     monkeypatch.setenv('LLM_API_KEY', 'test-only-key')
+    monkeypatch.setenv('LLM_ADAPTER', 'chat-completions')
     async def no_sleep(_):
         pass
     monkeypatch.setattr(llm.asyncio, 'sleep', no_sleep)
     def install(events):
         calls = []
         async def handler(request):
-            calls.append(json.loads(request.content))
+            calls.append({'url': str(request.url), **json.loads(request.content)})
             event = events.pop(0)
             if callable(event):
                 return await event(request)
@@ -40,6 +41,34 @@ def fake_http(monkeypatch):
         monkeypatch.setattr(llm.httpx, 'AsyncClient', lambda **kw: original(transport=httpx.MockTransport(handler), **kw))
         return calls
     return install
+
+
+@pytest.mark.asyncio
+async def test_responses_adapter_uses_responses_contract(fake_http, monkeypatch):
+    monkeypatch.setenv('LLM_ADAPTER', 'openai-responses')
+    calls = fake_http([httpx.Response(200, json={'output_text': '{"ok": true}'})])
+    assert await llm.call_json('test', {'value': 1}) == {'ok': True}
+    assert calls[0]['model'] == 'test-model'
+    assert calls[0]['max_output_tokens'] == 3500
+    assert calls[0]['input'] == '{"value": 1}'
+    assert 'instructions' in calls[0]
+    assert calls[0]['url'].endswith('/v1/responses')
+
+
+@pytest.mark.asyncio
+async def test_chat_completions_adapter_uses_chat_endpoint(fake_http):
+    calls = fake_http([{'ok': True}])
+    assert await llm.call_json('test', {'value': 1}) == {'ok': True}
+    assert calls[0]['model'] == 'test-model'
+    assert calls[0]['url'].endswith('/v1/chat/completions')
+
+
+@pytest.mark.asyncio
+async def test_method_or_path_failure_explains_adapter_mismatch(fake_http):
+    fake_http([405])
+    with pytest.raises(llm.AIError, match='请求路径或方法') as exc:
+        await llm.call_json('test', {})
+    assert exc.value.code == 'LLM_REQUEST'
 
 
 @pytest.mark.asyncio
@@ -65,6 +94,20 @@ async def test_nontransient_status_not_retried(fake_http, status):
     with pytest.raises(llm.AIError):
         await llm.call_json('test', {})
     assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(('status', 'code', 'message'), [
+    (401, 'LLM_AUTH', '认证失败（HTTP 401）'),
+    (403, 'LLM_PERMISSION', '拒绝访问（HTTP 403）'),
+])
+async def test_auth_failures_explain_status_without_exposing_upstream_body(fake_http, status, code, message):
+    fake_http([httpx.Response(status, text='private upstream credential detail')])
+    with pytest.raises(llm.AIError) as exc:
+        await llm.call_json('test', {})
+    assert exc.value.code == code
+    assert message in exc.value.message
+    assert 'private upstream' not in exc.value.message
 
 
 @pytest.mark.asyncio
@@ -238,28 +281,33 @@ async def test_profile_cannot_invent_strength(fake_http):
 async def test_profile_binds_strength_to_student_evidence(fake_http):
     calls = fake_http([{'strength_tag_ids': ['java'], 'improvements': ['完善接口测试并整理项目复盘']}])
     result = await llm.generate_profile(profile())
-    assert result['profile']['confirmed'] is False
+    assert result['profile']['confirmed'] is True
     assert result['analysis']['evidence_quotes'] == ['用Java编写课程管理接口']
-    assert result['analysis']['summary'] == ['已自述并确认：Java']
+    assert result['analysis']['summary'] == ['资料提及的技能：Java', '可作为展示重点：Java']
     assert result['profile']['skills'] == profile().model_dump()['skills']
     assert calls[0]['messages'][0]['role'] == 'system'
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('ability', [
-    Ability(tag_id='java', label='Java', level=2, confirmed=False, evidence='Java课程项目'),
-    Ability(tag_id='java', label='Java', level=0, confirmed=True, evidence='尚未掌握Java'),
-    Ability(tag_id='java', label='Java', level=2, confirmed=True, evidence=''),
+@pytest.mark.parametrize('ability,allowed', [
+    (Ability(tag_id='java', label='Java', level=2, confirmed=False, evidence='Java课程项目'), True),
+    (Ability(tag_id='java', label='Java', level=0, confirmed=True, evidence='尚未掌握Java'), False),
+    (Ability(tag_id='java', label='Java', level=2, confirmed=True, evidence=''), True),
 ])
-async def test_profile_unverified_abilities_cannot_be_strengths(fake_http, ability):
+async def test_profile_uses_positive_skills_without_confirmation_or_evidence(fake_http, ability, allowed):
     calls = fake_http([{'strength_tag_ids': ['java'], 'improvements': []}])
     student = StudentProfile(skills=[ability])
     original = student.model_dump()
-    with pytest.raises(llm.AIError) as exc:
-        await llm.generate_profile(student)
-    assert exc.value.code == 'LLM_EVIDENCE' and len(calls) == 1
+    if allowed:
+        result = await llm.generate_profile(student)
+        assert '可作为展示重点：Java' in result['analysis']['summary']
+    else:
+        with pytest.raises(llm.AIError) as exc:
+            await llm.generate_profile(student)
+        assert exc.value.code == 'LLM_EVIDENCE'
+    assert len(calls) == 1
     assert student.model_dump() == original
-    assert json.loads(calls[0]['messages'][1]['content'])['confirmed_tags'] == []
+    assert json.loads(calls[0]['messages'][1]['content'])['known_tags'] == (['java'] if allowed else [])
 
 
 @pytest.mark.asyncio
@@ -320,6 +368,46 @@ async def test_resume_valid_all_dimensions_remain_unconfirmed(fake_http):
     for dim in ('skills', 'certificates', 'qualities'):
         assert len(result['profile'][dim]) == 1
         assert not result['profile'][dim][0]['confirmed']
+
+
+@pytest.mark.asyncio
+async def test_resume_name_is_separate_verified_and_redacted_from_followup_payload(fake_http):
+    source = '姓名：张三。专业：软件工程。张三完成Java课程项目。'
+    calls = fake_http([
+        {'name': '张三', 'major': '软件工程', 'experiences': '张三完成Java课程项目。',
+         'skills': [{'tag_id': 'java', 'evidence': 'Java'}], 'certificates': [], 'qualities': []},
+        {'strength_tag_ids': ['java'], 'improvements': []},
+    ])
+
+    result = await llm.extract_resume(source)
+    assert result['name'] == '张三'
+    assert 'name' not in result['profile']
+    assert '张三' not in result['profile']['experiences']
+    assert '张三' not in result['profile']['skills'][0]['evidence']
+
+    student = StudentProfile.model_validate(result['profile'])
+    student.confirmed = True
+    student.skills[0].confirmed = True
+    await llm.generate_profile(student)
+    followup = json.loads(calls[1]['messages'][1]['content'])['student']
+    assert '张三' not in json.dumps(followup, ensure_ascii=False)
+    assert 'name' not in followup
+
+    from backend.app.main import export_report
+    match = match_student(student, get_job('java'))
+    report_text = export_report(student, get_job('java'), match, {
+        'fit_evaluation': '测试建议', 'learning_directions': [], 'learning_steps': [],
+    })
+    assert '张三' not in json.dumps(match, ensure_ascii=False)
+    assert '张三' not in report_text
+
+
+@pytest.mark.asyncio
+async def test_resume_unverified_name_falls_back_to_empty_without_losing_profile(fake_http):
+    fake_http([{'name': '李四', 'major': '软件工程', 'experiences': '', 'skills': [], 'certificates': [], 'qualities': []}])
+    result = await llm.extract_resume('姓名：张三。专业：软件工程。')
+    assert result['name'] == ''
+    assert result['profile']['major'] == '软件工程'
 
 
 @pytest.mark.asyncio
@@ -467,15 +555,15 @@ async def test_report_pending_directions_and_intention_use_supplied_facts(fake_h
     student.intention.city = '南京'
     match = {
         'items': [{'tag_id': 'java', 'label': 'Java', 'status': 'pending', 'contribution': 0, 'related_only': False}],
-        'satisfied': 0, 'required': 1, 'pending_items': ['java'], 'gap_items': [],
+        'satisfied': 0, 'required': 1, 'pending_items': ['java'],
     }
     original = json.dumps(match, sort_keys=True)
     calls = fake_http([{'focus': '补充证据', 'activities': [{'tag_id': 'java', 'steps': ['整理课程项目源码并自查可独立完成的部分']}]}])
     result = await llm.generate_advice(student, {'name': 'Java开发工程师'}, match)
     sent = json.loads(calls[0]['messages'][1]['content'])
     assert sent['intention'] == {'target_job_id': 'java', 'city': '南京'}
-    assert result['learning_directions'] == ['Java：先核实自述与作品证据']
-    assert '0/1' in result['fit_evaluation'] and '1 项待确认' in result['fit_evaluation']
+    assert result['learning_directions'] == ['Java：核实是否有相关经历并补充资料']
+    assert '0/1' in result['fit_evaluation'] and '1 项尚未在资料中提及' in result['fit_evaluation']
     assert json.dumps(match, sort_keys=True) == original
 
 

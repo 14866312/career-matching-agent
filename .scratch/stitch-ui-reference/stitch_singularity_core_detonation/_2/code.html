@@ -1,0 +1,706 @@
+<!DOCTYPE html><html class="dark scroll-smooth" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CareerAI · 探索与你同频的职业机遇</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600&amp;family=Inter:wght@200;300;400;500;600&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          surface: "#000000",
+          "surface-container": "#0b0b0e",
+          "surface-elevated": "#121217",
+          borderline: "rgba(255, 255, 255, 0.07)",
+          "borderline-light": "rgba(255, 255, 255, 0.12)",
+          mist: "#f5f5f7",
+          "mist-dim": "#86868b",
+          "mist-subtle": "#6e6e73"
+        },
+        fontFamily: {
+          sans: ["Plus Jakarta Sans", "Inter", "-apple-system", "BlinkMacSystemFont", "system-ui", "sans-serif"],
+          mono: ["JetBrains Mono", "SF Mono", "monospace"]
+        },
+        letterSpacing: {
+          tightest: "-0.04em",
+          tighter: "-0.025em"
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      color: #f5f5f7;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      overflow-x: hidden;
+    }
+  }
+
+  /* Ultra-sleek Apple Liquid Frosted Card */
+  .apple-glass {
+    background: linear-gradient(180deg, rgba(20, 20, 26, 0.65) 0%, rgba(10, 10, 14, 0.75) 100%);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    box-shadow: 0 24px 70px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .apple-glass-subtle {
+    background: rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+  }
+
+  /* Slow Organic Apple Aurora */
+  @keyframes aurora-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(60px, -40px) scale(1.15); }
+  }
+  @keyframes aurora-2 {
+    0%, 100% { transform: translate(0, 0) scale(1.1); }
+    50% { transform: translate(-50px, 40px) scale(0.95); }
+  }
+  @keyframes slow-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .aurora-layer-1 { animation: aurora-1 28s ease-in-out infinite alternate; }
+  .aurora-layer-2 { animation: aurora-2 34s ease-in-out infinite alternate; }
+  .rotate-slow { animation: slow-rotate 140s linear infinite; }
+
+  /* Smooth progressive disclosure transitions */
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Centripetal Particle Convergence Reveal Initial & Active States */
+  .particle-reveal-target {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    filter: blur(14px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform, filter;
+  }
+
+  .particle-reveal-target.revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+
+  /* Cinematic luminous subtle rim flash upon complete assembly */
+  .particle-reveal-target.revealed::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 0 35px 2px rgba(255, 255, 255, 0.3), inset 0 0 16px 1px rgba(255, 255, 255, 0.15);
+    animation: flash-converge 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes flash-converge {
+    0% { opacity: 0; transform: scale(1.01); }
+    30% { opacity: 0.8; }
+    100% { opacity: 0; transform: scale(1); }
+  }
+
+  /* Local canvas container overlaying the card */
+  .particle-stage-canvas {
+    position: absolute;
+    inset: -60px;
+    width: calc(100% + 120px);
+    height: calc(100% + 120px);
+    pointer-events: none;
+    z-index: 30;
+  }
+</style>
+</head>
+<body class="bg-black text-mist antialiased selection:bg-white/20 selection:text-white relative min-h-screen">
+<!-- Persistent Ambient Interactive Particle Canvas Background -->
+<canvas class="fixed inset-0 pointer-events-none -z-20 w-full h-full" id="ambient-cosmos-canvas" width="1280" height="4744"></canvas>
+<!-- Ambient Apple Glow Canvas -->
+<div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+<div class="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[1100px] h-[750px] rounded-full bg-gradient-to-b from-blue-950/25 via-indigo-950/15 to-transparent blur-[160px] opacity-70 aurora-layer-1"></div>
+<div class="absolute top-[45%] -left-[10%] w-[900px] h-[900px] rounded-full bg-gradient-to-r from-teal-950/15 via-emerald-950/10 to-transparent blur-[180px] opacity-60 aurora-layer-2"></div>
+<div class="absolute top-[75%] -right-[15%] w-[1000px] h-[850px] rounded-full bg-gradient-to-l from-violet-950/20 via-blue-950/10 to-transparent blur-[190px] opacity-60 aurora-layer-1"></div>
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#000000_85%)]"></div>
+</div>
+<!-- Apple Floating Navigation Bar -->
+<header class="fixed top-0 inset-x-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-white/10 transition-all duration-300">
+<div class="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+<a class="flex items-center gap-3 group" href="#">
+<div class="w-7 h-7 rounded-xl border border-white/15 bg-white/[0.04] backdrop-blur-md flex items-center justify-center transition-all group-hover:border-white/30 group-hover:bg-white/[0.08]">
+<span class="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]"></span>
+</div>
+<span class="text-sm font-medium tracking-tight text-white/90 group-hover:text-white transition-colors">CareerAI</span>
+<span class="text-xs text-neutral-400 hidden sm:inline ml-2 border-l border-white/10 pl-3 font-normal">大学生职业规划智能体</span>
+</a>
+<nav class="hidden md:flex items-center gap-1.5 text-xs font-normal">
+<a class="px-3 py-1.5 text-white bg-white/10 font-medium rounded-full border border-white/15 transition-colors" href="#curated-roles">岗位浏览</a>
+<a class="px-3 py-1.5 text-neutral-400 hover:text-white rounded-full transition-colors" href="#resonance-topology">我的能力与简历</a>
+<a class="px-3 py-1.5 text-neutral-400 hover:text-white rounded-full transition-colors" href="#overview">匹配报告与推荐</a>
+<a class="px-3 py-1.5 text-neutral-400 hover:text-white rounded-full transition-colors" href="#career-memo">职业发展路径</a>
+</nav>
+<div class="flex items-center gap-3">
+<div class="hidden sm:flex items-center gap-2 text-xs text-neutral-400 px-2.5 py-1 rounded-full border border-white/[0.05] bg-white/[0.02]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse"></span>
+<span class="">匹配雷达静默运行中</span>
+</div>
+<a class="flex items-center gap-2 py-1 px-2.5 rounded-full border border-white/[0.08] hover:border-white/25 bg-white/[0.04] transition-all" href="#">
+<div class="w-5 h-5 rounded-full bg-neutral-800 text-[10px] font-mono flex items-center justify-center text-neutral-300">AC</div>
+<span class="text-xs text-neutral-400 font-light">Alex Chen · 软件工程 本科在读</span>
+</a>
+</div>
+</div>
+</header>
+<!-- Main Long-Form Storyline Layout -->
+<main class="relative z-10 pt-20">
+<!-- ================= SECTION 1: IMMERSIVE HERO VIEWPORT ================= -->
+<section class="min-h-screen flex flex-col justify-between max-w-5xl mx-auto px-6 lg:px-12 pt-28 pb-20 text-center items-center" id="overview">
+<!-- Top Pill -->
+<div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-white/[0.09] bg-white/[0.03] backdrop-blur-xl text-mist-dim text-xs font-mono tracking-wider uppercase mb-6 shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-white/80 shadow-[0_0_6px_rgba(255,255,255,0.9)]"></span><span class="">专属于 Alex Chen 的精选岗位推荐</span></div>
+<!-- Apple Iconic Title & Subtitle -->
+<div class="max-w-3xl space-y-6"><h1 class="text-5xl sm:text-6xl md:text-7xl font-light tracking-tightest text-white leading-[1.08]">精选适合你的<br><span class="bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent font-normal">职业岗位</span></h1><p class="text-base sm:text-lg md:text-xl text-mist-dim font-light max-w-xl mx-auto leading-relaxed">基于你的专业背景与技能掌握情况，为你匹配适合的研发与设计岗位。</p></div>
+<!-- Center Heroic Metric Block (Huge Core Numbers with iOS Glass Aura & Convergence Reveal) -->
+<div class="particle-reveal-target w-full max-w-2xl my-12 p-8 sm:p-12 rounded-[32px] apple-glass border border-white/[0.08] relative group revealed" data-revealed="true">
+<div class="absolute -inset-px rounded-[32px] bg-gradient-to-b from-white/15 to-transparent pointer-events-none opacity-50"></div>
+<div class="grid grid-cols-3 gap-6 sm:gap-10 text-center relative z-10"><div class="flex flex-col items-center"><span class="text-xs font-mono tracking-widest text-mist-subtle uppercase mb-2">最高匹配度</span><div class="flex items-baseline gap-0.5"><span class="text-5xl sm:text-6xl font-light font-mono tracking-tighter text-white">98</span><span class="text-xl font-mono text-mist-dim">%</span></div><span class="text-xs text-mist-subtle mt-2 font-light">全栈开发匹配</span></div><div class="w-px h-16 bg-white/[0.08] my-auto mx-auto"></div><div class="flex flex-col items-center"><span class="text-xs font-mono tracking-widest text-mist-subtle uppercase mb-2">精选岗位</span><div class="flex items-baseline gap-1"><span class="text-5xl sm:text-6xl font-light font-mono tracking-tighter text-white">12</span><span class="text-xs text-mist-dim">个</span></div><span class="text-xs text-mist-subtle mt-2 font-light">深度推荐直面</span></div><div class="w-px h-16 bg-white/[0.08] my-auto mx-auto hidden sm:block"></div><div class="hidden sm:flex flex-col items-center"><span class="text-xs font-mono tracking-widest text-mist-subtle uppercase mb-2">企业邀请</span><div class="flex items-baseline gap-1"><span class="text-5xl sm:text-6xl font-light font-mono tracking-tighter text-white">3</span><span class="text-xs text-mist-dim">家</span></div><span class="text-xs text-mist-subtle mt-2 font-light">团队直面意向</span></div></div>
+<!-- Interactive Search / Intent Touchpoint -->
+<div class="mt-10 pt-8 border-t border-white/[0.07] flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 text-xs text-mist-dim font-light pl-2">
+<span class="material-symbols-outlined text-sm text-white/40">tune</span>
+<span class="">当前意向：资深全栈 / 独立交付 / 全球远程或沪杭高弹空间</span>
+</div>
+<a class="px-4 py-1.5 rounded-full bg-white text-black hover:bg-neutral-200 text-xs font-medium transition-all shadow-md flex items-center gap-1" href="#curated-roles">
+<span class="">开始探索</span>
+<span class="material-symbols-outlined text-sm">south</span>
+</a>
+</div>
+</div>
+<!-- Scroll Down Hint -->
+<div class="flex flex-col items-center gap-3 pt-6 text-mist-subtle">
+<span class="text-[11px] font-mono tracking-widest uppercase text-neutral-500">向下滚动 · 探索席位流</span>
+<div class="w-4 h-7 rounded-full border border-white/20 flex items-start justify-center p-1">
+<div class="w-1 h-1.5 bg-white/70 rounded-full animate-bounce"></div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 2: CURATED ROLES STREAM (1-2 CARDS PER VIEWPORT) ================= -->
+<section class="max-w-4xl mx-auto px-6 lg:px-8 py-32 space-y-36" id="curated-roles">
+<!-- Section Header Statement -->
+<div class="text-center space-y-4 max-w-xl mx-auto"><span class="text-xs font-mono tracking-widest uppercase text-neutral-500">CURATED POSITIONS</span><h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white">推荐岗位详情</h2><p class="text-sm text-mist-dim font-light leading-relaxed">每份岗位均经过专业技术要求与职业规划拟合，点击卡片可查看技能要求详情。</p></div>
+<!-- ROLE CARD 1: Synapse Labs -->
+<article class="particle-reveal-target p-8 sm:p-12 rounded-[32px] apple-glass border border-white/[0.08] hover:border-white/20 transition-all duration-500 relative group revealed" data-revealed="true">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.08] text-white border border-white/10">TOP MATCH</span>
+<span class="text-xs text-mist-subtle">上海 · 徐汇 / 支持部分远程 / 5-7 年</span>
+</div>
+<h3 class="text-2xl sm:text-3xl font-medium tracking-tight text-white group-hover:text-white/95 transition-colors">
+            资深全栈架构师
+          </h3>
+<p class="text-sm text-mist-dim mt-1 font-light">Synapse Labs · 下一代交互流式系统</p>
+</div>
+<div class="text-left sm:text-right">
+<div class="text-2xl sm:text-3xl font-mono font-light text-white tracking-tight">
+            40k - 65k
+          </div>
+<div class="text-xs text-mist-subtle mt-1 font-light">16薪 + 期权激励</div>
+<div class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-mono">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="">96% 契合度</span>
+</div>
+</div>
+</div>
+<!-- Gentle Editorial Abstract -->
+<div class="mt-8 pt-6 border-t border-white/[0.06] text-sm sm:text-base text-mist-dim leading-relaxed font-light">
+        你的开源 React 并发渲染流与分布式系统设计经验，与其核心产品即将开展的端到端并发重构高度一致。
+      </div>
+<!-- Progressive Disclosure: Expandable Detail Area -->
+<details class="group/detail mt-6 pt-4 border-t border-white/[0.05]">
+<summary class="cursor-pointer list-none flex items-center justify-between text-xs text-mist-dim hover:text-white transition-colors py-2"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm group-open/detail:rotate-180 transition-transform">expand_more</span><span class="">查看岗位技能要求与匹配详情</span></span><span class="font-mono text-[11px] text-neutral-500">展开匹配分析</span></summary>
+<div class="mt-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-mist-dim">
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">为什么为你推荐：</div>
+<ul class="space-y-1.5 list-disc list-inside text-neutral-400 font-light leading-relaxed">
+<li class="">团队 CTO 重点关注了你的 GitHub 异步渲染调度库；</li>
+<li class="">工作节奏契合：无需每日打卡，看重周度交付成果；</li>
+<li class="">配备顶配 M3 Max 工作站与自主算力配额。</li>
+</ul>
+</div>
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">技术同频栈：</div>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">React 19 &amp; Server Components</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">Next.js App Router</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">TypeScript</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">LLM 流式调用架构</span>
+</div>
+</div>
+</div>
+</details>
+<!-- Card Action Footer -->
+<div class="mt-8 pt-6 border-t border-white/[0.06] flex items-center justify-between">
+<button class="text-xs text-mist-subtle hover:text-white transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base">bookmark_border</span>
+<span class="">静默收藏</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white transition-all">
+            了解团队背景
+          </button>
+<button class="px-6 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-medium transition-all shadow-md">发起沟通</button>
+</div>
+</div>
+</article>
+<!-- ROLE CARD 2: MatrixPay 金融科技 -->
+<article class="particle-reveal-target p-8 sm:p-12 rounded-[32px] apple-glass border border-white/[0.08] hover:border-white/20 transition-all duration-500 relative group revealed" data-revealed="true">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.08] text-white border border-white/10">HIGH FIDELITY</span>
+<span class="text-xs text-mist-subtle">杭州 / 弹性混合工作 / 3-5 年</span>
+</div>
+<h3 class="text-2xl sm:text-3xl font-medium tracking-tight text-white group-hover:text-white/95 transition-colors">
+            前端工程专家 (Canvas / 渲染引擎)
+          </h3>
+<p class="text-sm text-mist-dim mt-1 font-light">MatrixPay 金融科技 · 极速行情系统研发组</p>
+</div>
+<div class="text-left sm:text-right">
+<div class="text-2xl sm:text-3xl font-mono font-light text-white tracking-tight">
+            35k - 50k
+          </div>
+<div class="text-xs text-mist-subtle mt-1 font-light">15薪 + 季度高额绩效</div>
+<div class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-mono">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+<span class="">91% 契合度</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-white/[0.06] text-sm sm:text-base text-mist-dim leading-relaxed font-light">
+        你在开源社区的高性能实时图形渲染组件与其实时微秒级行情看板深度同构，CTO 特批开放直接终面。
+      </div>
+<!-- Progressive Disclosure -->
+<details class="group/detail mt-6 pt-4 border-t border-white/[0.05]">
+<summary class="cursor-pointer list-none flex items-center justify-between text-xs text-mist-dim hover:text-white transition-colors py-2"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm group-open/detail:rotate-180 transition-transform">expand_more</span><span class="">查看岗位技能要求与匹配详情</span></span><span class="font-mono text-[11px] text-neutral-500">展开匹配分析</span></summary>
+<div class="mt-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-mist-dim">
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">为什么为你推荐：</div>
+<ul class="space-y-1.5 list-disc list-inside text-neutral-400 font-light leading-relaxed">
+<li class="">团队专注底层性能调优与极致高帧率，拒绝堆砌业务表单；</li>
+<li class="">提供专属的硬件调优环境与深度图形学专利支持；</li>
+<li class="">每周五固定无会议专注 Coding 日。</li>
+</ul>
+</div>
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">技术同频栈：</div>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">Canvas 2D / 离屏渲染</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">WebGL &amp; WebGPU</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">高吞吐 WebSocket 管道</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">WebAssembly 渲染加速</span>
+</div>
+</div>
+</div>
+</details>
+<div class="mt-8 pt-6 border-t border-white/[0.06] flex items-center justify-between">
+<button class="text-xs text-mist-subtle hover:text-white transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base">bookmark_border</span>
+<span class="">静默收藏</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white transition-all">
+            了解业务形态
+          </button>
+<button class="px-6 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-medium transition-all shadow-md">发起沟通</button>
+</div>
+</div>
+</article>
+<!-- ROLE CARD 3: OmniFlow AI (Global Remote) -->
+<article class="particle-reveal-target p-8 sm:p-12 rounded-[32px] apple-glass border border-white/[0.08] hover:border-white/20 transition-all duration-500 relative group revealed" data-revealed="true">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.08] text-white border border-white/10">GLOBAL REMOTE</span>
+<span class="text-xs text-mist-subtle">全异步无打卡 · 全球远程 / 纯美金结算</span>
+</div>
+<h3 class="text-2xl sm:text-3xl font-medium tracking-tight text-white group-hover:text-white/95 transition-colors">
+            AI 产品全栈工程师
+          </h3>
+<p class="text-sm text-mist-dim mt-1 font-light">OmniFlow AI · 硅谷先锋创意生成团队</p>
+</div>
+<div class="text-left sm:text-right">
+<div class="text-2xl sm:text-3xl font-mono font-light text-white tracking-tight">
+            $6,000 - $8,500
+          </div>
+<div class="text-xs text-mist-subtle mt-1 font-light">/ 月 · 年度带薪长假</div>
+<div class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
+<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+<span class="">88% 契合度</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-white/[0.06] text-sm sm:text-base text-mist-dim leading-relaxed font-light">
+        极简纯异步团队，看重端到端独立交付与极高审美直觉，你过去的独立上线作品非常契合其核心文化。
+      </div>
+<details class="group/detail mt-6 pt-4 border-t border-white/[0.05]">
+<summary class="cursor-pointer list-none flex items-center justify-between text-xs text-mist-dim hover:text-white transition-colors py-2"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm group-open/detail:rotate-180 transition-transform">expand_more</span><span class="">查看岗位技能要求与匹配详情</span></span><span class="font-mono text-[11px] text-neutral-500">展开匹配分析</span></summary>
+<div class="mt-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-mist-dim">
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">为什么为你推荐：</div>
+<ul class="space-y-1.5 list-disc list-inside text-neutral-400 font-light leading-relaxed">
+<li class="">自由选择居住城市，无需倒时差进行冗长同步会议；</li>
+<li class="">年度发放 5,000 美元个人学习与设备更新补贴；</li>
+<li class="">注重代码品味与极简 UI，尊重工程师的设计决策。</li>
+</ul>
+</div>
+<div class="space-y-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+<div class="text-white font-medium">技术同频栈：</div>
+<div class="flex flex-wrap gap-2 pt-1">
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">Node.js / Edge Runtime</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">Vector DB &amp; Embeddings</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">全栈独当一面能力</span>
+<span class="px-2.5 py-1 rounded-lg bg-white/[0.04] text-neutral-300 border border-white/10">良好英文读写</span>
+</div>
+</div>
+</div>
+</details>
+<div class="mt-8 pt-6 border-t border-white/[0.06] flex items-center justify-between">
+<button class="text-xs text-mist-subtle hover:text-white transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base">bookmark_border</span>
+<span class="">静默收藏</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white transition-all">
+            了解异步文化
+          </button>
+<button class="px-6 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-medium transition-all shadow-md">发起沟通</button>
+</div>
+</div>
+</article>
+</section>
+<!-- ================= SECTION 3: TOPOLOGY & DEEP RESONANCE ================= -->
+<section class="max-w-5xl mx-auto px-6 lg:px-12 py-36" id="resonance-topology">
+<div class="particle-reveal-target p-10 sm:p-16 rounded-[36px] apple-glass border border-white/[0.08] relative overflow-hidden revealed" data-revealed="true">
+<!-- Glow ambient in card -->
+<div class="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+<div class="max-w-2xl mb-12"><span class="text-xs font-mono tracking-widest uppercase text-neutral-500">SKILLS ASSESSMENT</span><h2 class="text-3xl sm:text-4xl font-light text-white tracking-tight mt-2">综合技能分布评估</h2><p class="text-sm text-mist-dim font-light mt-3 leading-relaxed">基于技术栈熟练度、项目落地质量与团队协作模式进行多维评估。</p></div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<!-- Abstract Radar Visual -->
+<div class="lg:col-span-6 flex items-center justify-center">
+<div class="w-72 h-72 sm:w-80 sm:h-80 relative flex items-center justify-center">
+<svg class="w-full h-full" viewBox="0 0 200 200">
+<!-- Concentric subtle rings -->
+<g class="rotate-slow origin-center">
+<circle cx="100" cy="100" fill="none" r="88" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 8" stroke-width="1"></circle>
+</g>
+<circle cx="100" cy="100" fill="none" r="66" stroke="rgba(255,255,255,0.08)" stroke-width="1"></circle>
+<circle cx="100" cy="100" fill="none" r="44" stroke="rgba(255,255,255,0.09)" stroke-width="1"></circle>
+<circle cx="100" cy="100" fill="rgba(255,255,255,0.02)" r="22" stroke="rgba(255,255,255,0.12)" stroke-width="1"></circle>
+<!-- Radial cross hairs -->
+<line stroke="rgba(255,255,255,0.06)" stroke-width="1" x1="100" x2="100" y1="12" y2="188"></line>
+<line stroke="rgba(255,255,255,0.06)" stroke-width="1" x1="12" x2="188" y1="100" y2="100"></line>
+<!-- Capability Envelope Wave Shape -->
+<polygon fill="rgba(255,255,255,0.04)" points="100,28 178,102 96,170 34,96" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"></polygon>
+<!-- Pulsing Key Nodes -->
+<circle class="shadow-[0_0_8px_rgba(255,255,255,0.8)]" cx="100" cy="28" fill="#ffffff" r="3"></circle>
+<circle class="shadow-[0_0_8px_rgba(255,255,255,0.8)]" cx="178" cy="102" fill="#ffffff" r="3"></circle>
+<circle class="shadow-[0_0_8px_rgba(255,255,255,0.8)]" cx="96" cy="170" fill="#ffffff" r="3"></circle>
+<circle class="shadow-[0_0_8px_rgba(255,255,255,0.8)]" cx="34" cy="96" fill="#ffffff" r="3"></circle>
+<circle cx="100" cy="100" fill="#ffffff" r="2"></circle>
+</svg>
+</div>
+</div>
+<!-- Metric Bars -->
+<div class="lg:col-span-6 space-y-6"><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-mist-dim font-light">全栈工程与系统实现</span><span class="font-mono text-white">97%</span></div><div class="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden"><div class="w-[97%] h-full bg-white rounded-full"></div></div></div><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-mist-dim font-light">AI 接口集成与全链路开发</span><span class="font-mono text-white">94%</span></div><div class="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden"><div class="w-[94%] h-full bg-white rounded-full"></div></div></div><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-mist-dim font-light">前端交互与性能优化</span><span class="font-mono text-white">90%</span></div><div class="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden"><div class="w-[90%] h-full bg-white rounded-full"></div></div></div><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-mist-dim font-light">远程自主协作与交付</span><span class="font-mono text-white">88%</span></div><div class="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden"><div class="w-[88%] h-full bg-white rounded-full"></div></div></div><p class="text-xs text-neutral-500 font-light pt-4 border-t border-white/[0.06]">系统会定期依据你的最新项目更新与技能拓展情况自动同步评估数据。</p></div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 4: CALM ADVISORY & FOOTER ================= -->
+<section class="max-w-4xl mx-auto px-6 lg:px-8 py-24 mb-20" id="career-memo">
+<div class="particle-reveal-target p-8 sm:p-10 rounded-[28px] border border-white/[0.08] apple-glass-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative revealed" data-revealed="true">
+<div class="space-y-1.5 max-w-lg"><div class="flex items-center gap-2 text-xs text-mist-dim font-medium tracking-wide"><span class="w-1.5 h-1.5 rounded-full bg-white/70"></span><span class="">求职建议</span></div><p class="text-sm text-mist-dim font-light leading-relaxed">若在个人简历中补充代表性项目文档或开源代码仓库链接，将显著提高技术团队负责人的面试发起意向。</p></div>
+<a class="px-5 py-2 rounded-full border border-white/15 hover:border-white/30 bg-white/[0.06] hover:bg-white/[0.1] text-xs text-white transition-all whitespace-nowrap" href="#">
+        调整个人偏好
+      </a>
+</div>
+</section>
+</main>
+<!-- Ultra-minimal Calm Apple Footer -->
+<footer class="w-full border-t border-white/[0.06] py-14 bg-black/60 backdrop-blur-2xl">
+<div class="max-w-6xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-mist-subtle font-light">
+<div class="">
+      CareerAI · 为优秀创造者提供专注而宁静的职业连接
+    </div>
+<div class="flex items-center gap-6 font-mono text-[11px] text-neutral-500">
+<a class="hover:text-white transition-colors" href="#">隐私保护</a>
+<a class="hover:text-white transition-colors" href="#">脱敏机制</a>
+<a class="hover:text-white transition-colors" href="#">免打扰协议</a>
+<span class="">© 2025 CareerAI Inc.</span>
+</div>
+</div>
+</footer>
+<!-- High-Performance Apple-Minimalist Convergence & Ambient Particles Script -->
+<script>
+(() => {
+  // 1. Persistent Ambient Background Stardust Simulation (Pure smooth dust, NO connecting lines, soft vertical scroll response)
+  const bgCanvas = document.getElementById('ambient-cosmos-canvas');
+  if (bgCanvas) {
+    const ctx = bgCanvas.getContext('2d');
+    let width = bgCanvas.width = window.innerWidth;
+    let height = bgCanvas.height = window.innerHeight;
+
+    const bgParticleCount = Math.min(80, Math.floor((width * height) / 16000));
+    const bgParticles = [];
+
+    class BgParticle {
+      constructor() {
+        this.reset(true);
+      }
+      reset(initial = false) {
+        this.x = Math.random() * width;
+        this.y = initial ? Math.random() * height : (Math.random() > 0.5 ? -10 : height + 10);
+        this.size = Math.random() * 1.4 + 0.6;
+        this.baseAlpha = Math.random() * 0.35 + 0.12;
+        this.vx = (Math.random() - 0.5) * 0.2;
+        this.vy = (Math.random() - 0.5) * 0.15 - 0.1;
+        this.twinkleSpeed = 0.012 + Math.random() * 0.016;
+        this.twinklePhase = Math.random() * Math.PI * 2;
+      }
+      update(scrollDelta) {
+        this.x += this.vx;
+        // Subtle vertical velocity responsiveness on scroll
+        this.y += this.vy - scrollDelta * 0.06;
+        this.twinklePhase += this.twinkleSpeed;
+
+        if (this.x < -20) this.x = width + 20;
+        if (this.x > width + 20) this.x = -20;
+        if (this.y < -30) this.y = height + 20;
+        if (this.y > height + 30) this.y = -20;
+      }
+      draw(c) {
+        const currentAlpha = Math.max(0.04, this.baseAlpha + Math.sin(this.twinklePhase) * 0.15);
+        c.beginPath();
+        c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        c.fillStyle = `rgba(255, 255, 255, ${currentAlpha})`;
+        c.fill();
+      }
+    }
+
+    for (let i = 0; i < bgParticleCount; i++) {
+      bgParticles.push(new BgParticle());
+    }
+
+    window.addEventListener('resize', () => {
+      width = bgCanvas.width = window.innerWidth;
+      height = bgCanvas.height = window.innerHeight;
+    }, { passive: true });
+
+    let lastScrollY = window.scrollY;
+    function renderAmbient() {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollY;
+      lastScrollY = currentScrollY;
+
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < bgParticles.length; i++) {
+        bgParticles[i].update(scrollDelta);
+        bgParticles[i].draw(ctx);
+      }
+      requestAnimationFrame(renderAmbient);
+    }
+    requestAnimationFrame(renderAmbient);
+  }
+
+  // 2. Scroll-Triggered Centripetal Particle Convergence Reveal (36~48 cold-white shimmering particles)
+  const targets = document.querySelectorAll('.particle-reveal-target');
+
+  function triggerParticleConvergence(card) {
+    if (card.dataset.revealed) return;
+    card.dataset.revealed = 'true';
+
+    // Make sure card position is relative for absolute canvas overlay
+    const computedStyle = window.getComputedStyle(card);
+    if (computedStyle.position === 'static') {
+      card.style.position = 'relative';
+    }
+
+    // Trigger card CSS reveal animation (opacity: 0 -> 1, translateY: 32px -> 0, scale: 0.96 -> 1, blur: 14px -> 0 in 0.8s)
+    requestAnimationFrame(() => {
+      card.classList.add('revealed');
+    });
+
+    // Create localized canvas overlay
+    const canvas = document.createElement('canvas');
+    canvas.className = 'particle-stage-canvas';
+    card.appendChild(canvas);
+
+    const rect = card.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const padding = 60; // Extra field margin for particles rushing in
+    const w = rect.width + padding * 2;
+    const h = rect.height + padding * 2;
+
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const centerX = padding + rect.width / 2;
+    const centerY = padding + rect.height / 2;
+
+    // Generate 36~48 cold-white glowing quantum particles
+    const particleCount = 36 + Math.floor(Math.random() * 13); // 36 to 48
+    const particles = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      // Destination: nicely distributed inside the card bounds
+      const margin = 24;
+      const destX = padding + margin + Math.random() * (rect.width - margin * 2);
+      const destY = padding + margin + Math.random() * (rect.height - margin * 2);
+
+      // Start position: outside the card edges with spiral offset
+      const startAngle = Math.random() * Math.PI * 2;
+      const startDist = Math.max(rect.width, rect.height) * (0.55 + Math.random() * 0.45);
+      const startX = centerX + Math.cos(startAngle) * startDist;
+      const startY = centerY + Math.sin(startAngle) * startDist;
+
+      // Spiral parameter
+      const spiralRotation = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 1.2);
+
+      particles.push({
+        startX,
+        startY,
+        destX,
+        destY,
+        centerX,
+        centerY,
+        spiralRotation,
+        size: Math.random() * 2 + 1.2,
+        progress: 0,
+        speed: 0.022 + Math.random() * 0.018,
+        delay: Math.floor(Math.random() * 10),
+        alpha: Math.random() * 0.4 + 0.6
+      });
+    }
+
+    // Cubic easing deceleration
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    let frame = 0;
+    const totalDurationFrames = 52; // roughly 0.85s at 60fps
+
+    function animateConvergence() {
+      frame++;
+      ctx.clearRect(0, 0, w, h);
+
+      let allDone = true;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (frame < p.delay) {
+          allDone = false;
+          continue;
+        }
+
+        if (p.progress < 1) {
+          p.progress += p.speed;
+          if (p.progress > 1) p.progress = 1;
+          allDone = false;
+        }
+
+        const t = easeOutCubic(p.progress);
+
+        // Linear interpolation towards target
+        let curX = p.startX + (p.destX - p.startX) * t;
+        let curY = p.startY + (p.destY - p.startY) * t;
+
+        // Spiral vortex dampening effect
+        const vortexFactor = Math.sin(p.progress * Math.PI) * (1 - p.progress);
+        const curAngle = Math.atan2(curY - p.centerY, curX - p.centerX) + p.spiralRotation * vortexFactor;
+        const curDist = Math.hypot(curX - p.centerX, curY - p.centerY);
+
+        curX = p.centerX + Math.cos(curAngle) * curDist;
+        curY = p.centerY + Math.sin(curAngle) * curDist;
+
+        // Opacity: smoothly brightens during convergence, then softly fades out as card solidifies
+        let alpha = 0;
+        if (p.progress < 0.6) {
+          alpha = (p.progress / 0.6) * p.alpha;
+        } else {
+          alpha = (1 - (p.progress - 0.6) / 0.4) * p.alpha;
+        }
+
+        if (alpha > 0.01) {
+          ctx.beginPath();
+          ctx.arc(curX, curY, p.size * (1 - p.progress * 0.25), 0, Math.PI * 2);
+
+          // Cold-white luminous halo
+          ctx.shadowColor = "rgba(220, 235, 255, 0.9)";
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = `rgba(240, 246, 255, ${alpha})`;
+          ctx.fill();
+        }
+      }
+
+      if (!allDone || frame < totalDurationFrames) {
+        requestAnimationFrame(animateConvergence);
+      } else {
+        // Smoothly unmount canvas when complete to keep DOM clean and card fully interactive
+        setTimeout(() => {
+          if (canvas.parentNode) {
+            canvas.parentNode.removeChild(canvas);
+          }
+        }, 150);
+      }
+    }
+
+    requestAnimationFrame(animateConvergence);
+  }
+
+  // IntersectionObserver to observe viewport entrance (threshold: 0.15)
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        triggerParticleConvergence(entry.target);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.15,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  targets.forEach(target => observer.observe(target));
+
+  // Initialize immediately if top card is already in the viewport upon load
+  setTimeout(() => {
+    const heroCard = document.querySelector('#overview .particle-reveal-target');
+    if (heroCard && !heroCard.dataset.revealed) {
+      const rect = heroCard.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.85) {
+        triggerParticleConvergence(heroCard);
+        observer.unobserve(heroCard);
+      }
+    }
+  }, 100);
+})();
+</script>
+
+
+</body></html>

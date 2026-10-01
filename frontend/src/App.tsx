@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, errMessage } from './api';
-import type { HealthResp, JobSummary, ProfileResp, StudentProfile } from './types';
+import type { HealthResp, JobSummary, ProfileFocusTarget, ProfileResp, StudentProfile } from './types';
 import JobsTab from './components/JobsTab';
 import ProfileTab from './components/ProfileTab';
 import MatchesTab from './components/MatchesTab';
 import PathsTab from './components/PathsTab';
+import AIConfigPanel from './components/AIConfigPanel';
+import LocalDraftSettingsPanel from './components/LocalDraftSettingsPanel';
+import OnboardingWizard, { type OnboardingOutcome, type OnboardingStart } from './components/OnboardingWizard';
+import { createLocalDraft, getBrowserStorage, readAutosavePreference, readLocalDraft, writeAutosavePreference, writeLocalDraft, clearLocalDraft, type PathSelection } from './lib/localDraft';
+import { deriveWorkflowState, type MatchFreshness, type ReportFreshness } from './lib/workflow';
+import { readOnboardingState, writeOnboardingState } from './lib/onboarding';
 
 const EMPTY_STUDENT: StudentProfile = {
   major: '',
@@ -19,25 +25,59 @@ const EMPTY_STUDENT: StudentProfile = {
 };
 
 type TabId = 'jobs' | 'profile' | 'paths' | 'matches';
+type WorkflowAnchor = 'profile-source' | 'profile-report' | 'report-matrix' | 'report-advice';
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'jobs', label: '岗位浏览' },
-  { id: 'profile', label: '我的能力' },
-  { id: 'paths', label: '职业路径' },
-  { id: 'matches', label: '匹配与建议' }
+const TABS: Array<{ id: TabId; label: string; code: string }> = [
+  { id: 'jobs', label: '职业探索', code: '01' },
+  { id: 'profile', label: '简历与个人报告', code: '02' },
+  { id: 'matches', label: '匹配报告', code: '03' },
+  { id: 'paths', label: '成长路径', code: '04' }
 ];
 
+function workflowStepForTab(tab: TabId, reportFreshness?: ReportFreshness): 0 | 1 | 2 | 3 {
+  if (tab === 'jobs') return 0;
+  if (tab === 'profile') return 0;
+  if (tab === 'matches') return reportFreshness === 'current' || reportFreshness === 'stale' ? 3 : 2;
+  return 3;
+}
+
+function tabFromLocation(): TabId {
+  const value = window.location.hash.slice(1);
+  return TABS.some(item => item.id === value) ? value as TabId : 'jobs';
+}
+
 export default function App() {
-  const [tab, setTab] = useState<TabId>('jobs');
+  const [storage] = useState(getBrowserStorage);
+  const [initialPreference] = useState(() => readAutosavePreference(storage));
+  const [initialOnboarding] = useState(() => readOnboardingState(storage));
+  const [tab, setTab] = useState<TabId>(tabFromLocation);
   const [health, setHealth] = useState<HealthResp | null>(null);
-  const [healthError, setHealthError] = useState<unknown>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<unknown>(null);
   const [student, setStudent] = useState<StudentProfile>(EMPTY_STUDENT);
+  const [resumeName, setResumeName] = useState('');
   const [studentRev, setStudentRev] = useState(0);
   const [analysis, setAnalysis] = useState<ProfileResp['analysis'] | null>(null);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [autosaveEnabled, setAutosaveEnabled] = useState(initialPreference.enabled);
+  const [autosaveChoicePending, setAutosaveChoicePending] = useState(!initialPreference.configured);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [draftStatus, setDraftStatus] = useState(initialPreference.available ? '正在检查本机草稿…' : '浏览器本机存储不可用；本次数据只保留在内存中。');
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<PathSelection | null>(null);
+  const [pathFocusRequest, setPathFocusRequest] = useState<{ jobId: string; token: number } | null>(null);
+  const [profileFocus, setProfileFocus] = useState<ProfileFocusTarget | null>(null);
+  const [matchFreshness, setMatchFreshness] = useState<MatchFreshness>('not_run');
+  const [reportFreshness, setReportFreshness] = useState<ReportFreshness>('not_generated');
+  const [workflowAnchor, setWorkflowAnchor] = useState<WorkflowAnchor | null>(null);
+  const [workflowFocus, setWorkflowFocus] = useState<0 | 1 | 2 | 3 | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(() => initialOnboarding.status !== 'stored' || !initialPreference.configured);
+  const [profileSourceModeRequest, setProfileSourceModeRequest] = useState<{ mode: 'resume' | 'manual'; token: number } | null>(null);
+  const [sessionResetKey, setSessionResetKey] = useState(0);
+  const skipNextDraftWrite = useRef(false);
 
   // 所有画像修改都经由 applyStudent 同步进 studentRef / revRef：
   // 异步请求（画像生成、简历解析、匹配、报告）返回时用 rev 判断期间是否
@@ -56,6 +96,63 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  useEffect(() => {
+    const syncTabFromHistory = () => {
+      const nextTab = tabFromLocation();
+      setTab(nextTab);
+      setWorkflowFocus(workflowStepForTab(nextTab));
+    };
+    window.addEventListener('popstate', syncTabFromHistory);
+    return () => window.removeEventListener('popstate', syncTabFromHistory);
+  }, []);
+
+  const navigateTo = useCallback((nextTab: TabId) => {
+    setWorkflowFocus(workflowStepForTab(nextTab));
+    if (nextTab === tab) return;
+    window.history.pushState(null, '', '#' + nextTab);
+    setTab(nextTab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab]);
+
+  const navigateWorkflowStep = useCallback((stepIndex: number) => {
+    if (stepIndex === 0 || stepIndex === 1) {
+      setWorkflowAnchor(stepIndex === 0 ? 'profile-source' : 'profile-report');
+      navigateTo('profile');
+      setWorkflowFocus(stepIndex);
+      return;
+    }
+
+    const anchor: WorkflowAnchor = stepIndex === 2 ? 'report-matrix' : 'report-advice';
+    setWorkflowAnchor(anchor);
+    if (tab !== 'matches') {
+      navigateTo('matches');
+    }
+    setWorkflowFocus(stepIndex === 2 ? 2 : 3);
+  }, [navigateTo, tab]);
+
+  useEffect(() => {
+    if (!workflowAnchor || !((tab === 'matches' && workflowAnchor.startsWith('report-')) ||
+      (tab === 'profile' && workflowAnchor.startsWith('profile-')))) return;
+    const anchor = workflowAnchor;
+    let attempts = 0;
+    let timer = 0;
+    const seek = () => {
+      const target = document.getElementById(anchor);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setWorkflowAnchor(null);
+        return;
+      }
+      if (attempts++ >= 60) {
+        setWorkflowAnchor(null);
+        return;
+      }
+      timer = window.setTimeout(seek, 100);
+    };
+    timer = window.setTimeout(seek, 0);
+    return () => window.clearTimeout(timer);
+  }, [tab, workflowAnchor]);
+
   const applyStudent = useCallback((next: StudentProfile) => {
     studentRef.current = next;
     revRef.current += 1;
@@ -63,7 +160,7 @@ export default function App() {
     setStudentRev(revRef.current);
   }, []);
 
-  // 编辑路径：任何字段修改都会撤销整体确认，并清空基于旧输入的 AI 分析
+  // 编辑路径：任何字段修改都会清空基于旧输入的 AI 分析
   // 与优势/待提升标签，避免旧结论残留。
   const editStudent = useCallback((fn: (s: StudentProfile) => { next: StudentProfile; notes?: string[] }): string[] => {
     const cur = studentRef.current;
@@ -82,17 +179,127 @@ export default function App() {
     applyStudent(s);
   }, [applyStudent]);
 
-  const confirmProfile = useCallback(() => {
-    applyStudent({ ...studentRef.current, confirmed: true });
-    showToast('画像已确认，可前往「匹配与建议」查看匹配');
-  }, [applyStudent, showToast]);
+  const restoreLocalDraft = useCallback(() => {
+    const result = readLocalDraft(storage);
+    if (result.status === 'restored') {
+      applyStudent(result.draft.student);
+      setTab(result.draft.tab);
+      window.history.replaceState(null, '', '#' + result.draft.tab);
+      setSelectedPath(result.draft.selectedPath);
+      setDraftSavedAt(result.draft.savedAt);
+      setDraftStatus('已恢复本机草稿 · ' + new Date(result.draft.savedAt).toLocaleString());
+    } else if (result.status === 'invalid') {
+      // 保留一次恢复失败提示，避免 hydrated 后的首次自动保存立即把它覆盖。
+      skipNextDraftWrite.current = true;
+      setDraftSavedAt(null);
+      setSelectedPath(null);
+      setDraftStatus(result.reason === 'version'
+        ? '本机草稿版本不兼容，已从空白会话开始。'
+        : '本机草稿损坏，已从空白会话开始。');
+    } else if (result.status === 'unavailable') {
+      setDraftStatus('浏览器本机存储不可用；本次数据只保留在内存中。');
+    } else {
+      setDraftSavedAt(null);
+      setDraftStatus('尚无本机草稿。');
+    }
+    setDraftHydrated(true);
+  }, [applyStudent, storage]);
+
+  useEffect(() => {
+    if (!initialPreference.configured) return;
+    if (initialPreference.enabled) {
+      restoreLocalDraft();
+    } else {
+      setDraftStatus('自动保存已关闭；本次不读取旧草稿，可启用恢复或清除本机草稿。');
+      setDraftHydrated(true);
+    }
+  }, [initialPreference.configured, initialPreference.enabled, restoreLocalDraft]);
+
+  useEffect(() => {
+    if (autosaveChoicePending || !draftHydrated) return;
+    if (skipNextDraftWrite.current) {
+      skipNextDraftWrite.current = false;
+      return;
+    }
+    if (!autosaveEnabled) return;
+    const draft = createLocalDraft(student, tab, selectedPath);
+    if (writeLocalDraft(storage, draft)) {
+      setDraftSavedAt(draft.savedAt);
+      setDraftStatus('已保存到本机浏览器 · ' + new Date(draft.savedAt).toLocaleString());
+    } else {
+      setDraftStatus('本机保存失败；当前内容仍保留在本次会话中。');
+    }
+  }, [autosaveChoicePending, autosaveEnabled, draftHydrated, selectedPath, storage, student, tab]);
+
+  const chooseAutosave = useCallback((enabled: boolean) => {
+    const isInitialChoice = autosaveChoicePending;
+    const saved = writeAutosavePreference(storage, enabled);
+    setAutosaveEnabled(enabled && saved);
+    setAutosaveChoicePending(false);
+    if (enabled && !saved) setDraftStatus('无法启用本机保存；本次内容仍可继续使用。');
+    else if (!storage) setDraftStatus('浏览器本机存储不可用；本次数据只保留在内存中。');
+    else if (enabled && isInitialChoice) setDraftStatus('正在检查本机草稿…');
+    else if (!enabled) setDraftStatus(isInitialChoice
+      ? '自动保存已关闭；本次未读取旧草稿，可稍后启用恢复或清除本机草稿。'
+      : '自动保存已关闭；已有草稿仍留在本机，可点击清除。');
+    if (isInitialChoice && enabled && saved) restoreLocalDraft();
+    else if (isInitialChoice) setDraftHydrated(true);
+  }, [autosaveChoicePending, restoreLocalDraft, storage]);
+
+  const toggleAutosave = useCallback((enabled: boolean) => {
+    const saved = writeAutosavePreference(storage, enabled);
+    if (!saved) {
+      setAutosaveEnabled(false);
+      setDraftStatus('无法更新本机保存设置；当前内容仍保留在本次会话中。');
+      return;
+    }
+
+    if (enabled) {
+      const current = studentRef.current;
+      const hasCurrentContent = Boolean(
+        current.major.trim() || current.experiences.trim() || current.skills.length ||
+        current.certificates.length || current.qualities.length ||
+        current.intention.target_job_id || current.intention.city.trim() || selectedPath || tab !== 'jobs'
+      );
+      const existing = readLocalDraft(storage);
+      setAutosaveEnabled(true);
+      if (!hasCurrentContent && existing.status === 'restored') {
+        restoreLocalDraft();
+      } else {
+        setDraftStatus('自动保存已开启；从现在开始保存本次流程。');
+      }
+      return;
+    }
+
+    setAutosaveEnabled(false);
+    setDraftStatus('自动保存已关闭；已有草稿仍留在本机，可在此清除。');
+  }, [restoreLocalDraft, selectedPath, storage, tab]);
+
+  const clearSessionDraft = useCallback(() => {
+    const cleared = clearLocalDraft(storage);
+    skipNextDraftWrite.current = true;
+    applyStudent(EMPTY_STUDENT);
+    setResumeName('');
+    setAnalysis(null);
+    setSelectedPath(null);
+    setProfileFocus(null);
+    setMatchFreshness('not_run');
+    setReportFreshness('not_generated');
+    setWorkflowAnchor(null);
+    setWorkflowFocus(0);
+    setPathFocusRequest(null);
+    setSessionResetKey(value => value + 1);
+    setTab('jobs');
+    window.history.replaceState(null, '', '#jobs');
+    setDraftSavedAt(null);
+    setDraftStatus(cleared ? '本机草稿已清除，流程已重置。' : '无法清除本机草稿；本次流程已重置。');
+  }, [applyStudent, storage]);
 
   const loadHealth = useCallback(async () => {
     try {
       setHealth(await apiGet<HealthResp>('/api/health'));
-      setHealthError(null);
-    } catch (e) {
-      setHealthError(e);
+    } catch {
+      // 页面仍可浏览；需要模型的操作会在实际请求时给出具体错误。
     }
   }, []);
 
@@ -119,66 +326,116 @@ export default function App() {
   useEffect(() => { void loadJobs(); }, [loadJobs]);
 
   const setTargetJob = useCallback((id: string, name: string) => {
-    updateStudent(s => ({ ...s, intention: { ...s.intention, target_job_id: id } }));
-    showToast('目标岗位已设为 ' + name + '，到「我的能力」确认画像后即可匹配');
-  }, [updateStudent, showToast]);
+    const current = studentRef.current;
+    if (current.intention.target_job_id !== id) {
+      applyStudent({ ...current, intention: { ...current.intention, target_job_id: id } });
+    }
+    showToast('目标岗位已设为 ' + name + '；旧匹配与岗位建议需要刷新');
+    navigateTo('profile');
+  }, [applyStudent, navigateTo, showToast]);
 
-  const llmNote = health
-    ? (health.llm_configured ? '模型 ' + health.llm_model : '模型未配置：画像与建议会提示错误，岗位浏览不受影响')
-    : null;
+  const finishOnboarding = useCallback((outcome: OnboardingOutcome, start?: OnboardingStart) => {
+    const saved = writeOnboardingState(storage, outcome);
+    setOnboardingOpen(false);
+    if (!saved && storage) showToast('新手教程状态保存失败；本次仍可继续使用', 'err');
+    if (outcome !== 'completed' || !start) return;
+    if (start === 'jobs') {
+      navigateTo('jobs');
+      return;
+    }
+    setProfileSourceModeRequest({ mode: start, token: Date.now() });
+    navigateTo('profile');
+  }, [navigateTo, showToast, storage]);
 
+  const workflow = deriveWorkflowState({
+    targetJobId: student.intention.target_job_id,
+    student,
+    match: matchFreshness,
+    report: reportFreshness
+  });
+  const workflowSteps = [
+    { label: '导入或填写资料', state: workflow.profile === 'ready' ? '已填写' : '待填写' },
+    { label: '个人分析报告', state: analysis ? '已生成' : workflow.profile === 'ready' ? '可生成' : '待填写资料' },
+    { label: '岗位匹配', state: workflow.match === 'current' ? '最新' : workflow.match === 'stale' ? '已过期' : workflow.match === 'not_run' ? '待计算' : '待填写资料' },
+    { label: '行动建议', state: workflow.report === 'current' ? '已生成' : workflow.report === 'stale' ? '已过期' : workflow.report === 'not_generated' ? '可生成' : '等待最新匹配' }
+  ];
+  const activeWorkflowStep = workflowFocus ?? workflowStepForTab(tab, reportFreshness);
+  const nextWorkflowStep = workflow.profile === 'empty' ? 0
+    : !analysis && activeWorkflowStep === 0 ? 1
+      : workflow.match !== 'current' ? 2 : 3;
+  const continueLabel = nextWorkflowStep === 0 ? '导入简历或填写资料'
+    : nextWorkflowStep === 1 ? '查看个人报告'
+      : nextWorkflowStep === 2 ? (matchFreshness === 'stale' ? '刷新岗位匹配' : '查看岗位匹配')
+        : (reportFreshness === 'stale' ? '更新行动建议' : '查看行动建议');
+  const continueWorkflow = useCallback(() => {
+    navigateWorkflowStep(nextWorkflowStep);
+  }, [navigateWorkflowStep, nextWorkflowStep]);
   return (
-    <div className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark">◈</span>
-          职业罗盘
-          <small>CAREER COMPASS · 计算机类岗位</small>
-        </div>
-        <div className="status" role="status" aria-live="polite">
-          <span className={'status-dot' + (health?.status === 'ok' ? ' ok' : '')} />
-          <span className="mono">
-            {healthError != null
-              ? '服务未连接'
-              : health
-                ? '数据 ' + health.data_version + ' · 算法 ' + health.algorithm_version + ' · ' + (llmNote ?? '')
-                : '正在检查服务…'}
-          </span>
+    <div className="exploration-shell">
+      <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
+        <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              aria-controls={'page-' + t.id}
+              className={'exploration-nav-item' + (tab === t.id ? ' active' : '')}
+              onClick={() => navigateTo(t.id)}
+            >
+              <span>{t.code}</span>{t.label}
+            </button>
+          ))}
+        </nav>
+        <div className="exploration-header-actions">
+          <button className="onboarding-trigger" type="button" onClick={() => setOnboardingOpen(true)}>
+            <span aria-hidden="true">?</span> 新手教程
+          </button>
+          <button className="settings-trigger" type="button" onClick={() => setSettingsOpen(true)}>
+            <span aria-hidden="true">⚙</span> 设置
+          </button>
+          <button className="model-config-trigger" type="button" onClick={() => setConfigOpen(true)}>
+            <span aria-hidden="true">✦</span> AI 模型配置
+          </button>
         </div>
       </header>
-      <section className="hero">
-        <div>
-          <p className="eyebrow">COMPUTER CAREERS · SAMPLE-BASED</p>
-          <h1>看清<em>岗位</em>，<br />也看清自己。</h1>
-          <p className="hero-sub">
-            岗位画像整理自历史招聘样本，匹配分由程序按标签重合度计算。确认你的技能、证书和素质，得到可执行的学习建议。
-          </p>
-        </div>
-        <div className="hero-orbit" aria-hidden="true">
-          <span className="orbit-ring" />
-          <span className="orbit-ring ring-two" />
-          <span className="orbit-core">◈<span>6 ROLES · 3 STAGES</span></span>
-          <span className="orbit-label label-a"><b>能力基线</b><br />技能 / 证书 / 素质</span>
-          <span className="orbit-label label-b"><b>匹配建议</b><br />满足 / 差距 / 待确认</span>
-          <span className="orbit-label label-c"><b>路径参考</b><br />晋升 / 换岗</span>
-        </div>
-      </section>
-      <nav className="tabs" role="tablist" aria-label="功能页签">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={'tab' + (tab === t.id ? ' active' : '')}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main>
-        <div className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="岗位浏览">
+      {!autosaveChoicePending && <aside className="workflow-guide" aria-label="流程导航">
+        <ol>
+          {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
+            <button
+              className="workflow-guide-step"
+              type="button"
+              title={item.label + '：' + item.state}
+              aria-label={(index + 1) + '. ' + item.label + '：' + item.state}
+              aria-current={activeWorkflowStep === index ? 'step' : undefined}
+              onClick={() => navigateWorkflowStep(index)}
+            >
+              <span className="workflow-step-number" aria-hidden="true">{index + 1}</span>
+              <span className="sr-only">{item.label}：{item.state}</span>
+            </button>
+          </li>)}
+        </ol>
+        <button
+          className="workflow-guide-next"
+          type="button"
+          aria-label={'下一步：' + continueLabel}
+          onClick={continueWorkflow}
+        >
+          <svg className="workflow-guide-next-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <path d="M4 12h16m-7-7 7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="workflow-guide-next-copy"><small>下一步</small><b>{continueLabel}</b></span>
+        </button>
+      </aside>}
+      {(onboardingOpen || autosaveChoicePending) && <OnboardingWizard
+        autosaveChoicePending={autosaveChoicePending}
+        autosaveAvailable={initialPreference.available}
+        onChooseAutosave={chooseAutosave}
+        onFinish={finishOnboarding}
+      />}
+      <main className="exploration-pages" data-active-page={tab}>
+        <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
           <JobsTab
             jobs={jobs}
             loading={jobsLoading}
@@ -188,36 +445,55 @@ export default function App() {
             targetJobId={student.intention.target_job_id}
           />
         </div>
-        <div className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="我的能力">
+        <div id="page-profile" className={'panel' + (tab === 'profile' ? ' active' : '')} role="tabpanel" aria-label="简历与个人报告">
           <ProfileTab
             student={student}
+            resumeName={resumeName}
+            setResumeName={setResumeName}
             updateStudent={updateStudent}
             editStudent={editStudent}
             replaceStudent={replaceStudent}
-            confirmProfile={confirmProfile}
             revRef={revRef}
             jobs={jobs}
             analysis={analysis}
             setAnalysis={setAnalysis}
             showToast={showToast}
-            onGoMatches={() => setTab('matches')}
+            onGoMatches={() => navigateTo('matches')}
+            onSetTargetJob={setTargetJob}
+            sourceModeRequest={profileSourceModeRequest}
+            onSourceModeRequestHandled={() => setProfileSourceModeRequest(null)}
+            focusTarget={profileFocus}
+            onFocusHandled={() => setProfileFocus(null)}
           />
         </div>
-        <div className={'panel' + (tab === 'paths' ? ' active' : '')} role="tabpanel" aria-label="职业路径">
-          <PathsTab active={tab === 'paths'} jobs={jobs} showToast={showToast} />
-        </div>
-        <div className={'panel' + (tab === 'matches' ? ' active' : '')} role="tabpanel" aria-label="匹配与建议">
+        <div id="page-matches" className={'panel' + (tab === 'matches' ? ' active' : '')} role="tabpanel" aria-label="匹配报告">
           <MatchesTab
+            key={sessionResetKey}
             isActive={tab === 'matches'}
             student={student}
             studentRev={studentRev}
             serverAlgorithm={health?.algorithm_version ?? null}
             serverDataVersion={health?.data_version ?? null}
             showToast={showToast}
-            onGoProfile={() => setTab('profile')}
+            onGoProfile={() => navigateTo('profile')}
+            onGoProfileFocus={target => { setProfileFocus({ ...target, token: Date.now() }); navigateTo('profile'); }}
+            onFreshnessChange={(match, report) => { setMatchFreshness(match); setReportFreshness(report); }}
           />
         </div>
+        <div id="page-paths" className={'panel' + (tab === 'paths' ? ' active' : '')} role="tabpanel" aria-label="成长路径">
+          <PathsTab active={tab === 'paths'} jobs={jobs} showToast={showToast} targetJobId={student.intention.target_job_id} focusRequest={pathFocusRequest} savedSelection={selectedPath} onSelectionChange={setSelectedPath} onClearSelection={() => setSelectedPath(null)} onSaveSelection={selection => setSelectedPath({ ...selection, targetJobId: student.intention.target_job_id, savedAt: new Date().toISOString() })} />
+        </div>
       </main>
+      {configOpen && <AIConfigPanel onClose={() => setConfigOpen(false)} onSaved={() => { void loadHealth(); showToast('AI 模型配置已更新'); }} />}
+      {settingsOpen && <LocalDraftSettingsPanel
+        enabled={autosaveEnabled}
+        available={initialPreference.available}
+        status={draftStatus}
+        savedAt={draftSavedAt}
+        onToggle={toggleAutosave}
+        onClear={clearSessionDraft}
+        onClose={() => setSettingsOpen(false)}
+      />}
       {toast && <div className={'toast show ' + toast.kind} role="status">{toast.msg}</div>}
     </div>
   );

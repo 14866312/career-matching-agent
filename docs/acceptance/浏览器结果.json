@@ -1,0 +1,78 @@
+{
+  "tested_at": "2026-09-30T12:31:47.726Z",
+  "ai": "MOCK ONLY — not real API acceptance",
+  "base": "http://127.0.0.1:8011",
+  "results": [
+    {
+      "name": "Local draft restores profile and saved path, keeps resume name session-only, and clears completely",
+      "status": "passed",
+      "ms": 5378
+    },
+    {
+      "name": "Six jobs, job detail, and career paths",
+      "status": "passed",
+      "ms": 1978
+    },
+    {
+      "name": "A profile without a target can see recommendations",
+      "status": "passed",
+      "ms": 1047
+    },
+    {
+      "name": "Canonical aliases deduplicate and binary absence differs from missing evidence",
+      "status": "passed",
+      "ms": 974
+    },
+    {
+      "name": "Manual profile, personal analysis, recommendations, and independent report scores",
+      "status": "passed",
+      "ms": 2113
+    },
+    {
+      "name": "Changing the target invalidates existing recommendations and report",
+      "status": "passed",
+      "ms": 1696
+    },
+    {
+      "name": "Editing profile data invalidates report and export",
+      "status": "passed",
+      "ms": 842
+    },
+    {
+      "name": "Delayed profile, report, and recommendation responses are discarded",
+      "status": "passed",
+      "ms": 5271
+    },
+    {
+      "name": "PDF, DOCX, and TXT resumes merge automatically while preserving manual values",
+      "status": "passed",
+      "ms": 4993
+    },
+    {
+      "name": "Delayed resume merging keeps the newest manual values",
+      "status": "passed",
+      "ms": 959
+    },
+    {
+      "name": "Invalid upload and upstream profile errors preserve editable input",
+      "status": "passed",
+      "ms": 195
+    },
+    {
+      "name": "Resume profile, real samples in filters, reset, and a new target report",
+      "status": "passed",
+      "ms": 4291
+    },
+    {
+      "name": "A server version change invalidates existing match and report",
+      "status": "passed",
+      "ms": 56
+    },
+    {
+      "name": "Zero skills, target outside top five, and narrow viewport remain usable",
+      "status": "passed",
+      "ms": 4013
+    }
+  ],
+  "page_errors": []
+}

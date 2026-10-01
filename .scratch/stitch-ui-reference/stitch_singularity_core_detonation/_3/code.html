@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_blank" name="shell-type"/>
+<title>CareerAI | 宇宙奇点探索 · 引导门</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@200;300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: "#0e0e10",
+            surface: "#131315",
+            "surface-container-lowest": "#0a0a0c",
+            "surface-container-low": "#161619",
+            "surface-container": "#1c1b1f",
+            "surface-container-high": "#242429",
+            "surface-container-highest": "#2d2d34",
+            "outline-dim": "rgba(255, 255, 255, 0.08)",
+            "outline-glow": "rgba(78, 242, 226, 0.35)",
+            "cyan-glow": "#4ef2e2",
+            "violet-cosmic": "#8566ff"
+          },
+          fontFamily: {
+            mono: ['Space Grotesk', 'monospace'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #0e0e10;
+        color: #f3f3f6;
+        user-select: none;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+    }
+
+    @keyframes pulse-singularity {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.9), 0 0 50px rgba(78, 242, 226, 0.55), 0 0 90px rgba(133, 102, 255, 0.35);
+      }
+      50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 38px rgba(255, 255, 255, 1), 0 0 75px rgba(78, 242, 226, 0.85), 0 0 130px rgba(133, 102, 255, 0.65);
+      }
+    }
+    .animate-singularity {
+      animation: pulse-singularity 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .hero-title-gradient {
+      background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.95) 45%, rgba(255, 255, 255, 0.45) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 35px rgba(255, 255, 255, 0.25), 0 0 80px rgba(78, 242, 226, 0.15);
+    }
+
+    @keyframes spin-cw {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spin-ccw {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    .animate-spin-cw { animation: spin-cw 32s linear infinite; }
+    .animate-spin-ccw { animation: spin-ccw 44s linear infinite; }
+  </style>
+</head>
+<body class="bg-[#0e0e10] text-[#f3f3f6] font-sans h-screen w-screen overflow-hidden selection:bg-cyan-500/30 selection:text-white antialiased">
+<!-- ================= SINGULARITY PORTAL EXPERIENCE ================= -->
+<div class="relative w-full h-full overflow-hidden flex flex-col items-center justify-between select-none" id="portal-viewport">
+<!-- Deep Cosmic Ambient Glow -->
+<div class="absolute inset-0 pointer-events-none z-0">
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[980px] h-[980px] bg-[radial-gradient(circle_at_center,rgba(78,242,226,0.09)_0%,rgba(133,102,255,0.06)_42%,transparent_72%)] blur-[130px] pointer-events-none transition-all duration-500" id="ambient-core-glow"></div>
+</div>
+<!-- Interactive Gravitational Particle Canvas (1000+ stars) -->
+<canvas class="absolute inset-0 w-full h-full z-10 block pointer-events-none" id="quantum-canvas"></canvas>
+<!-- Top Area: Cinematic Headline -->
+<div class="relative z-20 w-full pt-16 md:pt-24 flex flex-col items-center justify-center text-center px-6 pointer-events-none transition-all duration-700" id="hero-title-wrap">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/10 mb-4 backdrop-blur-md opacity-85 shadow-[0_0_15px_rgba(255,255,255,0.04)]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4ef2e2] animate-ping"></span>
+<span class="text-[11px] font-mono tracking-[0.2em] text-[#4ef2e2]/90 uppercase">Quantum Singularity Core · v2.5</span>
+</div>
+<h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-extralight tracking-[0.06em] leading-tight hero-title-gradient select-none max-w-4xl">
+      开启你的个性化职业智能探索
+    </h1>
+<p class="mt-4 text-xs md:text-sm font-light tracking-[0.26em] text-white/50 uppercase transition-all duration-300 flex items-center gap-2" id="hero-subtext">
+<span>长按核心基点或按住空格 · 凝聚引力奇点</span>
+</p>
+</div>
+<!-- Center Interactive Core Singularity (Fixed strictly at 50% 50%) -->
+<div class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto flex items-center justify-center transition-all duration-500" id="crucible-area">
+<!-- Resonance Celestial Rings -->
+<div class="absolute w-80 h-80 rounded-full border border-white/[0.04] pointer-events-none animate-spin-ccw" id="ring-outer">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#4ef2e2]/70 blur-[0.5px]"></div>
+</div>
+<div class="absolute w-60 h-60 rounded-full border border-dashed border-white/[0.07] pointer-events-none animate-spin-cw" id="ring-middle"></div>
+<!-- Energy Accretion SVG Progress Arc -->
+<div class="relative w-48 h-48 flex items-center justify-center" id="crucible-inner-box">
+<svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewbox="0 0 192 192">
+<circle cx="96" cy="96" fill="none" r="82" stroke="rgba(255, 255, 255, 0.05)" stroke-dasharray="4 6" stroke-width="1.5"></circle>
+<circle class="transition-[stroke-dashoffset] duration-75 ease-out" cx="96" cy="96" fill="none" id="energy-progress-circle" r="82" stroke="url(#singularity-energy-grad)" stroke-dasharray="515" stroke-dashoffset="515" stroke-linecap="round" stroke-width="3.5"></circle>
+<defs>
+<lineargradient id="singularity-energy-grad" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#ffffff"></stop>
+<stop offset="50%" stop-color="#4ef2e2"></stop>
+<stop offset="100%" stop-color="#8566ff"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Dynamic Resonance Halo -->
+<div class="absolute inset-6 rounded-full border border-white/10 pointer-events-none transition-transform duration-100" id="resonance-halo"></div>
+<!-- Center Interactive Core Trigger -->
+<button aria-label="能量奇点触发核心" class="relative z-40 w-20 h-20 rounded-full bg-white/[0.04] hover:bg-white/[0.1] border border-white/25 backdrop-blur-md flex items-center justify-center cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none shadow-[0_0_35px_rgba(78,242,226,0.3)] group select-none" id="core-trigger" type="button">
+<!-- Pure Luminous Quantum Nucleus Point -->
+<span class="w-6 h-6 rounded-full bg-white animate-singularity transition-all duration-200 group-hover:scale-110 flex items-center justify-center" id="singularity-nucleus">
+<span class="w-2.5 h-2.5 rounded-full bg-[#4ef2e2]"></span>
+</span>
+</button>
+</div>
+<!-- Percentage Meter Beneath Singularity -->
+<div class="absolute -bottom-11 left-1/2 -translate-x-1/2 font-mono text-xs tracking-widest text-[#4ef2e2]/75 opacity-0 transition-opacity duration-200 pointer-events-none font-medium" id="charge-percent-label">0%</div>
+</div>
+<!-- Bottom Audio & Fast Enter Controls -->
+<div class="relative z-30 mb-8 flex items-center gap-4 pointer-events-auto" id="bottom-controls">
+<button class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 backdrop-blur-md text-[11px] font-mono tracking-widest text-white/60 hover:text-white transition-all duration-300 shadow-sm" id="audio-toggle" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#4ef2e2]" id="audio-icon">volume_up</span>
+<span id="audio-label">AUDIO ONLINE</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-mono tracking-wider text-white/35 hover:text-white/70 hover:bg-white/[0.04] transition-all" id="skip-portal-btn" type="button">
+<span>跳过探索引导</span>
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- ================= FULLSCREEN SUPERNOVA WHITEOUT FLASH OVERLAY ================= -->
+<div class="fixed inset-0 bg-white pointer-events-none z-[60] opacity-0 transition-opacity ease-out" id="whiteout-flash"></div>
+<!-- Fullscreen Blackout Fade Layer for Seamless Transition -->
+<div class="fixed inset-0 bg-[#0e0e10] pointer-events-none z-[50] opacity-0 transition-opacity duration-700 ease-in-out" id="blackout-curtain"></div>
+<!-- ================= LOGIC & PARTICLE ENGINE ================= -->
+<script>
+  (function() {
+    const canvas = document.getElementById('quantum-canvas');
+    const ctx = canvas.getContext('2d');
+    const trigger = document.getElementById('core-trigger');
+    const energyCircle = document.getElementById('energy-progress-circle');
+    const whiteoutFlash = document.getElementById('whiteout-flash');
+    const blackoutCurtain = document.getElementById('blackout-curtain');
+    const nucleus = document.getElementById('singularity-nucleus');
+    const resonanceHalo = document.getElementById('resonance-halo');
+    const ambientGlow = document.getElementById('ambient-core-glow');
+    const audioToggle = document.getElementById('audio-toggle');
+    const audioIcon = document.getElementById('audio-icon');
+    const audioLabel = document.getElementById('audio-label');
+    const heroSubtext = document.getElementById('hero-subtext');
+    const chargePercentLabel = document.getElementById('charge-percent-label');
+    const skipBtn = document.getElementById('skip-portal-btn');
+
+    let width = 0;
+    let height = 0;
+    let centerX = 0;
+    let centerY = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Mouse Coordinates for Local Microlensing Perturbation
+    const mouse = {
+      x: -9999,
+      y: -9999,
+      active: false
+    };
+
+    window.addEventListener('pointermove', (e) => {
+      ensureAudioUnlocked();
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.active = true;
+    }, { passive: true });
+
+    window.addEventListener('pointerleave', () => {
+      mouse.active = false;
+      mouse.x = -9999;
+      mouse.y = -9999;
+    });
+
+    // ----------------------------------------------------
+    // Cinema-Grade Web Audio API (Sub-bass, Hum, Shockwave)
+    // ----------------------------------------------------
+    let audioCtx = null;
+    let isMuted = false;
+    let droneOsc = null;
+    let droneGain = null;
+    let chargeOsc = null;
+    let chargeGain = null;
+    let chargeFilter = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        // 1. Warm Ambient Sub-bass Drone (46Hz)
+        droneOsc = audioCtx.createOscillator();
+        droneGain = audioCtx.createGain();
+        droneOsc.type = 'sine';
+        droneOsc.frequency.setValueAtTime(46, audioCtx.currentTime);
+        droneGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        droneOsc.connect(droneGain);
+        droneGain.connect(audioCtx.destination);
+        droneOsc.start();
+
+        // 2. Gravitational Inward Collapse Resonance Synth
+        chargeFilter = audioCtx.createBiquadFilter();
+        chargeFilter.type = 'lowpass';
+        chargeFilter.frequency.setValueAtTime(120, audioCtx.currentTime);
+        chargeFilter.Q.setValueAtTime(1.5, audioCtx.currentTime);
+
+        chargeOsc = audioCtx.createOscillator();
+        chargeOsc.type = 'triangle';
+        chargeOsc.frequency.setValueAtTime(38, audioCtx.currentTime);
+
+        chargeGain = audioCtx.createGain();
+        chargeGain.gain.setValueAtTime(0, audioCtx.currentTime);
+
+        chargeOsc.connect(chargeFilter);
+        chargeFilter.connect(chargeGain);
+        chargeGain.connect(audioCtx.destination);
+        chargeOsc.start();
+      } catch (e) {
+        console.warn('Audio Init:', e);
+      }
+    }
+
+    function ensureAudioUnlocked() {
+      if (!audioCtx) {
+        initAudio();
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function updateChargeAudio(progressRatio) {
+      if (!audioCtx || isMuted || !chargeGain || !chargeOsc) return;
+      const now = audioCtx.currentTime;
+      if (progressRatio > 0.01) {
+        const targetGain = 0.03 + Math.pow(progressRatio, 2) * 0.22;
+        chargeGain.gain.setTargetAtTime(targetGain, now, 0.04);
+
+        const targetPitch = 38 + Math.pow(progressRatio, 1.8) * 72;
+        chargeOsc.frequency.setTargetAtTime(targetPitch, now, 0.04);
+
+        const filterFreq = 110 + Math.pow(progressRatio, 1.6) * 260;
+        chargeFilter.frequency.setTargetAtTime(filterFreq, now, 0.04);
+      } else {
+        chargeGain.gain.setTargetAtTime(0, now, 0.12);
+      }
+    }
+
+    function playShockwaveBoom() {
+      if (!audioCtx || isMuted) return;
+      try {
+        const now = audioCtx.currentTime;
+        if (chargeGain) chargeGain.gain.setValueAtTime(0, now);
+        if (droneGain) droneGain.gain.setTargetAtTime(0, now, 0.8);
+
+        const boomOsc = audioCtx.createOscillator();
+        const boomGain = audioCtx.createGain();
+        const boomFilter = audioCtx.createBiquadFilter();
+
+        boomOsc.type = 'sine';
+        boomOsc.frequency.setValueAtTime(75, now);
+        boomOsc.frequency.exponentialRampToValueAtTime(22, now + 1.3);
+
+        boomFilter.type = 'lowpass';
+        boomFilter.frequency.setValueAtTime(180, now);
+
+        boomGain.gain.setValueAtTime(0.35, now);
+        boomGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+
+        boomOsc.connect(boomFilter);
+        boomFilter.connect(boomGain);
+        boomGain.connect(audioCtx.destination);
+
+        boomOsc.start(now);
+        boomOsc.stop(now + 1.5);
+      } catch(e) {}
+    }
+
+    audioToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ensureAudioUnlocked();
+      isMuted = !isMuted;
+      if (isMuted) {
+        if (chargeGain) chargeGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        if (droneGain) droneGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        audioIcon.textContent = 'volume_off';
+        audioLabel.textContent = 'MUTED';
+        audioToggle.classList.add('opacity-40');
+      } else {
+        if (droneGain) droneGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        audioIcon.textContent = 'volume_up';
+        audioLabel.textContent = 'AUDIO ONLINE';
+        audioToggle.classList.remove('opacity-40');
+      }
+    });
+
+    // ----------------------------------------------------
+    // Fullscreen 1080 Micro-Particles Simulation Engine
+    // ----------------------------------------------------
+    const PARTICLE_COUNT = 1080;
+    const particles = [];
+    let isCharging = false;
+    let chargeProgress = 0; // 0 to 100
+    let hasExploded = false;
+
+    const STAR_SHADES = [
+      [255, 255, 255],
+      [240, 246, 255],
+      [215, 235, 250],
+      [180, 215, 235],
+      [78, 242, 226],
+      [133, 102, 255]
+    ];
+
+    class StarDust {
+      constructor() {
+        this.origX = Math.random() * width;
+        this.origY = Math.random() * height;
+        this.x = this.origX;
+        this.y = this.origY;
+        this.vx = (Math.random() - 0.5) * 0.32;
+        this.vy = (Math.random() - 0.5) * 0.32;
+        this.radius = Math.random() * 1.25 + 0.65;
+        this.baseAlpha = 0.2 + Math.random() * 0.6;
+        this.alpha = this.baseAlpha;
+        this.shade = STAR_SHADES[Math.floor(Math.random() * STAR_SHADES.length)];
+        this.twinkleOffset = Math.random() * Math.PI * 2;
+        this.twinkleSpeed = 0.015 + Math.random() * 0.025;
+      }
+
+      update(chargeFactor) {
+        this.twinkleOffset += this.twinkleSpeed;
+        const twinkle = Math.sin(this.twinkleOffset) * 0.18;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < -20) this.x = width + 20;
+        if (this.x > width + 20) this.x = -20;
+        if (this.y < -20) this.y = height + 20;
+        if (this.y > height + 20) this.y = -20;
+
+        // 1. Mouse Local Microlensing (Perturbation radius ~160px)
+        if (mouse.active && chargeFactor <= 0.05) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          const lensRadius = 160;
+
+          if (dist < lensRadius && dist > 1) {
+            const force = (1 - dist / lensRadius);
+            const nx = dx / dist;
+            const ny = dy / dist;
+            this.x += -nx * force * 1.7 - ny * force * 1.3;
+            this.y += -ny * force * 1.7 + nx * force * 1.3;
+            this.alpha = Math.min(1, this.baseAlpha + force * 0.45);
+          } else {
+            this.alpha = Math.max(0.1, Math.min(1, this.baseAlpha + twinkle));
+          }
+        }
+
+        // 2. Powerful Inward Gravitational Spiral Accretion
+        if (chargeFactor > 0.02 && !hasExploded) {
+          const cdx = centerX - this.x;
+          const cdy = centerY - this.y;
+          const cdist = Math.hypot(cdx, cdy);
+
+          if (cdist > 3) {
+            const cnx = cdx / cdist;
+            const cny = cdy / cdist;
+
+            const inwardSpeed = (chargeFactor * 3.8) + Math.pow(chargeFactor, 2.5) * 9.2;
+            const swirlSpeed = (chargeFactor * 3.0) + (1 - Math.min(1, cdist / 650)) * (chargeFactor * 4.5);
+
+            this.x += cnx * inwardSpeed - cny * swirlSpeed;
+            this.y += cny * inwardSpeed + cnx * swirlSpeed;
+
+            this.alpha = Math.min(1, this.baseAlpha + chargeFactor * 0.55 + (1 - Math.min(1, cdist / 220)) * 0.5);
+          } else {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.max(width, height) * 0.6 + Math.random() * 80;
+            this.x = centerX + Math.cos(angle) * dist;
+            this.y = centerY + Math.sin(angle) * dist;
+          }
+        } else if (!mouse.active) {
+          this.alpha = Math.max(0.1, Math.min(1, this.baseAlpha + twinkle));
+        }
+      }
+
+      draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.shade[0]}, ${this.shade[1]}, ${this.shade[2]}, ${this.alpha.toFixed(3)})`;
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles.length = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new StarDust());
+      }
+    }
+    initParticles();
+
+    // ----------------------------------------------------
+    // Direct Navigation to Career Discovery Main Screen
+    // ----------------------------------------------------
+    function navigateToCareerDiscovery() {
+      const targetPayload = {
+        type: 'NAVIGATE_TO_SCREEN',
+        title: '职业探索主界面 · 粒子汇聚显现长卷 (修复版)',
+        path: 'career-discovery'
+      };
+
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(targetPayload, '*');
+        }
+      } catch (err) {}
+
+      if (window.location.hash !== undefined) {
+        window.location.hash = '#career-discovery';
+      }
+    }
+
+    // ----------------------------------------------------
+    // Supernova Detonation & Pure Clean Fade Transition
+    // ----------------------------------------------------
+    function triggerSupernovaTransition() {
+      if (hasExploded) return;
+      hasExploded = true;
+      isCharging = false;
+      playShockwaveBoom();
+
+      // 1. Instant pure whiteout flash
+      whiteoutFlash.style.transition = 'opacity 0.08s ease-out';
+      whiteoutFlash.style.opacity = '1';
+
+      // 2. Slow cinematic fade to dark, then clean direct redirect
+      setTimeout(() => {
+        whiteoutFlash.style.transition = 'opacity 1.0s cubic-bezier(0.16, 1, 0.3, 1)';
+        whiteoutFlash.style.opacity = '0';
+        blackoutCurtain.classList.remove('opacity-0');
+        blackoutCurtain.classList.add('opacity-100');
+
+        setTimeout(() => {
+          navigateToCareerDiscovery();
+        }, 850);
+      }, 160);
+    }
+
+    // Skip Button Handler
+    skipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerSupernovaTransition();
+    });
+
+    // ----------------------------------------------------
+    // Singularity Core Render Loop
+    // ----------------------------------------------------
+    const TOTAL_CIRCUMFERENCE = 515;
+    let haloAngle = 0;
+
+    function render() {
+      if (!hasExploded) {
+        ctx.clearRect(0, 0, width, height);
+
+        const chargeFactor = chargeProgress / 100;
+        updateChargeAudio(chargeFactor);
+
+        haloAngle = (haloAngle + 0.35 + chargeFactor * 4.5) % 360;
+        resonanceHalo.style.transform = `rotate(${haloAngle}deg)`;
+
+        const coreScale = 1 + chargeFactor * 1.85;
+        nucleus.style.transform = `scale(${coreScale})`;
+        ambientGlow.style.opacity = 0.5 + chargeFactor * 0.95;
+
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update(chargeFactor);
+          particles[i].draw(ctx);
+        }
+
+        // Accretion Charging Logic (~3.2s for 0 -> 100%)
+        if (isCharging) {
+          chargeProgress = Math.min(100, chargeProgress + 0.52);
+          const offset = TOTAL_CIRCUMFERENCE - (chargeProgress / 100) * TOTAL_CIRCUMFERENCE;
+          energyCircle.style.strokeDashoffset = offset;
+
+          chargePercentLabel.style.opacity = '1';
+          chargePercentLabel.textContent = `${Math.floor(chargeProgress)}%`;
+          heroSubtext.innerHTML = '<span class="text-[#4ef2e2]">引力奇点高速凝聚中 · 持续保持按住</span>';
+
+          if (chargeProgress >= 100) {
+            triggerSupernovaTransition();
+          }
+        } else if (chargeProgress > 0) {
+          // Smooth spring-back recoil
+          chargeProgress = Math.max(0, chargeProgress - 1.6);
+          const offset = TOTAL_CIRCUMFERENCE - (chargeProgress / 100) * TOTAL_CIRCUMFERENCE;
+          energyCircle.style.strokeDashoffset = offset;
+
+          if (chargeProgress <= 0) {
+            chargePercentLabel.style.opacity = '0';
+            heroSubtext.innerHTML = '<span>长按核心基点或按住空格 · 凝聚引力奇点</span>';
+          } else {
+            chargePercentLabel.textContent = `${Math.floor(chargeProgress)}%`;
+          }
+        }
+
+        requestAnimationFrame(render);
+      }
+    }
+    requestAnimationFrame(render);
+
+    // Interaction Handlers (Touch, Pointer, Keyboard Space)
+    function startCharge(e) {
+      if (e) e.preventDefault();
+      ensureAudioUnlocked();
+      if (hasExploded) return;
+      isCharging = true;
+    }
+
+    function stopCharge(e) {
+      if (e) e.preventDefault();
+      if (hasExploded) return;
+      isCharging = false;
+    }
+
+    trigger.addEventListener('pointerdown', (e) => {
+      trigger.setPointerCapture(e.pointerId);
+      startCharge(e);
+    });
+    trigger.addEventListener('pointerup', stopCharge);
+    trigger.addEventListener('pointercancel', stopCharge);
+
+    let spacePressed = false;
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !spacePressed && !hasExploded) {
+        spacePressed = true;
+        startCharge();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        spacePressed = false;
+        stopCharge();
+      }
+    });
+
+  })();
+</script>
+</body></html>

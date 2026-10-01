@@ -6,17 +6,16 @@
     - 要求标签以"维度 + 规范标签 ID"标识；三个维度合并计数，不对维度百分比取平均。
     - 只统计岗位必需项(requirement=required / required=true)；优先项(preferred)与未提及(unmentioned)
       都不进入分母，未提及不等于无要求。
-    - 学生"已确认(confirmed=True)、有证据且等级>0"才算满足；未确认、无证据或未填写的标签单列"待确认"，
-      与"已确认不具备(等级=0)"的差距项分开。
+    - 简历或手动资料已提及且 level>0 的标签计入匹配；未提及只表示资料未说明，
+      不推断学生不具备，也不要求确认或提交证据。
     - 学生多出来的标签不进入分母，不稀释覆盖率；重复项（同一维度 + 规范标签 ID，含别名）只计一次。
     - 某维度没有要求 → 该维度"不适用"，basic/enhanced 为 None，不显示 0% 或 100%。
     - 整个岗位没有可用要求 → "无法计算"，并从推荐中排除。
     - 分数保留原始精度用于排序；页面展示值另给 basic_display / enhanced_display（四舍五入 1 位小数）。
 
 增强匹配度 = 所有要求贡献之和 ÷ 要求总数 × 100%
-    - 精确技能匹配贡献 = min(学生等级 ÷ 要求等级, 1)。
-    - 证书与通用素质维持"明确满足为 1，否则为 0"，不按等级折算。
-    - 无精确匹配时，只有岗位关联表(relations)中的已确认相关技能可产生贡献，上限 0.25；
+    - 已提及的精确标签贡献为 1；不依据不可靠的自评等级折算。
+    - 无精确匹配时，岗位关联表(relations)中的相关技能可产生贡献，上限 0.25；
       同一要求存在多个关联时取最大值，不累加；显示为"相关基础"，不进入基础满足项。
     - 要求等级优先取画像字段，并记录 level_rule 版本与 basis；缺省时按岗位文本
       "了解=1 / 熟悉=2 / 熟练=3" 映射；仍未明确时按画像整理默认等级，并标记为系统默认值。
@@ -35,7 +34,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from .data import dataset
 from .models import Filters, StudentProfile
 
-ALGORITHM_VERSION = 'matching-2.1'
+ALGORITHM_VERSION = 'matching-2.2'
 LEVEL_BASELINE_VERSION = 'level-baseline-1.0'
 DIMENSIONS = ('skills', 'certificates', 'qualities')
 DEFAULT_DIMENSION_LABELS = {'skills': '专业技能', 'certificates': '证书要求', 'qualities': '通用素质'}
@@ -50,9 +49,9 @@ SORT_FIELDS = ('basic', 'enhanced')
 SALARY_PERIODS = ('month', 'day')
 NEGOTIABLE_PERIOD = 'negotiable'
 SORT_RULE = '匹配分数降序 → 同分直接按岗位ID升序（不再比较满足项数或要求项数）'
-SCORE_RULE = ('basic = 已确认满足的必需标签数 / 必需标签总数；'
-              'enhanced = 各要求贡献之和 / 要求总数（技能按 min(等级/要求等级,1)，'
-              '证书与通用素质满足为 1，相关技能按关联表权重且上限 0.25）')
+SCORE_RULE = ('basic = 资料已提及的必需标签数 / 必需标签总数；'
+              'enhanced = 各要求贡献之和 / 要求总数（已提及的标签贡献为 1，'
+              '相关技能按关联表权重且上限 0.25；未提及不代表不具备）')
 SKILL_FILTER_RULE = '技能筛选：所选标签必须全部出现在岗位要求或优先项标签中'
 
 LEVEL_KEYWORDS = (('了解', 1), ('熟悉', 2), ('熟练', 3))
@@ -320,7 +319,7 @@ def _is_preferred_row(row, in_preferred_list):
 
 
 def _ability_index(student):
-    """按 (维度, 规范标签ID) 归并学生标签；重复项只保留最强者（已确认优先，其次等级高）。"""
+    """按 (维度, 规范标签ID) 归并学生标签；优先保留有原文的正向条目。"""
     index, unknown, duplicates, ignored = {}, [], [], []
     for field in DIMENSIONS:
         for ability in list(getattr(student, field, None) or []):
@@ -343,8 +342,8 @@ def _ability_index(student):
                 continue
             record['entries'] += 1
             previous = record['ability']
-            current = (bool(previous.confirmed), bool(previous.evidence.strip()) or previous.level == 0, int(_number(previous.level) or 0))
-            candidate = (confirmed, bool(ability.evidence.strip()) or level == 0, level)
+            current = (int(_number(previous.level) or 0) > 0, bool(previous.evidence.strip()))
+            candidate = (level > 0, bool(ability.evidence.strip()))
             duplicates.append({'dimension': dimension, 'tag_id': tag_id, 'label': label or tag_id,
                                'entries': record['entries'], 'kept': candidate > current})
             if candidate > current:
@@ -367,25 +366,14 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
     ability = record['ability'] if record is not None else None
     confirmed = bool(ability.confirmed) if ability is not None else None
     level = int(_number(ability.level) or 0) if ability is not None else None
-    if ability is None:
-        status, pending_reason, gap_reason = 'pending', 'not_provided', ''
-    elif not confirmed:
-        status, pending_reason, gap_reason = 'pending', 'unconfirmed', ''
-    elif level <= 0:
-        status, pending_reason, gap_reason = 'gap', '', 'confirmed_absent'
-    elif not str(ability.evidence or '').strip():
-        status, pending_reason, gap_reason = 'pending', 'missing_evidence', ''
-    else:
-        status, pending_reason, gap_reason = 'satisfied', '', ''
+    # Legacy level=0 entries are not evidence of absence. Only a positive
+    # self-report or resume extraction can count as a present skill.
+    status = 'satisfied' if ability is not None and level > 0 else 'pending'
+    pending_reason = '' if status == 'satisfied' else 'not_provided'
 
     contribution, contribution_type, basis, relations_used, shortfall = 0.0, 'none', '', [], False
     if status == 'satisfied':
-        if dimension == 'skills':
-            contribution = min(level / max(required_level, 1), 1.0)
-            basis = '精确匹配：已确认等级 ' + str(level) + ' / 要求等级 ' + str(required_level)
-            shortfall = contribution < 1.0
-        else:
-            contribution, basis = 1.0, '明确满足（已确认持有/具备）'
+        contribution, basis = 1.0, '简历或补充资料中已提及；不推断熟练度'
         contribution_type = 'exact'
     elif dimension == 'skills':
         for relation in relations or []:
@@ -396,7 +384,7 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
             if source_record is None:
                 continue
             source_ability = source_record['ability']
-            if not bool(source_ability.confirmed) or int(_number(source_ability.level) or 0) <= 0 or not str(source_ability.evidence or '').strip():
+            if int(_number(source_ability.level) or 0) <= 0:
                 continue
             weight = min(_number(relation.get('weight')) or 0.0, RELATION_WEIGHT_CAP)
             if weight <= 0:
@@ -432,8 +420,7 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
         'preferred': bool(preferred),
         'status': status,
         'pending_reason': pending_reason,
-        'gap_reason': gap_reason,
-        'student_level': level if (ability is not None and confirmed) else None,
+        'student_level': level if (ability is not None and level > 0) else None,
         'student_reported_level': level,
         'student_confirmed': confirmed,
         'student_evidence': str(getattr(ability, 'evidence', '') or '') if ability is not None else '',
@@ -453,7 +440,6 @@ def _evaluate_requirement(requirement, abilities, relations, preferred=False):
 def _summarize(items):
     total = len(items)
     satisfied = sum(1 for x in items if x['status'] == 'satisfied')
-    gap = sum(1 for x in items if x['status'] == 'gap')
     pending = sum(1 for x in items if x['status'] == 'pending')
     exact = sum(x['contribution'] for x in items if x['contribution_type'] == 'exact')
     related = sum(x['contribution'] for x in items if x['contribution_type'] == 'related')
@@ -465,7 +451,6 @@ def _summarize(items):
         'status_text': STATUS_TEXT[status],
         'required': total,
         'satisfied': satisfied,
-        'gap': gap,
         'pending': pending,
         'basic': basic,
         'enhanced': enhanced,
@@ -522,7 +507,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
 
     summary = _summarize(items)
     satisfied_items = [x for x in items if x['status'] == 'satisfied']
-    gap_items = [x for x in items if x['status'] == 'gap']
     pending_items = [x for x in items if x['status'] == 'pending']
     counted_keys = list(seen_keys)
     extra_tags = []
@@ -530,7 +514,7 @@ def match_student(student: StudentProfile, job: dict) -> dict:
         record = abilities[key]
         if _tag_index().get(key[1]) is None:
             continue
-        if bool(record['ability'].confirmed) and int(_number(record['ability'].level) or 0) > 0:
+        if int(_number(record['ability'].level) or 0) > 0:
             extra_tags.append({'dimension': key[0], 'tag_id': key[1],
                                'label': str(record['ability'].label or key[1]),
                                'level': int(_number(record['ability'].level) or 0)})
@@ -544,7 +528,7 @@ def match_student(student: StudentProfile, job: dict) -> dict:
         'data_version': str(dataset().get('version') or ''),
         'job_version': str(job.get('version') or ''),
         'profile_confirmed': bool(getattr(student, 'confirmed', False)),
-        'profile_confirmation_rule': '正式匹配应由调用方在用户确认画像后发起（StudentProfile.confirmed）；本函数只按各标签的 confirmed 评分。',
+        'profile_confirmation_rule': '无需整份档案或单项证据确认；已提及计入匹配，未提及仅提示核实。',
         'input_version': fingerprint(student, job),
         'versions': {
             'algorithm': ALGORITHM_VERSION,
@@ -563,7 +547,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
         'dimensions': [_dimension_summary(dimension, [x for x in items if x['dimension'] == dimension]) for dimension in DIMENSIONS],
         'items': items,
         'satisfied_items': satisfied_items,
-        'gap_items': gap_items,
         'pending_items': pending_items,
         'weak_proficiency_items': [x for x in satisfied_items if x['proficiency_shortfall']],
         'related_items': [x for x in items if x['related_only']],
@@ -571,7 +554,6 @@ def match_student(student: StudentProfile, job: dict) -> dict:
             'total': len(preferred_items),
             'satisfied': sum(1 for x in preferred_items if x['status'] == 'satisfied'),
             'pending': sum(1 for x in preferred_items if x['status'] == 'pending'),
-            'gap': sum(1 for x in preferred_items if x['status'] == 'gap'),
             'matched_labels': [x['label'] for x in preferred_items if x['status'] == 'satisfied'],
             'missing_labels': [x['label'] for x in preferred_items if x['status'] != 'satisfied'],
             'note': '优先项只作为补充建议展示，不计入基础分与增强分的分母。',
@@ -635,15 +617,12 @@ def _salary_summary(samples, period):
 
 
 def _reason(match):
-    met = '\u3001'.join(x['label'] for x in match['satisfied_items'][:3]) or '暂无已确认匹配项'
-    missing = '\u3001'.join(x['label'] for x in match['gap_items'] + match['pending_items']) or '必需标签已全部覆盖，可继续提升熟练度'
-    parts = ['已满足：' + met + '。', '主要差距：' + missing + '。']
-    weak = [x['label'] for x in match['weak_proficiency_items']]
-    if weak:
-        parts.append('熟练度待提升：' + '\u3001'.join(weak[:3]) + '。')
+    met = '、'.join(x['label'] for x in match['satisfied_items'][:3]) or '暂无资料提及的岗位要求'
+    missing = '、'.join(x['label'] for x in match['pending_items']) or '岗位必需项均已在资料中提及'
+    parts = ['资料已提及：' + met + '。', '资料未提及（不代表不具备）：' + missing + '。']
     related = [x['label'] for x in match['related_items']]
     if related:
-        parts.append('仅有相关基础（未确认掌握）：' + '\u3001'.join(related[:3]) + '。')
+        parts.append('资料提及相关技能：' + '、'.join(related[:3]) + '。')
     return ''.join(parts)
 
 
@@ -658,7 +637,6 @@ def _reason_facts(match):
         'required': match['required'],
         'satisfied': match['satisfied'],
         'satisfied_labels': [x['label'] for x in match['satisfied_items']],
-        'gap_labels': [x['label'] for x in match['gap_items']],
         'pending_labels': [x['label'] for x in match['pending_items']],
         'related_base_labels': [x['label'] for x in match['related_items']],
         'proficiency_shortfall_labels': [x['label'] for x in match['weak_proficiency_items']],
@@ -669,7 +647,7 @@ def _reason_facts(match):
 
 
 def recommendations(student: StudentProfile, filters: Filters, sort_by='basic') -> dict:
-    """对全部合格岗位评分，按确认口径筛选、稳定排序并返回最多 5 条推荐。"""
+    """对全部合格岗位评分，按当前资料筛选、稳定排序并返回最多 5 条推荐。"""
     if sort_by not in SORT_FIELDS:
         raise ValueError('排序字段只支持 basic 或 enhanced。')
     if filters.salary_min is not None and filters.salary_max is not None and filters.salary_min > filters.salary_max:
