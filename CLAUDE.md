@@ -57,5 +57,5 @@ npm.cmd --prefix frontend run lint                         # TypeScript/React �
 
 ## 工作约定
 
-- Issue 与 spec 使用本地 Markdown：`.scratch/<feature-slug>/spec.md` 和 `issues/NN-<slug>.md`。文件顶部写 `Status:` 行，使用 needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix 五种标签，讨论记录追加在 `## Comments` 下（见 `docs/agents/`）。
+- Issue 与 spec 使用本地 Markdown：`本地资料/scratch/<feature-slug>/spec.md` 和 `issues/NN-<slug>.md`。文件顶部写 `Status:` 行，使用 needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix 五种标签，讨论记录追加在 `## Comments` 下（见 `docs/agents/`）。
 - `competition/` 是只读的原始赛题材料；`samples/` 全部为虚构数据；`.env` 含密钥，不要读取或回显其中的值。

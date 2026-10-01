@@ -1,0 +1,15 @@
+# 每月检查一次依赖更新，自动开 PR
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

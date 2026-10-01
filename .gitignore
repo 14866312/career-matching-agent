@@ -11,3 +11,5 @@ playwright-report/
 *.pyc
 tmp/
 .claude/settings.local.json
+# 本地需求、issue、设计参考与学习笔记，不公开
+本地资料/
