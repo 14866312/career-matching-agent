@@ -3,21 +3,8 @@ import { apiGet, apiPost, apiPostForm, errMessage } from '../api';
 import type { Ability, Dimension, JobSummary, ProfileResp, ResumeResp, StudentProfile, TagDef } from '../types';
 import { EmptyState, ErrorBox } from './ui';
 import { mergeResumeProfile } from '../lib/resumeImport';
+import { DIM_CONFIGS, type DimensionConfig } from '../lib/profileConfig';
 import type { ProfileFocusTarget } from '../types';
-
-export interface DimensionConfig {
-  key: Dimension;
-  label: string;
-  max: number;
-  levels: boolean;
-  placeholder: string;
-}
-
-export const DIM_CONFIGS: DimensionConfig[] = [
-  { key: 'skills', label: '技能标签', max: 100, levels: true, placeholder: '输入技能后回车，例如 JavaScript' },
-  { key: 'certificates', label: '证书', max: 50, levels: false, placeholder: '例如：软考程序员、CET-6' },
-  { key: 'qualities', label: '通用素质', max: 50, levels: false, placeholder: '例如：客户沟通、文档编写' }
-];
 
 function TagEditor({ cfg, items, dict, onAdd, onRename, onRemove, focusTarget, onFocusHandled }: {
   cfg: DimensionConfig;
@@ -44,7 +31,7 @@ function TagEditor({ cfg, items, dict, onAdd, onRename, onRemove, focusTarget, o
     setText(focusTarget.label);
     window.setTimeout(() => inputRef.current?.focus(), 0);
     onFocusHandled();
-  }, [cfg.key, focusTarget?.token]);
+  }, [cfg.key, focusTarget, onFocusHandled]);
   return (
     <div className="tag-editor">
       <div className="editor-title">
@@ -127,7 +114,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   useEffect(() => {
     if (!focusTarget) return;
     setFocusNotice('岗位要求提到「' + focusTarget.label + '」。若你具备这项技能，可在这里补充。');
-  }, [focusTarget?.token]);
+  }, [focusTarget]);
 
   useEffect(() => {
     if (!sourceModeRequest) return;
@@ -141,7 +128,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       onSourceModeRequestHandled();
     }, 40);
     return () => window.clearTimeout(timer);
-  }, [onSourceModeRequestHandled, sourceModeRequest?.mode, sourceModeRequest?.token]);
+  }, [onSourceModeRequestHandled, sourceModeRequest]);
 
   useEffect(() => {
     let alive = true;

@@ -18,10 +18,11 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
   onClearSelection: () => void;
   onSaveSelection: (selection: PathSelection) => void;
 }) {
-  const savedSelectionForTarget = savedSelection &&
-    (!targetJobId || savedSelection.targetJobId === targetJobId)
-    ? savedSelection
-    : null;
+  const savedSelectionForTarget = useMemo(() => (
+    savedSelection && (!targetJobId || savedSelection.targetJobId === targetJobId)
+      ? savedSelection
+      : null
+  ), [savedSelection, targetJobId]);
   const [data, setData] = useState<CareerPaths | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -84,7 +85,7 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
       setSelectedJobId(targetJobId);
       setSelectedEdgeId(null);
     }
-  }, [data, focusRequest?.jobId, focusRequest?.token, jobs, onSelectionChange, savedSelectionForTarget?.jobId, savedSelectionForTarget?.edgeId, targetJobId]);
+  }, [data, focusRequest, jobs, onSelectionChange, savedSelectionForTarget, targetJobId]);
 
   async function load() {
     setLoading(true);
