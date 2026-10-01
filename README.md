@@ -161,9 +161,10 @@ npm.cmd ci --prefix tests/browser
 .venv/Scripts/python.exe tests/e2e_server.py   # 终端一：测试专用服务器（端口 8011，AI 返回固定假数据）
 npm.cmd --prefix tests/browser test            # 终端二：默认使用本机 Edge，设置 PW_CHANNEL=chromium 可切换
 npm.cmd --prefix tests/browser run test:ui     # 聚焦检查本机草稿、键盘焦点、模型配置、离线字体与减弱动效
+npm.cmd --prefix tests/browser run test:a11y   # axe 扫描首次引导、主页面、设置、模型配置、岗位详情和匹配报告
 ~~~
 
-浏览器测试默认把截图、导出报告和结果写入 `docs/acceptance/`；设置 `E2E_OUTPUT_DIR` 可改写到临时目录，CI 使用该方式避免修改仓库验收文件。测试服务器只把 AI 的返回换成假数据，匹配、文件解析和报告生成都是真实代码；但它不能证明真实 AI 调用可用。要检查真实模型，先正常启动服务，再运行 `.venv/Scripts/python.exe scripts/smoke_live.py`（缺少配置时退出码为 2，失败为 1，成功为 0）。
+浏览器测试默认把截图、导出报告和结果写入 `docs/acceptance/`；设置 `E2E_OUTPUT_DIR` 可改写到临时目录，CI 使用该方式避免修改仓库验收文件。无障碍扫描会阻止 `serious` 和 `critical` 级别的违规，并在日志中列出首次发现的 `minor` 或 `moderate` 项，供单独修复。测试服务器只把 AI 的返回换成假数据，匹配、文件解析和报告生成都是真实代码；但它不能证明真实 AI 调用可用。要检查真实模型，先正常启动服务，再运行 `.venv/Scripts/python.exe scripts/smoke_live.py`（缺少配置时退出码为 2，失败为 1，成功为 0）。
 
 ### 完整评分规则（matching-2.2）
 

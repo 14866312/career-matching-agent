@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node run.cjs",
-    "test:ui": "node ui_regressions.cjs"
+    "test:ui": "node ui_regressions.cjs",
+    "test:a11y": "node a11y.cjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "playwright": "1.62.1"
   }
 }
