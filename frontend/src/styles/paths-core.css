@@ -1,0 +1,40 @@
+/* Stitch-inspired career path page. The SVG layout and path interactions remain unchanged. */
+.paths-stitch {
+  --stitch-bg: #111111;
+  --stitch-line: rgba(255, 255, 255, .1);
+  --stitch-text: #f5f5f5;
+  --stitch-muted: #929292;
+  --stitch-accent: #ebebeb;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+  border-radius: 18px;
+  min-height: 720px;
+  margin: -20px -12px;
+  padding: 74px clamp(22px, 5vw, 78px) 90px;
+  overflow: hidden;
+  position: relative;
+}
+.paths-stitch::before { content: ""; position: absolute; width: 520px; height: 520px; left: -220px; bottom: -330px; border-radius: 50%; background: radial-gradient(circle, rgba(235, 235, 235, .08), transparent 68%); pointer-events: none; }
+.paths-stitch .eyebrow { color: var(--stitch-muted); }
+.paths-stitch .empty-state, .paths-stitch .loading { color: var(--stitch-muted); }
+.paths-stitch .empty-state h3 { color: var(--stitch-text); }
+.paths-stitch .error-box { background: rgba(93, 93, 93, .15); border-color: rgba(172, 172, 172, .35); color: #cbcbcb; }
+.paths-stitch .ghost-button { color: var(--stitch-accent); border-color: rgba(235, 235, 235, .4); background: transparent; }
+
+@media (max-width: 560px) {
+  .paths-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+}
+
+@media (max-width: 800px) {
+  .jobs-stitch-section-head { align-items: stretch; flex-direction: column; }
+  .jobs-stitch-search { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .jobs-stitch { margin: -20px -4px; padding: 52px 16px 65px; border-radius: 12px; }
+  .jobs-stitch-hero { padding-bottom: 55px; }
+  .jobs-stitch-hero h2 { font-size: 46px; }
+  .jobs-stitch-stats { width: 100%; }
+  .jobs-stitch-stats div { min-width: 0; padding: 14px 10px; }
+  .jobs-stitch-stats strong { font-size: 20px; }
+}

@@ -1,0 +1,92 @@
+/* Profile: three quiet editorial chapters with a fixed action dock. */
+.profile-stitch-hero { max-width: 1000px; margin: 0 auto; padding: 120px 24px 95px; text-align: center; }
+.profile-stitch-hero h2 { margin: 27px 0 16px; color: #ffffff; font-size: clamp(44px, 5.4vw, 66px); font-weight: 400; line-height: 1.06; letter-spacing: -.06em; }
+.profile-stitch-hero > p { max-width: 620px; margin: 0 auto; color: var(--stitch-muted); font-size: 14px; line-height: 1.8; }
+.profile-meta-line { margin: 36px 0 0; display: flex; justify-content: center; gap: 26px; color: #696969; font: 400 9px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.profile-stitch-progress { margin: 52px auto 0; display: inline-flex; border: 0; background: transparent; overflow: visible; }
+.profile-stitch-progress div { width: 155px; min-width: 0; padding: 0 12px; position: relative; display: flex; flex-direction: row; align-items: center; gap: 8px; color: #555555; }
+.profile-stitch-progress div + div { border: 0; }
+.profile-stitch-progress div:not(:last-child)::after { content: ""; position: absolute; left: 105px; right: -27px; top: 8px; height: 1px; background: var(--stitch-line); }
+.profile-stitch-progress b { width: 17px; height: 17px; display: grid; place-items: center; border: 1px solid var(--stitch-line); border-radius: 50%; font: 400 7px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.profile-stitch-progress span { color: inherit; font-size: 10px; }
+.profile-stitch-progress .is-current { color: #e7e7e7; }
+.profile-stitch-progress .is-current b { color: #111111; background: #eeeeee; border-color: #eeeeee; }
+.profile-flow { padding-bottom: 150px; }
+.profile-step { max-width: 900px; margin: 0 auto; padding: 105px 24px; border-top: 1px solid rgba(255, 255, 255, .045); }
+.profile-step > header { text-align: center; margin-bottom: 45px; }
+.profile-step > header p,
+.report-section > header p,
+.path-section > header p { margin: 0 0 12px; color: #6a6a6a; font: 400 9px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+.profile-step > header h3 { margin: 0; color: #ffffff; font-size: 29px; font-weight: 500; letter-spacing: -.045em; }
+.profile-step > header span { display: block; margin-top: 12px; color: #676767; font: 400 9px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.profile-source-actions { width: max-content; margin: 0 auto 23px; padding: 3px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #626262; font-size: 10px; }
+.profile-source-actions button { padding: 8px 15px; border: 0; border-radius: 999px; color: #111111; background: #f5f5f5; font-size: 10px; cursor: pointer; }
+.profile-source-actions button:not(.is-active) { color: #e2e2e2; background: transparent; }
+.profile-source-actions button.is-active { color: #111111; background: #f5f5f5; }
+.profile-source-actions span { padding: 0 12px; }
+.profile-upload-card { width: 100%; min-height: 250px; padding: 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--stitch-line); border-radius: 20px; color: #eeeeee; background: linear-gradient(145deg, rgba(24, 24, 24, .72), rgba(9, 9, 9, .8)); cursor: pointer; }
+.profile-upload-card:hover { border-color: var(--stitch-line-strong); }
+.profile-upload-icon { width: 52px; height: 52px; margin-bottom: 21px; display: grid; place-items: center; border: 1px solid var(--stitch-line-strong); border-radius: 13px; color: #dddddd; font-size: 22px; background: rgba(255, 255, 255, .035); }
+.profile-upload-card strong { font-size: 14px; font-weight: 500; }
+.profile-upload-card small { max-width: 520px; margin: 10px 0 20px; color: #747474; font-size: 10px; line-height: 1.7; }
+.profile-upload-card i { padding: 7px 12px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #aaaaaa; font-size: 9px; font-style: normal; }
+.profile-name-field { max-width: 480px; margin: 18px auto 0; display: grid; gap: 8px; color: #cacaca; font-size: 12px; }
+.profile-name-field input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--stitch-line); border-radius: 10px; color: #eeeeee; background: rgba(9, 9, 9, .8); }
+.profile-name-field input:focus { outline: 2px solid rgba(111, 111, 111, .55); outline-offset: 1px; }
+.profile-name-field small { color: #747474; font-size: 10px; line-height: 1.6; }
+.profile-resume-status { margin: 12px 0 30px; text-align: center; color: #626262; font-size: 10px; }
+.profile-basic-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.profile-basic-grid label { display: grid; gap: 8px; color: #858585; font-size: 10px; }
+.profile-basic-grid label.wide { grid-column: 1 / -1; }
+.profile-basic-grid input,
+.profile-basic-grid select,
+.profile-basic-grid textarea,
+.profile-stitch .tag-input input,
+.matches-stitch-filter input,
+.matches-stitch-filter select {
+  width: 100%;
+  border: 1px solid var(--stitch-line);
+  border-radius: 10px;
+  color: #ededed;
+  background: rgba(255, 255, 255, .025);
+  box-shadow: none;
+}
+.profile-basic-grid input,
+.profile-basic-grid select { height: 42px; padding: 0 12px; }
+.profile-stitch select { color-scheme: dark; }
+.profile-stitch select option { color: #f4f4f4; background-color: #181818; }
+.profile-basic-grid textarea { padding: 12px; resize: vertical; }
+.profile-basic-grid input:focus,
+.profile-basic-grid select:focus,
+.profile-basic-grid textarea:focus,
+.profile-stitch .tag-input input:focus,
+.matches-stitch-filter input:focus,
+.matches-stitch-filter select:focus { outline: none; border-color: rgba(255, 255, 255, .24); box-shadow: 0 0 0 3px rgba(255, 255, 255, .035); }
+.profile-step-copy { max-width: 690px; margin: -15px auto 34px; text-align: center; color: #757575; font-size: 11px; line-height: 1.7; }
+.profile-editor-stack { display: grid; gap: 13px; }
+.profile-stitch .tag-editor { padding: 20px; border: 1px solid var(--stitch-line); border-radius: 14px; background: rgba(255, 255, 255, .018); }
+.profile-stitch .tag-editor + .tag-editor { margin-top: 0; }
+.profile-stitch .editor-title { color: #eeeeee; }
+.profile-stitch .tag-input button,
+.profile-stitch .editable-tag { color: #d5d5d5; border-color: var(--stitch-line); background: rgba(255, 255, 255, .025); }
+.profile-analysis-list { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.profile-analysis-group { padding: 20px; border: 1px solid var(--stitch-line); border-radius: 12px; background: rgba(255, 255, 255, .02); min-width: 0; }
+.profile-analysis-group h4 { margin: 0 0 12px; color: #f3f3f3; font-size: 16px; }
+.profile-analysis-group p { margin: 8px 0 0; color: #cecece; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap; }
+.profile-analysis-list > .soft-note { grid-column: 1 / -1; }
+@media (max-width: 680px) { .profile-analysis-list { grid-template-columns: 1fr; } }
+.profile-evidence { margin-top: 14px; padding: 15px; border: 1px solid var(--stitch-line); border-radius: 10px; color: #aaaaaa; background: rgba(255, 255, 255, .02); font-size: 11px; }
+.profile-evidence blockquote { margin: 12px 0 0; padding: 12px; border-left: 2px solid #888888; color: #787878; background: rgba(255, 255, 255, .02); }
+.profile-action-dock { width: min(760px, calc(100vw - 32px)); min-height: 64px; padding: 8px 9px 8px 20px; position: fixed; z-index: 20; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; border: 1px solid var(--stitch-line-strong); border-radius: 18px; background: rgba(20, 20, 20, .88); backdrop-filter: blur(24px); box-shadow: 0 18px 55px rgba(0, 0, 0, .65); }
+.profile-action-dock > div { margin-right: auto; display: flex; align-items: center; gap: 10px; }
+.profile-action-dock > div > i { width: 7px; height: 7px; border-radius: 50%; background: #777777; }
+.profile-action-dock > div > i.ok { background: #dddddd; box-shadow: 0 0 8px #ffffff; }
+.profile-action-dock > div span { display: flex; flex-direction: column; gap: 2px; }
+.profile-action-dock > div b { color: #eeeeee; font-size: 10px; }
+.profile-action-dock > div small { color: #6a6a6a; font-size: 8px; }
+.profile-action-dock button { min-height: 38px; padding: 0 13px; border-radius: 999px; white-space: nowrap; font-size: 9px; }
+.profile-stitch .primary-button,
+.matches-stitch .primary-button { border-color: #f5f5f5; color: #111111; background: #f5f5f5; }
+.profile-stitch .ghost-button,
+.matches-stitch .ghost-button,
+.paths-stitch .ghost-button { color: #c4c4c4; border-color: var(--stitch-line-strong); background: rgba(255, 255, 255, .025); }

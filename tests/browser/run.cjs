@@ -313,6 +313,7 @@ async function assertNoLegacyProfileControls() {
     const paths = await (await context.request.get(base + '/api/career-paths')).json();
     assert.equal(paths.nodes.length, 18);
     assert.equal(paths.edges.filter(edge => edge.type === 'transition').length, 12);
+    await page.locator('.path-timeline .timeline-stage').first().waitFor();
     assert.equal(await page.locator('.path-timeline .timeline-stage').count(), 3);
     const branches = page.locator('.path-branch-grid > button');
     assert.ok(await branches.count() >= 2);

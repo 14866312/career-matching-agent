@@ -1,0 +1,64 @@
+/* Career path: overview cover, alternating timeline, branch cards and sprints. */
+.paths-hero { min-height: calc(100vh - 64px); max-width: 880px; margin: 0 auto; padding: 125px 24px 55px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.paths-hero h2 { margin: 28px 0 17px; color: #ffffff; font-size: clamp(47px, 6vw, 72px); font-weight: 500; line-height: 1.04; letter-spacing: -.065em; }
+.paths-hero > p { max-width: 620px; margin: 0; color: #858585; font-size: 13px; line-height: 1.8; }
+.path-job-select { margin-top: 28px; display: flex; align-items: center; gap: 10px; color: #696969; font-size: 9px; }
+.path-job-select select { height: 34px; padding: 0 12px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #dddddd; background: #111111; }
+.path-overview { width: min(100%, 670px); margin-top: 50px; padding: 17px 20px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto; align-items: center; gap: 14px; border: 1px solid var(--stitch-line); border-radius: 15px; background: linear-gradient(145deg, rgba(25, 25, 25, .65), rgba(10, 10, 10, .88)); }
+.path-overview div { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.path-overview small { color: #626262; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.path-overview b { color: #e5e5e5; font-size: 10px; font-weight: 500; }
+.path-overview > span { color: #565656; }
+.path-overview > em { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #111111; background: #eeeeee; font-style: normal; }
+.path-flow { max-width: 1020px; margin: 0 auto; padding: 0 24px 170px; }
+.path-section { padding: 115px 0; border-top: 1px solid rgba(255, 255, 255, .045); }
+.path-section > header { margin-bottom: 55px; text-align: center; }
+.path-section > header h2 { margin: 0 0 10px; color: #ffffff; font-size: 35px; font-weight: 500; letter-spacing: -.05em; }
+.path-section > header span { color: #6c6c6c; font-size: 10px; }
+.path-timeline { max-width: 860px; margin: 0 auto; position: relative; display: grid; gap: 55px; }
+.path-timeline::before { content: ""; position: absolute; top: 20px; bottom: 20px; left: 50%; width: 1px; background: linear-gradient(transparent, rgba(255, 255, 255, .16) 10%, rgba(255, 255, 255, .16) 90%, transparent); }
+.timeline-stage { display: grid; grid-template-columns: 1fr 48px 1fr; gap: 25px; align-items: center; }
+.timeline-copy { text-align: right; }
+.timeline-copy span { color: #676767; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: .08em; }
+.timeline-copy h3 { margin: 10px 0 8px; color: #eeeeee; font-size: 18px; font-weight: 500; letter-spacing: -.03em; }
+.timeline-copy p { margin: 0; color: #686868; font-size: 10px; line-height: 1.65; }
+.timeline-node { z-index: 1; width: 42px; height: 42px; border: 1px solid rgba(255, 255, 255, .18); border-radius: 10px; color: #aaaaaa; background: #0c0c0c; font: 400 10px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.timeline-node.active { color: #111111; background: #eeeeee; box-shadow: 0 0 25px rgba(255, 255, 255, .18); }
+.timeline-card { min-height: 155px; padding: 18px; text-align: left; border: 1px solid var(--stitch-line); border-radius: 14px; color: #bdbdbd; background: var(--stitch-surface); }
+.timeline-card:hover,
+.timeline-card.active { border-color: var(--stitch-line-strong); background: var(--stitch-surface-2); }
+.timeline-card > span { color: #898989; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.timeline-card p { margin: 14px 0 0; display: flex; justify-content: space-between; gap: 10px; color: #6a6a6a; font-size: 9px; line-height: 1.5; }
+.timeline-card p b { color: #bbbbbb; font-weight: 500; }
+.timeline-card small { display: block; margin-top: 14px; color: #8b8b8b; font-size: 8px; }
+.timeline-stage.reverse .timeline-copy { grid-column: 3; grid-row: 1; text-align: left; }
+.timeline-stage.reverse .timeline-node { grid-column: 2; grid-row: 1; }
+.timeline-stage.reverse .timeline-card { grid-column: 1; grid-row: 1; }
+.path-branch-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.path-branch-grid button { min-height: 225px; padding: 21px; position: relative; text-align: left; border: 1px solid var(--stitch-line); border-radius: 15px; color: #eeeeee; background: var(--stitch-surface); cursor: pointer; }
+.path-branch-grid button:hover,
+.path-branch-grid button.active { border-color: var(--stitch-line-strong); background: var(--stitch-surface-2); }
+.path-branch-grid span { color: #6c6c6c; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.path-branch-grid h3 { margin: 54px 0 12px; color: #eeeeee; font-size: 16px; }
+.path-branch-grid p { color: #727272; font-size: 10px; line-height: 1.7; }
+.path-branch-grid small { position: absolute; left: 21px; bottom: 20px; color: #606060; font-size: 8px; }
+.path-branch-grid em { position: absolute; right: 18px; bottom: 16px; color: #aaaaaa; font-style: normal; }
+.path-selected-detail { margin-top: 13px; padding: 20px; border: 1px solid var(--stitch-line); border-radius: 13px; background: rgba(255, 255, 255, .018); }
+.path-selected-detail > span { color: #787878; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.path-selected-detail h3 { color: #eeeeee; font-size: 15px; }
+.path-selected-detail p { color: #787878; font-size: 10px; }
+.path-selected-detail b { color: #bbbbbb; }
+.path-selected-detail small { color: #575757; }
+.sprint-list { display: grid; gap: 8px; }
+.sprint-list button { min-height: 62px; padding: 10px 16px; display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 13px; text-align: left; border: 1px solid var(--stitch-line); border-radius: 11px; color: #eeeeee; background: var(--stitch-surface); cursor: pointer; }
+.sprint-list button:hover { border-color: var(--stitch-line-strong); background: var(--stitch-surface-2); }
+.sprint-list button > b { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; color: #aaaaaa; background: rgba(255, 255, 255, .05); font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.sprint-list span { display: flex; flex-direction: column; gap: 4px; }
+.sprint-list strong { color: #dcdcdc; font-size: 10px; font-weight: 500; }
+.sprint-list small { color: #616161; font-size: 8px; }
+.sprint-list em { padding: 5px 8px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #787878; font: 400 7px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-style: normal; }
+.path-action-hub { padding: 28px; display: flex; align-items: center; justify-content: space-between; gap: 22px; border: 1px solid var(--stitch-line); border-radius: 17px; background: linear-gradient(145deg, rgba(26, 26, 26, .78), rgba(10, 10, 10, .9)); }
+.path-action-hub span { color: #676767; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.path-action-hub h3 { margin: 8px 0 5px; color: #eeeeee; font-size: 17px; }
+.path-action-hub p { margin: 0; color: #6a6a6a; font-size: 9px; }
+.path-action-hub button { min-height: 38px; padding: 0 17px; border-radius: 999px; white-space: nowrap; }
