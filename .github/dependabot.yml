@@ -9,6 +9,10 @@ updates:
     directory: /frontend
     schedule:
       interval: monthly
+    # 前端大版本升级（React 19、Vite 8、ESLint 10 等）需要手动迁移，不自动开 PR
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
