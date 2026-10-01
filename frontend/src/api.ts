@@ -8,11 +8,20 @@ export class ApiError extends Error {
   }
 }
 
+export interface ApiRequestOptions {
+  signal?: AbortSignal;
+}
+
+function isAbortError(error: unknown): boolean {
+  return typeof error === 'object' && error != null && 'name' in error && error.name === 'AbortError';
+}
+
 async function request<T>(path: string, opt: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, opt);
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) throw error;
     throw new ApiError('NETWORK', '无法连接后端服务，请确认本地服务已启动后重试。', true);
   }
   const data: unknown = await res.json().catch(() => null);
@@ -27,20 +36,21 @@ async function request<T>(path: string, opt: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
-export function apiGet<T>(path: string): Promise<T> {
-  return request<T>(path);
+export function apiGet<T>(path: string, options?: ApiRequestOptions): Promise<T> {
+  return request<T>(path, options);
 }
 
-export function apiPost<T>(path: string, body: unknown): Promise<T> {
+export function apiPost<T>(path: string, body: unknown, options?: ApiRequestOptions): Promise<T> {
   return request<T>(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: options?.signal
   });
 }
 
-export function apiPostForm<T>(path: string, form: FormData): Promise<T> {
-  return request<T>(path, { method: 'POST', body: form });
+export function apiPostForm<T>(path: string, form: FormData, options?: ApiRequestOptions): Promise<T> {
+  return request<T>(path, { method: 'POST', body: form, signal: options?.signal });
 }
 
 export function errMessage(e: unknown): string {
