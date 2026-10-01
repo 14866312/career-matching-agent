@@ -7,6 +7,7 @@ import { getReportText, reportFileName } from '../report';
 import { isReportStale, type ReportMeta } from '../lib/stale';
 import { EmptyState, ErrorBox, Loading } from './ui';
 import { hasProfileContent } from '../lib/workflow';
+import { createLatestRequest } from '../lib/latestRequest';
 
 function statusOrder(item: MatchItem): number {
   return item.status === 'satisfied' ? 1 : 0;
@@ -81,7 +82,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   // 防止旧响应覆盖请求期间的新输入或新选择。
   const revRef = useRef(studentRev);
   const studentRef = useRef(student);
-  const recommendationRequestRef = useRef(0);
+  const [recommendationRequests] = useState(createLatestRequest);
   revRef.current = studentRev;
   studentRef.current = student;
 
@@ -125,16 +126,19 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   }, [isActive, hasProfile]);
 
   async function load() {
-    const requestId = ++recommendationRequestRef.current;
-    const isLatestRequest = () => recommendationRequestRef.current === requestId;
+    const requestId = recommendationRequests.begin();
+    const isLatestRequest = () => recommendationRequests.isLatest(requestId);
     if (!hasProfileContent(studentRef.current)) {
       setLoading(false);
       return;
     }
     const parsed = parseFilters(city, salaryMin, salaryMax, salaryPeriod, skillText);
     if (!parsed.ok) {
+      const message = parsed.error ?? '筛选条件无效';
       setLoading(false);
-      setFilterError(parsed.error ?? '筛选条件无效');
+      setLoadError(null);
+      setFilterError(message);
+      showToast(message, 'err');
       return;
     }
     setFilterError(null);
@@ -144,6 +148,12 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     const discardChangedInput = () => {
       showToast('输入在计算期间已修改，本次推荐已丢弃，请重新计算', 'err');
     };
+    const requestIsCurrent = () => {
+      if (!isLatestRequest()) return false;
+      if (!inputChanged()) return true;
+      discardChangedInput();
+      return false;
+    };
     setLoading(true);
     setLoadError(null);
     try {
@@ -151,22 +161,14 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
         '/api/recommendations',
         { student: reqStudent, filters: parsed.filters, sort_by: sortBy }
       );
-      if (!isLatestRequest()) return;
-      if (inputChanged()) {
-        discardChangedInput();
-        return;
-      }
+      if (!requestIsCurrent()) return;
       const merged = [...d.items];
       // 目标岗位可能不在推荐前5：单独调用 /api/matches，保证目标岗位始终可查看比较。
       const tid = reqStudent.intention.target_job_id;
       if (tid && !merged.some(x => x.job_id === tid)) {
         try {
           const t = await apiPost<MatchResult>('/api/matches', { student: reqStudent, job_id: tid });
-          if (!isLatestRequest()) return;
-          if (inputChanged()) {
-            discardChangedInput();
-            return;
-          }
+          if (!requestIsCurrent()) return;
           merged.unshift({
             job_id: t.job_id,
             job_name: t.job_name,
@@ -177,19 +179,11 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
             standalone: true
           });
         } catch (targetErr) {
-          if (!isLatestRequest()) return;
-          if (inputChanged()) {
-            discardChangedInput();
-            return;
-          }
+          if (!requestIsCurrent()) return;
           showToast('目标岗位单独计算失败：' + errMessage(targetErr), 'err');
         }
       }
-      if (!isLatestRequest()) return;
-      if (inputChanged()) {
-        discardChangedInput();
-        return;
-      }
+      if (!requestIsCurrent()) return;
       setItems(merged);
       setActiveIndex(merged.length > 0 ? 0 : -1);
       setMeta({ count: d.candidate_count, note: d.note, summary: filtersSummary(parsed.filters!), rev: reqRev, targetJobId: reqStudent.intention.target_job_id });
@@ -197,11 +191,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       setReportMeta(null);
       setReportError(null);
     } catch (e) {
-      if (!isLatestRequest()) return;
-      if (inputChanged()) {
-        discardChangedInput();
-        return;
-      }
+      if (!requestIsCurrent()) return;
       setLoadError(e);
       showToast('推荐计算失败：' + errMessage(e), 'err');
     } finally {

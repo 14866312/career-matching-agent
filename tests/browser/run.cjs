@@ -106,24 +106,14 @@ async function checkExport(result, filename) {
   assert.equal(stripBom(await fs.readFile(file, 'utf8')), result.export_text, filename + ' differs from the server report');
 }
 
-async function delayRoute(url) {
-  let signal, release, finish;
-  const started = new Promise(resolve => signal = resolve);
-  const gate = new Promise(resolve => release = resolve);
-  const done = new Promise(resolve => finish = resolve);
-  const handler = async route => { signal(); await gate; try { await route.continue(); } finally { finish(); } };
-  await page.route('**' + url, handler);
-  return { started, release: async () => { release(); await done; await page.unroute('**' + url, handler); } };
-}
-
-async function delayFirstRoute(url, resume = route => route.continue()) {
+async function delayRoute(url, { firstOnly = false, resume = route => route.continue() } = {}) {
   let signal, release, finish;
   let intercepted = false;
   const started = new Promise(resolve => signal = resolve);
   const gate = new Promise(resolve => release = resolve);
   const done = new Promise(resolve => finish = resolve);
   const handler = async route => {
-    if (intercepted) {
+    if (firstOnly && intercepted) {
       await route.continue();
       return;
     }
@@ -466,7 +456,7 @@ async function assertNoLegacyProfileControls() {
     await openFilterPanel();
 
     await setFilters({ city: '不存在的测试城市' });
-    const delayed = await delayFirstRoute('/api/recommendations');
+    const delayed = await delayRoute('/api/recommendations', { firstOnly: true });
     const firstResponse = page.waitForResponse(r =>
       r.url().endsWith('/api/recommendations') && r.request().method() === 'POST'
     );
@@ -492,7 +482,7 @@ async function assertNoLegacyProfileControls() {
   await step('Invalid filters and late errors cannot revive an older recommendation request', async () => {
     await openFilterPanel();
     await setFilters({ city: '不存在的测试城市' });
-    const delayed = await delayFirstRoute('/api/recommendations');
+    const delayed = await delayRoute('/api/recommendations', { firstOnly: true });
     await button('应用筛选').click();
     await delayed.started;
 
@@ -506,11 +496,14 @@ async function assertNoLegacyProfileControls() {
     assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '未设置筛选条件');
 
     await setFilters({ min: '', city: '不存在的测试城市' });
-    const delayedError = await delayFirstRoute('/api/recommendations', route => route.fulfill({
-      status: 503,
-      contentType: 'application/json',
-      body: JSON.stringify({ error: { code: 'LATE_ERROR', message: '旧请求错误', retryable: true, request_id: 'old' } })
-    }));
+    const delayedError = await delayRoute('/api/recommendations', {
+      firstOnly: true,
+      resume: route => route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: { code: 'LATE_ERROR', message: '旧请求错误', retryable: true, request_id: 'old' } })
+      })
+    });
     await button('应用筛选').click();
     await delayedError.started;
     await setFilters({ city: '' });
@@ -520,6 +513,23 @@ async function assertNoLegacyProfileControls() {
     assert.equal(await page.locator('.alternative-grid > button').count(), 5);
     assert.equal(await page.getByText('旧请求错误', { exact: false }).count(), 0,
       'a late error from an older request became visible');
+
+    const visibleError = route => route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'CURRENT_ERROR', message: '当前请求错误', retryable: true, request_id: 'current' } })
+    });
+    await page.route('**/api/recommendations', visibleError, { times: 1 });
+    await button('应用筛选').click();
+    await until(async () => await page.getByText('当前请求错误', { exact: false }).count() > 0,
+      'current recommendation error was not shown');
+    await setFilters({ min: '-1' });
+    await button('应用筛选').click();
+    assert.match(await page.locator('.error-box').first().innerText(), /薪资下限/);
+    assert.equal(await page.getByText('当前请求错误', { exact: false }).count(), 0,
+      'invalid filters did not replace the previous request error');
+    assert.equal(await page.locator('.alternative-grid > button').count(), 5,
+      'invalid filters hid the current recommendations');
   });
 
   await step('A stale target-job supplement cannot replace the latest recommendations', async () => {
@@ -529,7 +539,7 @@ async function assertNoLegacyProfileControls() {
     await label('专业').fill('软件工程');
     await targetJob().selectOption('testing');
 
-    const delayedTarget = await delayFirstRoute('/api/matches');
+    const delayedTarget = await delayRoute('/api/matches', { firstOnly: true });
     const firstRecommendation = page.waitForResponse(r =>
       r.url().endsWith('/api/recommendations') && r.request().method() === 'POST'
     );
