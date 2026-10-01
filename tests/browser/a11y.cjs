@@ -5,6 +5,17 @@ const assert = require('node:assert/strict');
 
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 const blockingImpacts = new Set(['critical', 'serious']);
+const resolvedRuleIds = {
+  '首次引导': new Set(['landmark-no-duplicate-banner', 'landmark-unique']),
+  '主页面': new Set(['page-has-heading-one']),
+  '匹配报告': new Set([
+    'heading-order',
+    'landmark-main-is-top-level',
+    'landmark-no-duplicate-main',
+    'landmark-unique',
+    'page-has-heading-one'
+  ])
+};
 
 function formatViolations(violations) {
   return violations.map(violation => {
@@ -18,7 +29,9 @@ function formatViolations(violations) {
 async function scan(page, state) {
   const result = await new AxeBuilder({ page }).analyze();
   const blocking = result.violations.filter(violation => blockingImpacts.has(violation.impact));
-  assert.deepEqual(blocking, [], `${state} 存在严重无障碍问题：\n${formatViolations(blocking)}`);
+  assert.deepEqual(blocking, [], state + ' 存在严重无障碍问题：\n' + formatViolations(blocking));
+  const resolvedRegressions = result.violations.filter(violation => resolvedRuleIds[state]?.has(violation.id));
+  assert.deepEqual(resolvedRegressions, [], state + ' 重新出现已修复的语义问题：\n' + formatViolations(resolvedRegressions));
   const nonBlocking = result.violations.filter(violation => !blockingImpacts.has(violation.impact));
   if (nonBlocking.length) {
     console.log(`NOTICE A11Y ${state}：\n${formatViolations(nonBlocking)}`);

@@ -152,7 +152,7 @@ export default function OnboardingWizard({
         aria-describedby="onboarding-wizard-description"
         tabIndex={-1}
       >
-        <header className="onboarding-wizard-header">
+        <div className="onboarding-wizard-header">
           <div>
             <p className="onboarding-wizard-kicker">新手教程 · 从这里开始</p>
             <p className="onboarding-wizard-progress" aria-live="polite">{screen === 0 ? '入口选择' : '开始规划'} · {screen + 1} / 2</p>
@@ -166,7 +166,7 @@ export default function OnboardingWizard({
           >
             ×
           </button>
-        </header>
+        </div>
 
         {screen === 0 ? (
           <>
