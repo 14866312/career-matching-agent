@@ -67,4 +67,22 @@ describe('App integration', () => {
       expect(screen.getByRole('button', { name: '4. 行动建议：已过期' })).toBeInTheDocument();
     });
   });
+
+  it('can navigate back to matching after clearing a session from that tab', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const pages = document.querySelector('.exploration-pages');
+    expect(pages).not.toBeNull();
+    await user.click(screen.getByRole('tab', { name: /匹配报告/ }));
+    await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'matches'));
+
+    await user.click(screen.getByRole('button', { name: '设置' }));
+    const settings = await screen.findByRole('dialog', { name: '本机数据设置' });
+    await user.click(within(settings).getByRole('button', { name: '清除本机草稿并重置流程' }));
+    await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'jobs'));
+
+    await user.click(screen.getByRole('tab', { name: /匹配报告/ }));
+    await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'matches'));
+  });
 });
