@@ -118,25 +118,25 @@
 .local-draft-settings-actions .ghost-button { width: auto; margin-top: 0; }
 
 @media (max-width: 900px) {
-  .exploration-header { grid-template-columns: 1fr auto; padding: 0 18px; }
-  .exploration-nav { grid-column: 1; position: fixed; left: 50%; bottom: 14px; z-index: 30; transform: translateX(-50%); height: 45px; padding: 5px; background: rgba(20, 20, 20, .9); backdrop-filter: blur(20px); box-shadow: 0 14px 42px rgba(0, 0, 0, .55); }
+  /* A backdrop-filter on the header would anchor its fixed nav to the header. */
+  .exploration-header { grid-template-columns: 1fr auto; height: auto; min-height: 64px; padding: 8px 18px; background: #000000; backdrop-filter: none; }
+  .exploration-nav { grid-column: 1; position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 30; transform: translateX(-50%); height: 56px; padding: 5px; background: rgba(20, 20, 20, .9); backdrop-filter: blur(20px); box-shadow: 0 14px 42px rgba(0, 0, 0, .55); }
   .exploration-header-actions { grid-column: 2; gap: 6px; }
-  .exploration-nav-item { height: 33px; }
+  .exploration-nav-item { min-width: 44px; height: 44px; font-size: 14px; color: #b8b8b8; }
+  .exploration-pages { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .exploration-pages :is(.empty-state p, .error-box p) { font-size: 14px; }
+  .exploration-pages :is(.empty-state, .error-box) button { min-height: 44px; font-size: 14px; }
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); left: 16px; right: 16px; max-width: none; font-size: 14px; }
   .jobs-stitch-section-head { display: grid; justify-items: center; }
   .jobs-stitch-section-head > div { padding-left: 0; }
   .jobs-stitch-search { width: min(100%, 320px); }
   .profile-basic-grid { grid-template-columns: 1fr 1fr; }
   .profile-basic-grid label:nth-child(3) { grid-column: 1 / -1; }
-  .profile-action-dock { bottom: 70px; overflow-x: auto; }
-  .profile-action-dock > div { min-width: 190px; }
 }
 
 @media (max-width: 680px) {
-  .exploration-header { height: 58px; min-height: 58px; }
-  .settings-trigger,
-  .model-config-trigger { padding: 0 10px; font-size: 9px; }
   .exploration-nav { width: calc(100vw - 20px); justify-content: space-between; overflow-x: auto; }
-  .exploration-nav-item { flex: 1; padding: 0 10px; white-space: nowrap; }
+  .exploration-nav-item { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 12px; line-height: 1.35; white-space: normal; }
   .jobs-stitch-hero,
   .matches-stitch-hero,
   .paths-hero { min-height: calc(100vh - 58px); padding-left: 18px; padding-right: 18px; }
@@ -161,8 +161,6 @@
   .profile-step { padding: 78px 16px; }
   .profile-basic-grid { grid-template-columns: 1fr; }
   .profile-basic-grid label:nth-child(3) { grid-column: auto; }
-  .profile-action-dock { padding-left: 10px; }
-  .profile-action-dock > div { display: none; }
   .matches-stitch-hero h2 { font-size: 82px; }
   .matches-stitch-hero h2.empty-title { font-size: 43px; }
   .matches-stitch-empty .matches-stitch-hero h2.empty-title { font-size: clamp(40px, 12vw, 72px); }
@@ -183,7 +181,7 @@
   .path-overview > span:nth-of-type(2) { display: none; }
   .path-timeline::before { left: 20px; }
   .timeline-stage,
-  .timeline-stage.reverse { grid-template-columns: 42px 1fr; gap: 15px; }
+  .timeline-stage.reverse { grid-template-columns: 44px minmax(0, 1fr); gap: 15px; }
   .timeline-node,
   .timeline-stage.reverse .timeline-node { grid-column: 1; grid-row: 1; }
   .timeline-copy,
@@ -463,11 +461,46 @@
   .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
   .jobs-stitch .modal { width: calc(100vw - 24px); padding: 24px 18px 18px; border-radius: 16px; }
   .jobs-stitch .job-detail h3 { font-size: 25px; }
-  .jobs-stitch .job-detail-head { padding-right: 34px; }
   .jobs-stitch .job-detail-items { grid-template-columns: 1fr; }
   .jobs-stitch .job-detail-aside { padding-top: 14px; }
   .jobs-stitch .detail-actions { justify-content: stretch; }
   .jobs-stitch .detail-actions .primary-button { width: 100%; }
+}
+
+@media (max-width: 900px) {
+  .ai-config-close,
+  .local-draft-settings-close,
+  .jobs-stitch .modal-close { width: 44px; height: 44px; }
+  .ai-config-panel :is(input, select, button),
+  .local-draft-settings-actions button,
+  .jobs-stitch .detail-actions button { min-height: 44px; font-size: 14px; }
+  .ai-config-panel :is(input, select) { font-size: 16px; }
+  .ai-config-kicker,
+  .local-draft-settings-kicker { padding-right: 44px; font-size: 12px; }
+  .ai-config-panel label,
+  .ai-config-lead,
+  .ai-provider-grid button strong,
+  .local-draft-settings-lead,
+  .local-draft-setting-card p { font-size: 14px; }
+  .ai-config-label-note,
+  .ai-provider-grid button span,
+  .ai-config-state,
+  .ai-config-error,
+  .local-draft-settings-state,
+  .local-draft-settings-status,
+  .local-draft-privacy ul { font-size: 12px; line-height: 1.6; }
+  .local-draft-switch { height: 44px; }
+  .local-draft-switch > span[aria-hidden] { inset: 8px 0; }
+  .ai-config-actions { flex-wrap: wrap; }
+  .ai-config-actions button { flex: 1 1 auto; justify-content: center; }
+  .jobs-stitch .job-detail-head { padding-right: 48px; }
+  .jobs-stitch .detail-summary,
+  .jobs-stitch .job-detail-aside .item.pending { font-size: 14px; }
+  .jobs-stitch .item-block h4 { font-size: 14px; }
+  .jobs-stitch .job-detail-items .req-item summary { min-height: 44px; font-size: 14px !important; }
+  .jobs-stitch :is(.detail-meta, .req-basis, .soft-note, .req-quote, .req-quote cite, .job-detail-aside h4 span, .job-detail-samples .sample-row) { font-size: 12px; }
+  .jobs-stitch .job-detail .mono { font-size: 12px; }
+  .matrix-action { min-width: 44px; min-height: 44px; font-size: 14px; }
 }
 
 /* Desktop reading scale: keep page headings expressive while making all

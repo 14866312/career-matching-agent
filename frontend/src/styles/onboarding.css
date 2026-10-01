@@ -363,16 +363,20 @@
 .onboarding-wizard-footer-final .onboarding-skip-button { white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .onboarding-trigger { padding-inline: 10px; }
+  .onboarding-trigger,
+  .settings-trigger,
+  .model-config-trigger { min-height: 44px; padding-inline: 10px; font-size: 14px; }
+  .onboarding-wizard-close { width: 44px; height: 44px; }
+  .onboarding-storage-choice p { font-size: 14px; }
+  .onboarding-storage-actions button,
+  .onboarding-skip-button,
+  .onboarding-back-button { min-height: 44px; }
   .workflow-guide { grid-template-columns: minmax(0, 1fr); width: calc(100% - 32px); margin-top: 18px; padding: 12px; }
   .workflow-guide-next { min-height: 56px; }
 }
 
 @media (max-width: 680px) {
   .exploration-header-actions { flex-wrap: wrap; justify-content: flex-end; }
-  .onboarding-trigger,
-  .settings-trigger,
-  .model-config-trigger { padding: 0 10px; font-size: 11px; }
   .workflow-guide ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .onboarding-wizard { max-height: calc(100vh - 24px); padding: 24px 18px; border-radius: 20px; }
   .onboarding-route-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 0; }
