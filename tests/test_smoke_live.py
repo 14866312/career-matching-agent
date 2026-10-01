@@ -1,6 +1,10 @@
 """Contract tests for scripts/smoke_live.py. The model JSON is stubbed; this is not live evidence."""
 import importlib.util
+import json
 from pathlib import Path
+
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 from backend.app import llm, main
 
@@ -40,13 +44,56 @@ def test_cli_missing_configuration_exits_2_before_connecting(monkeypatch, capsys
     assert 'not_verified' in capsys.readouterr().out
 
 
-def test_all_steps_pass_without_printing_names(monkeypatch):
+def test_all_applicable_steps_pass_without_printing_names(monkeypatch):
     code, output = run_smoke(monkeypatch)
     assert code == 0, output
-    for step in ('live_resume_pdf_empty_name', 'name_returned', 'name_not_in_profile', 'name_edit', 'name_rejected_by_scoring', 'name_not_in_report'):
-        assert f'"step": "{step}",\n      "status": "passed"' in output
+    outcomes = {step['step']: step for step in json.loads(output)['steps']}
+    for step in ('live_resume_pdf_empty_name', 'name_returned', 'name_not_in_profile', 'name_rejected_by_scoring', 'name_not_in_report'):
+        assert outcomes[step]['status'] == 'passed'
+    assert outcomes['name_edit']['status'] == 'not_applicable'
+    assert 'browser' in outcomes['name_edit']['reason']
     assert smoke.PROBE_NAME not in output and smoke.EDITED_NAME not in output
     assert '图书借阅' not in output  # no resume text
+
+
+@pytest.mark.parametrize('field', ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display'))
+def test_report_fact_drift_fails_with_exit_1(monkeypatch, field):
+    original = TestClient.post
+
+    def altered_report(client, url, *args, **kwargs):
+        response = original(client, url, *args, **kwargs)
+        if url == '/api/reports' and response.status_code == 200:
+            data = response.json()
+            value = data['match'][field]
+            data['match'][field] = value + '-drift' if isinstance(value, str) else value + 1
+            return httpx.Response(response.status_code, json=data)
+        return response
+
+    monkeypatch.setattr(TestClient, 'post', altered_report)
+    code, output = run_smoke(monkeypatch)
+    assert code == 1, output
+    outcomes = {step['step']: step for step in json.loads(output)['steps']}
+    assert outcomes['report_uses_match_facts']['status'] == 'failed'
+
+
+def test_missing_match_facts_in_both_responses_fail_with_exit_1(monkeypatch):
+    original = TestClient.post
+
+    def missing_facts(client, url, *args, **kwargs):
+        response = original(client, url, *args, **kwargs)
+        if url in ('/api/matches', '/api/reports') and response.status_code == 200:
+            data = response.json()
+            match = data['match'] if url == '/api/reports' else data
+            for field in ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display'):
+                del match[field]
+            return httpx.Response(response.status_code, json=data)
+        return response
+
+    monkeypatch.setattr(TestClient, 'post', missing_facts)
+    code, output = run_smoke(monkeypatch)
+    assert code == 1, output
+    outcomes = {step['step']: step for step in json.loads(output)['steps']}
+    assert outcomes['report_uses_match_facts']['status'] == 'failed'
 
 
 async def missed_name(instruction, payload):

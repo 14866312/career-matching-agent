@@ -176,11 +176,11 @@ npm.cmd --prefix tests/browser run test:a11y   # axe 扫描首次引导、主页
 
 其他说明：
 
-- 每次 AI 请求最多等 45 秒，遇到网络错误、429 或 5xx 会自动重试一次。
+- 每次上游 AI 调用有 45 秒预算；连接错误、429 或 5xx 可自动重试一次，详情见 [AI 接口契约](docs/AI接口契约.md)。
 - 需要独立的干净 Python 环境时，运行 `./install.ps1 -VenvPath .venv-acceptance -SkipFrontend`，启动时使用相同的 `-VenvPath`。
-- 最终验收状态和已知限制以 [docs/acceptance/后端测试.txt](docs/acceptance/后端测试.txt) 为准。
+- 当前验收状态和已知限制以 [项目稳定性验收](docs/acceptance/项目稳定性验收.md) 为准；真实模型是否通过单独记录。
 - 早期示例中曾出现过一个真实密钥，已经删除并应在服务商处作废，不要使用。
-- 每次推送和 PR 都会由 GitHub Actions 自动运行后端与前端检查。
+- 每次推送和 PR 都会由 GitHub Actions 自动运行后端、前端与浏览器检查，包含 UI 回归和无障碍扫描。
 
 </details>
 

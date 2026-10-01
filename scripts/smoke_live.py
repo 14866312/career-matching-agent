@@ -1,6 +1,6 @@
 """Real API acceptance only. Never prints credentials, names, resume text or upstream responses.
 
-Exit codes: 0 all steps passed, 1 a step failed, 2 local model configuration missing.
+Exit codes: 0 all applicable API checks passed, 1 a step failed, 2 local model configuration missing.
 """
 import argparse
 import json
@@ -80,9 +80,10 @@ def run(client, out=print):
         expect('name_returned', parsed.get('name') == PROBE_NAME, 'explicit fictional name was not returned')
         resume_profile = parsed['profile']
         expect('name_not_in_profile', 'name' not in resume_profile and not _contains(resume_profile, PROBE_NAME), 'name leaked into StudentProfile fields')
-        session_name = parsed.get('name', '')
-        session_name = EDITED_NAME
-        expect('name_edit', session_name == EDITED_NAME and session_name != parsed.get('name'), 'session-only name edit was not applied')
+        outcomes.append({
+            'step': 'name_edit', 'status': 'not_applicable',
+            'reason': 'Frontend name editing and refresh require browser acceptance.',
+        })
 
         target = {'student': resume_profile, 'job_id': 'java'}
         expect('name_not_in_scoring_input', not _contains(target, PROBE_NAME, EDITED_NAME), 'name present in scoring input')
@@ -94,7 +95,14 @@ def run(client, out=print):
         live_report = check('live_report', client.post('/api/reports', json=target))
         expect('live_report_contract', live_report.get('mode') == 'live' and live_report.get('status') == 'complete' and bool(live_report.get('export_text')), 'report response contract')
         expect('name_not_in_report', not _contains(live_report, PROBE_NAME, EDITED_NAME), 'name present in report or export_text')
-        expect('report_uses_match_facts', live_report['match'].get('input_version') == match.get('input_version') and live_report['match'].get('basic') == match.get('basic'), 'report score differs from deterministic match')
+        report_match = live_report['match']
+        match_fields = ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display')
+        expect(
+            'report_uses_match_facts',
+            all(field in match and field in report_match and report_match[field] == match[field]
+                for field in match_fields),
+            'report facts missing or different from deterministic match',
+        )
 
         outcomes.append({'step': 'versions', 'data': health.get('data_version'), 'algorithm': health.get('algorithm_version')})
         report()
