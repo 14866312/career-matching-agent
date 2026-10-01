@@ -115,12 +115,24 @@ def test_raw_full_field_dedupe_matches_pandas(data, frame):
     assert data['audit']['dedupe_order'].startswith('先按原始全字段签名去重')
 
 
-def test_cleaning_happens_after_dedupe(frame):
-    """原文含 <br> 等展示标记时，原始签名不同就不能合并。"""
-    raw = frame.fillna('')
-    marked = raw[raw['岗位详情'].str.contains('<br', regex=False)]
-    assert len(marked) > 0
-    assert bd.clean('<br>熟悉') != bd.clean('熟悉') or True  # clean 只影响展示
+def test_cleaning_happens_after_dedupe():
+    """清理相同的展示文本不能吞掉原始字段不同的记录。"""
+    def record(row, raw_detail):
+        return {
+            '_row': row,
+            '岗位详情': bd.clean(raw_detail),
+            '_raw': {'岗位名称': '测试岗位', '岗位详情': raw_detail},
+        }
+
+    marked = record(101, '<br>熟悉')
+    plain = record(102, '熟悉')
+    exact_duplicate = record(103, '<br>熟悉')
+
+    assert marked['岗位详情'] == plain['岗位详情'] == '熟悉'
+    unique = bd.dedupe([marked, plain, exact_duplicate])
+    assert [item['_row'] for item in unique] == [101, 102]
+    assert unique[0]['_dup_rows'] == [103]
+    assert unique[1]['_dup_rows'] == []
     assert bd.clean('a<br/>b') == 'a\nb'
 
 
