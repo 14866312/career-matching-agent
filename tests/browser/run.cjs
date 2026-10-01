@@ -164,8 +164,11 @@ async function ready(start = 'jobs') {
   }
   await page.locator('.workflow-guide').waitFor();
   assert.deepEqual(await page.locator('.workflow-guide .workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
-  assert.equal(await page.locator('.workflow-guide-step-copy').count(), 0, 'the guide is a compact numbered navigator');
-  assert.equal(await page.locator('.workflow-guide-next').count(), 1, 'compact guide should expose a contextual next-step button');
+  assert.equal(await page.locator('.workflow-guide-step-copy').count(), 4, '流程导航应显示四个步骤名称与状态');
+  for (const label of ['导入或填写资料', '个人分析报告', '岗位匹配', '行动建议']) {
+    assert.equal(await page.locator('.workflow-guide').getByText(label, { exact: true }).isVisible(), true, '步骤名称必须直接可见：' + label);
+  }
+  assert.equal(await page.locator('.workflow-guide-next-copy b').isVisible(), true, '下一步应显示具体动作');
   assert.match(await page.locator('.workflow-guide-next').getAttribute('aria-label'), /下一步：/);
   const activePanel = page.locator('.exploration-pages > .panel.active');
   await activePanel.waitFor();
@@ -411,6 +414,9 @@ async function assertNoLegacyProfileControls() {
     await assertUnavailable(button('复制报告'), 'copy report');
     await assertUnavailable(button('导出报告TXT'), 'export report');
     assert.match(await page.locator('.stale-banner').first().innerText(), /旧匹配与建议已过期|失效/);
+    assert.equal(await guideStep(2).getByText('已过期', { exact: true }).isVisible(), true, '流程导航应直接显示匹配过期');
+    assert.equal(await guideStep(3).getByText('已过期', { exact: true }).isVisible(), true, '流程导航应直接显示建议过期');
+    assert.equal(await page.locator('.workflow-guide-next-copy b').innerText(), '刷新岗位匹配');
   });
 
   await step('Delayed profile, report, and recommendation responses are discarded', async () => {

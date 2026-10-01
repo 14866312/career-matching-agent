@@ -84,9 +84,38 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     const guide = page.locator('.workflow-guide');
     await guide.waitFor();
     assert.deepEqual(await guide.locator('.workflow-step-number').allTextContents(), ['1', '2', '3', '4']);
-    assert.equal(await guide.locator('.workflow-guide-step-copy').count(), 0, 'collapsed guide should show only numbered steps');
-    assert.equal(await guide.getByRole('button').count(), 5, 'compact guide should expose four numbered buttons and a next-step button');
+    assert.equal(await guide.getByRole('button').count(), 5, '流程导航应包含四个步骤和下一步');
+    const initialSteps = [
+      ['导入或填写资料', '待填写'],
+      ['个人分析报告', '待填写资料'],
+      ['岗位匹配', '待填写资料'],
+      ['行动建议', '等待最新匹配']
+    ];
+    for (const [index, [label, state]] of initialSteps.entries()) {
+      const step = guide.getByRole('button', { name: `${index + 1}. ${label}：${state}`, exact: true });
+      assert.equal(await step.getByText(label, { exact: true }).isVisible(), true, '步骤名称必须直接可见：' + label);
+      assert.equal(await step.getByText(state, { exact: true }).isVisible(), true, '步骤状态必须直接可见：' + state);
+    }
+    assert.equal(await guide.getByText('导入简历或填写资料', { exact: true }).isVisible(), true, '下一步必须显示具体动作');
+    assert.equal(await guide.locator('[aria-current="step"]').getAttribute('aria-label'), '1. 导入或填写资料：待填写');
+    const flowLayout = await guide.evaluate(element => ({
+      position: getComputedStyle(element).position,
+      bottom: element.getBoundingClientRect().bottom,
+      contentTop: document.querySelector('.exploration-pages').getBoundingClientRect().top
+    }));
+    assert.equal(['fixed', 'absolute', 'sticky'].includes(flowLayout.position), false, '流程导航应在文档内容流内');
+    assert.ok(flowLayout.bottom <= flowLayout.contentTop + 1, '流程导航不能覆盖主内容');
     assert.match(await guide.locator('.workflow-guide-next').getAttribute('aria-label'), /下一步：/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const narrowSteps = await guide.locator('.workflow-guide-step').evaluateAll(elements => elements.map(element => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, top: rect.top, right: rect.right, height: rect.height };
+    }));
+    assert.ok(Math.abs(narrowSteps[0].top - narrowSteps[1].top) <= 1, '窄屏首行应有两个步骤');
+    assert.ok(narrowSteps[2].top > narrowSteps[0].top, '窄屏后两个步骤应换到第二行');
+    assert.ok(narrowSteps.every(step => step.left >= 0 && step.right <= 390 && step.height >= 44), '窄屏流程按钮应完整可见且便于触控');
+    await page.setViewportSize({ width: 1440, height: 1000 });
 
     await page.getByRole('button', { name: '新手教程', exact: true }).click();
     await page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true }).waitFor();
@@ -111,8 +140,13 @@ const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
     assert.equal(optionStyle.backgroundColor, 'rgb(24, 24, 24)', '目标岗位下拉菜单应使用深色背景');
 
     await page.getByLabel('专业', { exact: true }).fill('软件工程');
+    assert.equal(await guide.getByRole('button', { name: '1. 导入或填写资料：已填写', exact: true }).getByText('已填写', { exact: true }).isVisible(), true);
     await page.getByRole('tab', { name: '匹配报告', exact: true }).click();
     await page.locator('.alternative-grid > button').first().waitFor();
+    const currentMatchStep = guide.getByRole('button', { name: '3. 岗位匹配：最新', exact: true });
+    await currentMatchStep.waitFor();
+    assert.equal(await currentMatchStep.getByText('最新', { exact: true }).isVisible(), true);
+    assert.equal(await currentMatchStep.getAttribute('aria-current'), 'step');
     const contents = page.getByRole('navigation', { name: '匹配报告目录', exact: true });
     for (const [label, sectionId] of [['能力摘要', 'report-dimensions'], ['岗位要求', 'report-matrix'], ['岗位建议', 'report-advice']]) {
       await contents.getByRole('link', { name: label, exact: true }).click();
