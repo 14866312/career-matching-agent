@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('smoke_live', ROOT / 'scripts' / 'smoke_live.py')
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
+MATCH_FACT_FIELDS = ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display')
 
 
 async def fake_json(instruction, payload):
@@ -30,6 +31,28 @@ def run_smoke(monkeypatch, configured=True, model=fake_json):
     lines = []
     code = smoke.run(TestClient(main.app), out=lines.append)
     return code, '\n'.join(lines)
+
+
+def rewrite_match_responses(monkeypatch, urls, rewrite):
+    original = TestClient.post
+
+    def rewritten_response(client, url, *args, **kwargs):
+        response = original(client, url, *args, **kwargs)
+        if url not in urls or response.status_code != 200:
+            return response
+        data = response.json()
+        match = data['match'] if url == '/api/reports' else data
+        rewrite(match)
+        return httpx.Response(response.status_code, json=data)
+
+    monkeypatch.setattr(TestClient, 'post', rewritten_response)
+
+
+def assert_report_facts_fail(monkeypatch):
+    code, output = run_smoke(monkeypatch)
+    assert code == 1, output
+    outcomes = {step['step']: step for step in json.loads(output)['steps']}
+    assert outcomes['report_uses_match_facts']['status'] == 'failed'
 
 
 def test_missing_configuration_exits_2(monkeypatch):
@@ -56,44 +79,23 @@ def test_all_applicable_steps_pass_without_printing_names(monkeypatch):
     assert '图书借阅' not in output  # no resume text
 
 
-@pytest.mark.parametrize('field', ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display'))
+@pytest.mark.parametrize('field', MATCH_FACT_FIELDS)
 def test_report_fact_drift_fails_with_exit_1(monkeypatch, field):
-    original = TestClient.post
+    def drift_fact(match):
+        value = match[field]
+        match[field] = value + '-drift' if isinstance(value, str) else value + 1
 
-    def altered_report(client, url, *args, **kwargs):
-        response = original(client, url, *args, **kwargs)
-        if url == '/api/reports' and response.status_code == 200:
-            data = response.json()
-            value = data['match'][field]
-            data['match'][field] = value + '-drift' if isinstance(value, str) else value + 1
-            return httpx.Response(response.status_code, json=data)
-        return response
-
-    monkeypatch.setattr(TestClient, 'post', altered_report)
-    code, output = run_smoke(monkeypatch)
-    assert code == 1, output
-    outcomes = {step['step']: step for step in json.loads(output)['steps']}
-    assert outcomes['report_uses_match_facts']['status'] == 'failed'
+    rewrite_match_responses(monkeypatch, {'/api/reports'}, drift_fact)
+    assert_report_facts_fail(monkeypatch)
 
 
 def test_missing_match_facts_in_both_responses_fail_with_exit_1(monkeypatch):
-    original = TestClient.post
+    def remove_facts(match):
+        for field in MATCH_FACT_FIELDS:
+            del match[field]
 
-    def missing_facts(client, url, *args, **kwargs):
-        response = original(client, url, *args, **kwargs)
-        if url in ('/api/matches', '/api/reports') and response.status_code == 200:
-            data = response.json()
-            match = data['match'] if url == '/api/reports' else data
-            for field in ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display'):
-                del match[field]
-            return httpx.Response(response.status_code, json=data)
-        return response
-
-    monkeypatch.setattr(TestClient, 'post', missing_facts)
-    code, output = run_smoke(monkeypatch)
-    assert code == 1, output
-    outcomes = {step['step']: step for step in json.loads(output)['steps']}
-    assert outcomes['report_uses_match_facts']['status'] == 'failed'
+    rewrite_match_responses(monkeypatch, {'/api/matches', '/api/reports'}, remove_facts)
+    assert_report_facts_fail(monkeypatch)
 
 
 async def missed_name(instruction, payload):
