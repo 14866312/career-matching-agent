@@ -4,6 +4,8 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
+const desktopViewport = { width: 1440, height: 1000 };
+const mobileViewport = { width: 390, height: 844 };
 const blockingImpacts = new Set(['critical', 'serious']);
 const resolvedRuleIds = {
   '首次引导': new Set(['landmark-no-duplicate-banner', 'landmark-unique']),
@@ -26,20 +28,26 @@ function formatViolations(violations) {
   }).join('\n');
 }
 
-async function scan(page, state) {
-  await page.evaluate(() => Promise.all(document.getAnimations()
-    .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
-    .map(animation => animation.finished.catch(() => {}))));
-  const result = await new AxeBuilder({ page }).analyze();
-  const blocking = result.violations.filter(violation => blockingImpacts.has(violation.impact));
-  assert.deepEqual(blocking, [], state + ' 存在严重无障碍问题：\n' + formatViolations(blocking));
-  const resolvedRegressions = result.violations.filter(violation => resolvedRuleIds[state]?.has(violation.id));
-  assert.deepEqual(resolvedRegressions, [], state + ' 重新出现已修复的语义问题：\n' + formatViolations(resolvedRegressions));
-  const nonBlocking = result.violations.filter(violation => !blockingImpacts.has(violation.impact));
-  if (nonBlocking.length) {
-    console.log(`NOTICE A11Y ${state}：\n${formatViolations(nonBlocking)}`);
+async function scan(page, state, viewports = [desktopViewport, mobileViewport]) {
+  const originalViewport = page.viewportSize();
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => Promise.all(document.getAnimations()
+      .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+      .map(animation => animation.finished.catch(() => {}))));
+    const label = `${state} ${viewport.width}px`;
+    const result = await new AxeBuilder({ page }).analyze();
+    const blocking = result.violations.filter(violation => blockingImpacts.has(violation.impact));
+    assert.deepEqual(blocking, [], label + ' 存在严重无障碍问题：\n' + formatViolations(blocking));
+    const resolvedRegressions = result.violations.filter(violation => resolvedRuleIds[state]?.has(violation.id));
+    assert.deepEqual(resolvedRegressions, [], label + ' 重新出现已修复的语义问题：\n' + formatViolations(resolvedRegressions));
+    const nonBlocking = result.violations.filter(violation => !blockingImpacts.has(violation.impact));
+    if (nonBlocking.length) {
+      console.log(`NOTICE A11Y ${label}：\n${formatViolations(nonBlocking)}`);
+    }
+    console.log(`PASS A11Y ${label}（${result.violations.length} 项违规，均非 serious 或 critical）`);
   }
-  console.log(`PASS A11Y ${state}（${result.violations.length} 项违规，均非 serious 或 critical）`);
+  await page.setViewportSize(originalViewport);
 }
 
 async function closeOnboarding(page) {
@@ -64,7 +72,7 @@ async function closeOnboarding(page) {
   });
 
   try {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+    const context = await browser.newContext({ viewport: desktopViewport });
     const page = await context.newPage();
     await page.goto(base);
     await page.locator('.exploration-header').waitFor();
@@ -102,6 +110,8 @@ async function closeOnboarding(page) {
     const skill = page.getByLabel('新增技能标签', { exact: true });
     await skill.fill('Java');
     await skill.press('Enter');
+    await page.locator('.profile-stitch .empty-state').scrollIntoViewIfNeeded();
+    await scan(page, '资料页', [mobileViewport]);
 
     await page.getByRole('tab', { name: '匹配报告', exact: true }).click();
     const alternatives = page.locator('.alternative-grid > button');
@@ -112,6 +122,9 @@ async function closeOnboarding(page) {
     await page.getByRole('button', { name: '生成岗位建议', exact: true }).click();
     await page.locator('.report').waitFor();
     await scan(page, '匹配报告');
+    await page.getByRole('tab', { name: '成长路径', exact: true }).click();
+    await page.locator('.path-overview').waitFor();
+    await scan(page, '成长路径', [mobileViewport]);
 
     await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
     await page.getByLabel('专业', { exact: true }).fill('计算机科学与技术');

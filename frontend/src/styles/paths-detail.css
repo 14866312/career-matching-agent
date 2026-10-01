@@ -62,3 +62,40 @@
 .path-action-hub h3 { margin: 8px 0 5px; color: #eeeeee; font-size: 17px; }
 .path-action-hub p { margin: 0; color: #6a6a6a; font-size: 9px; }
 .path-action-hub button { min-height: 38px; padding: 0 17px; border-radius: 999px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .path-job-select { max-width: 100%; font-size: 14px; }
+  .path-job-select select { min-width: 0; max-width: 100%; height: 44px; font-size: 16px; }
+  .timeline-node { width: 44px; height: 44px; font-size: 12px; }
+  .path-action-hub button { min-height: 44px; font-size: 14px; white-space: normal; }
+  .path-overview small,
+  .path-section > header p,
+  .path-section > header span,
+  .timeline-copy span,
+  .timeline-card > span,
+  .timeline-card small,
+  .path-branch-grid span,
+  .path-branch-grid small,
+  .path-selected-detail > span,
+  .path-selected-detail small,
+  .sprint-list button > b,
+  .sprint-list small,
+  .sprint-list em,
+  .path-action-hub span { font-size: 12px; line-height: 1.6; }
+  .paths-hero > p,
+  .path-overview b,
+  .timeline-copy p,
+  .timeline-card p,
+  .path-branch-grid p,
+  .path-selected-detail p,
+  .sprint-list strong,
+  .path-action-hub p { font-size: 14px; line-height: 1.7; }
+  .timeline-card p { flex-wrap: wrap; }
+  .timeline-card { min-width: 0; }
+  .path-branch-grid small { position: static; display: block; padding-right: 20px; }
+}
+
+@media (max-width: 680px) {
+  .sprint-list button { grid-template-columns: 32px minmax(0, 1fr); }
+  .sprint-list em { grid-column: 2; justify-self: start; }
+}

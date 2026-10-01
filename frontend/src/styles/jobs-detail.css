@@ -92,3 +92,24 @@
 .jobs-stitch-pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .jobs-stitch-pills span { padding: 5px 8px; border: 1px solid var(--stitch-line); border-radius: 999px; color: #747474; font-size: 9px; }
 .jobs-card-link { color: #eeeeee; font-size: 10px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .jobs-stitch-stats span,
+  .jobs-stitch-stats em,
+  .jobs-stitch-kicker,
+  .jobs-stitch-family,
+  .jobs-stitch-level,
+  .jobs-card-score span,
+  .jobs-card-score strong small,
+  .jobs-card-metrics,
+  .jobs-card-metrics b,
+  .jobs-stitch-pills span,
+  .jobs-card-link { font-size: 12px; }
+  .jobs-card-main > p,
+  .jobs-stitch-section-head p,
+  .jobs-stitch-note { font-size: 14px; line-height: 1.7; }
+  .jobs-stats-action a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; flex: none; }
+  .jobs-stitch-search { height: 44px; }
+  .jobs-stitch-search input { min-width: 0; height: 44px; font-size: 16px; }
+  .jobs-stitch-card-top { flex-wrap: wrap; }
+}

@@ -90,3 +90,50 @@
 .profile-stitch .ghost-button,
 .matches-stitch .ghost-button,
 .paths-stitch .ghost-button { color: #c4c4c4; border-color: var(--stitch-line-strong); background: rgba(255, 255, 255, .025); }
+
+@media (max-width: 900px) {
+  .profile-flow { padding-bottom: 24px; }
+  .profile-stitch .empty-state h3 { color: var(--stitch-text); }
+  .profile-action-dock { position: static; width: auto; margin: 16px 16px 0; padding: 18px; transform: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; backdrop-filter: none; box-shadow: none; }
+  .profile-action-dock > div { grid-column: 1 / -1; margin: 0; min-width: 0; }
+  .profile-action-dock > div b { font-size: 14px; }
+  .profile-action-dock > div small { font-size: 12px; line-height: 1.6; }
+  .profile-action-dock button { min-height: 44px; margin: 0; padding: 10px; font-size: 14px; white-space: normal; justify-content: center; }
+  .profile-meta-line,
+  .profile-step > header p,
+  .profile-step > header span,
+  .profile-stitch-progress span,
+  .profile-upload-card small,
+  .profile-upload-card i,
+  .profile-name-field small,
+  .profile-resume-status,
+  .profile-stitch .tag-empty,
+  .profile-stitch .editable-tag small,
+  .profile-stitch .editor-title .mono { font-size: 12px; }
+  .profile-stitch-progress b { width: 22px; height: 22px; font-size: 12px; }
+  .profile-step-copy,
+  .profile-source-hint,
+  .profile-name-field,
+  .profile-basic-grid label,
+  .profile-stitch .editor-title,
+  .profile-upload-card strong,
+  .profile-evidence { font-size: 14px; line-height: 1.7; }
+  .profile-source-actions { max-width: 100%; width: fit-content; }
+  .profile-source-actions button { min-width: 44px; min-height: 44px; padding: 8px 10px; font-size: 14px; }
+  .profile-basic-grid :is(input, select),
+  .profile-target-select select,
+  .profile-name-field input,
+  .profile-stitch .tag-input input,
+  .profile-stitch .tag-row-edit input { min-width: 0; min-height: 44px; font-size: 16px; }
+  .profile-basic-grid textarea { font-size: 16px; }
+  .profile-target-select { max-width: 100%; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .profile-target-select select { max-width: 100%; padding: 0 12px; border: 1px solid var(--stitch-line); border-radius: 10px; color: #ededed; background: var(--stitch-surface); }
+  .profile-stitch .tag-input button,
+  .profile-stitch .editable-tag button,
+  .profile-stitch .tag-row-edit button { min-width: 44px; min-height: 44px; flex: none; font-size: 14px; }
+  .profile-stitch .editable-tag { max-width: 100%; font-size: 14px; flex-wrap: wrap; }
+  .profile-stitch .tag-label { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .profile-stitch .tag-row-edit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .profile-stitch .tag-row-edit input { grid-column: 1 / -1; width: 100%; padding: 10px; border: 1px solid var(--stitch-line); border-radius: 10px; color: #ededed; background: var(--stitch-surface); }
+  .profile-stitch .tag-row-edit button { border: 1px solid var(--stitch-line); border-radius: 8px; color: #d5d5d5; background: var(--stitch-surface); }
+}
