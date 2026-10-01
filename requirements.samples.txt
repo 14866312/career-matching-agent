@@ -1,0 +1,4 @@
+# Only required to rebuild the fictional PDF sample; not needed to run the app.
+charset-normalizer==3.5.2
+pillow==12.3.0
+reportlab==5.0.1

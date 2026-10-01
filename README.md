@@ -146,7 +146,11 @@ npm.cmd --prefix frontend test                                 # 前端测试
 npm.cmd --prefix frontend run lint                             # 前端代码检查
 npm.cmd --prefix frontend run build                            # 类型检查并构建前端
 .venv/Scripts/python.exe scripts/build_data.py                 # 从赛题表格重新生成岗位数据
+.venv/Scripts/python.exe -m pip install -r requirements.samples.txt # 仅重建 PDF 虚构样例时安装
+.venv/Scripts/python.exe scripts/make_samples.py --include-pdf # 有意重建 TXT、DOCX、PDF、学生 JSON
 ~~~
+
+样例重建命令会改写 samples 中已提交的虚构文件，仅在更新样例时运行；日常功能改动不要执行。PDF 工具依赖与应用运行依赖分开，不影响正常安装或启动。
 
 改了前端代码后，要重新 build 并重启 `./start.ps1` 才能看到效果。开发时也可以运行 `npm.cmd --prefix frontend run dev`，在 http://localhost:5173 热更新预览（需要后端同时在 8000 端口运行）。
 
