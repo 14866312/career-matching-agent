@@ -2,7 +2,7 @@ fastapi==0.138.2
 uvicorn==0.41.0
 pydantic==2.13.4
 httpx==0.28.1
-python-multipart==0.0.22
+python-multipart==0.0.31
 python-dotenv==1.2.2
 pandas==3.0.5
 xlrd==2.0.2
