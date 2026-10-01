@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiPost, errMessage } from '../api';
 import type { Filters, MatchItem, MatchResult, ProfileFocusTarget, Recommendation, ReportResp, StudentProfile } from '../types';
 import { fmtNum, fmtPct, todayStamp } from '../format';
@@ -83,8 +83,21 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   const revRef = useRef(studentRev);
   const studentRef = useRef(student);
   const [recommendationRequests] = useState(createLatestRequest);
+  const recommendationControllerRef = useRef<AbortController | null>(null);
   revRef.current = studentRev;
   studentRef.current = student;
+
+  const cancelActiveRecommendation = useCallback(() => {
+    const controller = recommendationControllerRef.current;
+    recommendationControllerRef.current = null;
+    controller?.abort();
+  }, []);
+
+  const invalidateRecommendations = useCallback(() => {
+    recommendationRequests.begin();
+    cancelActiveRecommendation();
+    setLoading(false);
+  }, [cancelActiveRecommendation, recommendationRequests]);
 
   const active = items[activeIndex] ?? null;
   const activeRef = useRef<Recommendation | null>(active);
@@ -117,6 +130,19 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   }, [onFreshnessChange, workflowMatch, workflowReport]);
 
   useEffect(() => {
+    invalidateRecommendations();
+  }, [invalidateRecommendations, studentRev]);
+
+  useEffect(() => {
+    if (!isActive) invalidateRecommendations();
+  }, [invalidateRecommendations, isActive]);
+
+  useEffect(() => () => {
+    recommendationRequests.begin();
+    cancelActiveRecommendation();
+  }, [cancelActiveRecommendation, recommendationRequests]);
+
+  useEffect(() => {
     // 首次进入匹配页自动计算一次；学生信息编辑造成的过期不自动重算，
     // 由失效横幅提示用户手动刷新，避免连续输入触发请求风暴。
     if (isActive && hasProfile && !loading && meta == null) {
@@ -127,14 +153,16 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
 
   async function load() {
     const requestId = recommendationRequests.begin();
+    cancelActiveRecommendation();
     const isLatestRequest = () => recommendationRequests.isLatest(requestId);
     if (!hasProfileContent(studentRef.current)) {
-      setLoading(false);
+      if (isLatestRequest()) setLoading(false);
       return;
     }
     const parsed = parseFilters(city, salaryMin, salaryMax, salaryPeriod, skillText);
     if (!parsed.ok) {
       const message = parsed.error ?? '筛选条件无效';
+      if (!isLatestRequest()) return;
       setLoading(false);
       setLoadError(null);
       setFilterError(message);
@@ -144,14 +172,16 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     setFilterError(null);
     const reqStudent = studentRef.current;
     const reqRev = revRef.current;
+    const reqFilters = parsed.filters!;
+    const reqSortBy = sortBy;
+    const reqTargetJobId = reqStudent.intention.target_job_id;
+    const controller = new AbortController();
+    recommendationControllerRef.current = controller;
     const inputChanged = () => revRef.current !== reqRev;
-    const discardChangedInput = () => {
-      showToast('输入在计算期间已修改，本次推荐已丢弃，请重新计算', 'err');
-    };
     const requestIsCurrent = () => {
-      if (!isLatestRequest()) return false;
+      if (!isLatestRequest() || controller.signal.aborted) return false;
       if (!inputChanged()) return true;
-      discardChangedInput();
+      invalidateRecommendations();
       return false;
     };
     setLoading(true);
@@ -159,15 +189,19 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     try {
       const d = await apiPost<{ items: Recommendation[]; candidate_count: number; sort_by: string; note: string }>(
         '/api/recommendations',
-        { student: reqStudent, filters: parsed.filters, sort_by: sortBy }
+        { student: reqStudent, filters: reqFilters, sort_by: reqSortBy },
+        { signal: controller.signal }
       );
       if (!requestIsCurrent()) return;
       const merged = [...d.items];
       // 目标岗位可能不在推荐前5：单独调用 /api/matches，保证目标岗位始终可查看比较。
-      const tid = reqStudent.intention.target_job_id;
-      if (tid && !merged.some(x => x.job_id === tid)) {
+      if (reqTargetJobId && !merged.some(x => x.job_id === reqTargetJobId)) {
         try {
-          const t = await apiPost<MatchResult>('/api/matches', { student: reqStudent, job_id: tid });
+          const t = await apiPost<MatchResult>(
+            '/api/matches',
+            { student: reqStudent, job_id: reqTargetJobId },
+            { signal: controller.signal }
+          );
           if (!requestIsCurrent()) return;
           merged.unshift({
             job_id: t.job_id,
@@ -186,7 +220,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       if (!requestIsCurrent()) return;
       setItems(merged);
       setActiveIndex(merged.length > 0 ? 0 : -1);
-      setMeta({ count: d.candidate_count, note: d.note, summary: filtersSummary(parsed.filters!), rev: reqRev, targetJobId: reqStudent.intention.target_job_id });
+      setMeta({ count: d.candidate_count, note: d.note, summary: filtersSummary(reqFilters), rev: reqRev, targetJobId: reqTargetJobId });
       setReport(null);
       setReportMeta(null);
       setReportError(null);
@@ -195,7 +229,10 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       setLoadError(e);
       showToast('推荐计算失败：' + errMessage(e), 'err');
     } finally {
-      if (isLatestRequest()) setLoading(false);
+      if (isLatestRequest()) {
+        if (recommendationControllerRef.current === controller) recommendationControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }
 
