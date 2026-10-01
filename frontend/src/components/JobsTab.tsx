@@ -71,7 +71,7 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
         <aside className="job-detail-aside" aria-label="岗位补充信息">
           {(job.preferred ?? []).length > 0 && (
             <div className="item-block">
-              <h4>优先项 · {job.preferred.length}<span>只作补充建议，不计入基础分</span></h4>
+              <h4>优先项 · {job.preferred.length}<span>只作补充建议，不计入基础分和增强分</span></h4>
               {job.preferred.map(r => (
                 <div className="item pending" key={r.tag_id}>＋ {r.label}{r.required_level ? <span className="mono"> · 建议等级 {r.required_level}</span> : null}</div>
               ))}
@@ -149,10 +149,10 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   return (
     <div className="jobs-stitch">
       <section className="jobs-stitch-hero">
-        <h2>精选适合你的职业岗位</h2>
+        <h2>探索职业岗位</h2>
         <div className="jobs-stitch-stats" aria-label="岗位数据概览">
           <div><span>目标岗位</span><strong className="is-text">{targetJobId ? '已选择' : '待选择'}</strong><em>{targetJobId ? '可前往简历与个人报告继续' : '从岗位详情中设为目标'}</em></div>
-          <div><span>精选岗位</span><strong>{jobs.length}<small>个</small></strong><em>来自当前岗位样本库</em></div>
+          <div><span>岗位目录</span><strong>{jobs.length}<small>个</small></strong><em>来自当前岗位样本库</em></div>
           <div><span>能力要求</span><strong>{requirementCount}<small>项</small></strong><em>技能、证书与通用素质</em></div>
           <div className="jobs-stats-action"><span>数据已完成结构化，可继续查看岗位详情</span><a href="#curated-roles">开始探索 <b>↓</b></a></div>
         </div>
@@ -161,8 +161,8 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
       <section className="jobs-stitch-section" id="curated-roles">
         <div className="jobs-stitch-section-head">
           <div>
-            <div className="jobs-stitch-kicker">CURATED POSITIONS</div>
-            <h3>推荐岗位详情</h3>
+            <div className="jobs-stitch-kicker">CAREER CATALOG</div>
+            <h3>岗位详情</h3>
             <p>点击岗位卡片，查看核心技能、证书要求、通用素质和来源样本。</p>
           </div>
           <label className="jobs-stitch-search">
@@ -172,7 +172,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
           </label>
         </div>
         <p className="jobs-stitch-note">
-          数据来自当前项目岗位样本。要求等级用于能力基线整理，不代表每条招聘广告的统一硬门槛。
+          这里展示岗位目录；个性化推荐请前往匹配报告。要求等级用于能力基线整理，不代表每条招聘广告的统一硬门槛。
         </p>
       {error != null ? (
         <ErrorBox error={error} onRetry={onRetry} retryLabel="重新加载岗位" />
@@ -198,7 +198,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
               <div className="jobs-stitch-divider" />
               <div className="jobs-card-metrics">
                 <span><b>{j.requirements.length}</b> 项核心要求</span>
-                <span><b>{j.preferred.length}</b> 项加分能力</span>
+                <span><b>{j.preferred.length}</b> 项优先项（不计分）</span>
                 <span><b>{j.version}</b> 数据版本</span>
               </div>
               <div className="jobs-card-footer">
