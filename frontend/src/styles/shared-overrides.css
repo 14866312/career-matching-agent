@@ -461,7 +461,6 @@
   .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
   .jobs-stitch .modal { width: calc(100vw - 24px); padding: 24px 18px 18px; border-radius: 16px; }
   .jobs-stitch .job-detail h3 { font-size: 25px; }
-  .jobs-stitch .job-detail-head { padding-right: 48px; }
   .jobs-stitch .job-detail-items { grid-template-columns: 1fr; }
   .jobs-stitch .job-detail-aside { padding-top: 14px; }
   .jobs-stitch .detail-actions { justify-content: stretch; }
@@ -500,6 +499,7 @@
   .jobs-stitch .item-block h4 { font-size: 14px; }
   .jobs-stitch .job-detail-items .req-item summary { min-height: 44px; font-size: 14px !important; }
   .jobs-stitch :is(.detail-meta, .req-basis, .soft-note, .req-quote, .req-quote cite, .job-detail-aside h4 span, .job-detail-samples .sample-row) { font-size: 12px; }
+  .jobs-stitch .job-detail .mono { font-size: 12px; }
   .matrix-action { min-width: 44px; min-height: 44px; font-size: 14px; }
 }
 

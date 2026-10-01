@@ -51,6 +51,12 @@ async function assertDialogLayout(dialog, label) {
   assert.ok(layout.contentWidth <= layout.width + 1, `${label}不得横向溢出`);
 }
 
+async function assertActionsAboveNavigation(page, locator, label) {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const unobstructed = await locator.evaluate(element => element.getBoundingClientRect().bottom <= document.querySelector('.exploration-nav').getBoundingClientRect().top);
+  assert.ok(unobstructed, `滚动到底后${label}不能被底部导航遮挡`);
+}
+
 (async () => {
   const root = path.resolve(__dirname, '../..');
   const indexHtml = await fs.readFile(path.join(root, 'frontend', 'index.html'), 'utf8');
@@ -187,8 +193,7 @@ async function assertDialogLayout(dialog, label) {
     await assertTextScale(dock.locator('small'), 12, '手机资料操作说明');
     assert.equal(await dock.evaluate(element => getComputedStyle(element).position), 'static', '手机资料操作条应回到内容流');
     await assertTouchTargets(dock.getByRole('button'), '资料主要操作');
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    assert.ok(await dock.evaluate(element => element.getBoundingClientRect().bottom <= document.querySelector('.exploration-nav').getBoundingClientRect().top), '滚动到底后资料操作条不能被底部导航遮挡');
+    await assertActionsAboveNavigation(page, dock, '资料操作条');
     await page.setViewportSize({ width: 1440, height: 1000 });
 
     await page.getByRole('button', { name: '新手教程', exact: true }).click();
@@ -271,8 +276,7 @@ async function assertDialogLayout(dialog, label) {
     await page.locator('.timeline-card:enabled').first().click();
     await assertTextScale(page.locator('.path-selected-detail p'), 14, '手机选中路径详情');
     await assertNarrowLayout(page, '手机成长路径');
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    assert.ok(await page.locator('.path-action-hub').evaluate(element => element.getBoundingClientRect().bottom <= document.querySelector('.exploration-nav').getBoundingClientRect().top), '滚动到底后路径保存操作不能被导航遮挡');
+    await assertActionsAboveNavigation(page, page.locator('.path-action-hub'), '路径保存操作');
 
     await page.getByRole('tab', { name: '职业探索', exact: true }).click();
     await assertNarrowLayout(page, '手机岗位目录');
@@ -297,6 +301,7 @@ async function assertDialogLayout(dialog, label) {
     await assertTouchTargets(jobDialog.locator('.req-item summary'), '岗位要求展开');
     await assertTextScale(jobDialog.locator('.detail-summary, .item-block h4'), 14, '手机岗位详情正文');
     await assertTextScale(jobDialog.locator('.detail-meta, .job-detail-aside h4 span'), 12, '手机岗位详情说明');
+    await assertTextScale(jobDialog.locator('.job-detail .mono'), 12, '手机岗位等级与样本说明');
     await jobDialog.locator('.req-item summary').first().click();
     await assertTextScale(jobDialog.locator('.req-basis, .req-quote, .req-quote cite'), 12, '手机岗位依据');
     await assertDialogLayout(jobDialog, '手机展开岗位依据');
