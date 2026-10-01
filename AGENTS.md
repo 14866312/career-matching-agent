@@ -7,6 +7,8 @@
 - `tests/` holds Python API and domain tests; `tests/browser/` contains Playwright end-to-end checks.
 - `scripts/` builds data and runs live smoke checks. `samples/` is fictional test data, `docs/` contains contracts and ADRs, and `competition/` is read-only source material.
 
+Before starting work, read `docs/工作日志.md` (current state, the user's standing decisions, GitHub workflow, open follow-ups). After significant work, add an entry at the top of its 日志 section and refresh 当前状态.
+
 Read `CONTEXT.md` and relevant files in `docs/adr/` before changing domain terminology, matching rules, privacy boundaries, or report behavior.
 
 ## Build, Test, and Development Commands
