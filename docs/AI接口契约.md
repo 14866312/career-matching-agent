@@ -126,4 +126,4 @@ AIError 对外只提供固定中文消息、code、retryable；不在消息中�
 .venv/Scripts/python.exe -m pytest tests/test_ai.py tests/test_api.py tests/test_resume.py -q
 ~~~
 
-最终回归见 docs/acceptance/后端测试.txt。AI 专项包含127项测试，覆盖总预算、重试额度、ConnectTimeout 允许一次重试、其他超时不重试、响应流关闭、外部取消、畸形 JSON、严格 Schema、原文上下文/引用边界/否定、拒绝无证据优势、拒绝模型分数覆盖、输入不变及意向/确定性事实传递。所有 AI 测试使用模拟传输和虚构配置，没有真实 API 成功含义。
+当前回归汇总见 [项目稳定性验收](acceptance/项目稳定性验收.md)。2026-10-01 执行上述命令，接口、AI 与文件解析联合回归共 169 项通过，覆盖总预算、重试额度、ConnectTimeout 允许一次重试、其他超时不重试、响应流关闭、外部取消、畸形 JSON、严格 Schema、原文上下文/引用边界/否定、拒绝无证据优势、拒绝模型分数覆盖、输入不变及意向/确定性事实传递。AI 测试使用模拟传输和虚构配置，没有真实 API 成功含义；实际供应商验收见 [真实模型验收](acceptance/真实模型验收.md)。

@@ -243,9 +243,9 @@ async function assertNoLegacyProfileControls() {
 
       await tab('我的能力');
       await resumeMode();
-      await label('简历姓名').fill('DO_NOT_PERSIST_RESUME_NAME');
       await uploadResume('虚构简历.pdf');
       assert.equal(await page.locator('.resume-review-item').count(), 0, 'resume import must merge without a review step');
+      await label('简历姓名').fill('DO_NOT_PERSIST_RESUME_NAME');
 
       await tab('职业路径');
       const storedDraft = await page.evaluate(() => JSON.parse(localStorage.getItem('career-planner.local-draft')));
@@ -258,6 +258,7 @@ async function assertNoLegacyProfileControls() {
       assert.ok(storedDraft.selectedPath.edgeId);
       assert.equal(JSON.stringify(storedDraft).includes('DO_NOT_PERSIST_RESUME_NAME'), false);
       assert.equal(JSON.stringify(storedDraft).includes('resumeCandidates'), false);
+      assert.equal(await label('简历姓名').inputValue(), 'DO_NOT_PERSIST_RESUME_NAME', 'resume name must be populated before reload');
 
       await page.reload();
       await ready();
