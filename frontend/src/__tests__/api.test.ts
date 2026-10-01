@@ -26,4 +26,28 @@ describe('API request options', () => {
 
     await expect(apiGet('/cancelled')).rejects.toBe(abortError);
   });
+
+  it.each([200, 503])('preserves AbortError while reading an HTTP %i response body', async (status) => {
+    const abortError = new DOMException('body read aborted', 'AbortError');
+    const response = new Response(new ReadableStream({
+      start(controller) {
+        controller.error(abortError);
+      }
+    }), { status });
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(response)));
+
+    await expect(apiGet('/cancelled-body')).rejects.toBe(abortError);
+  });
+
+  it('keeps the existing fallback for a successful non-JSON response', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('not JSON'))));
+
+    await expect(apiGet('/non-json')).resolves.toBeNull();
+  });
+
+  it('keeps the HTTP error fallback when an error response is not JSON', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('not JSON', { status: 503 }))));
+
+    await expect(apiGet('/unavailable')).rejects.toMatchObject({ code: 'HTTP_503', retryable: true });
+  });
 });
