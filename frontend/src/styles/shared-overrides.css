@@ -425,99 +425,7 @@
 
 /* Native menus may open on a light platform surface; keep their labels visible. */
 
-/* Flow guidance and resume review. */
-.workflow-guide {
-  position: fixed;
-  right: clamp(16px, 3vw, 42px);
-  bottom: 24px;
-  z-index: 35;
-  width: min(318px, calc(100vw - 32px));
-  margin: 0;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 18px;
-  background: rgba(16, 16, 16, .9);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(255, 255, 255, .025);
-  backdrop-filter: blur(20px) saturate(135%);
-  transition: width .22s ease, padding .22s ease, border-radius .22s ease, background .22s ease;
-}
-
-.workflow-guide.is-collapsed {
-  width: auto;
-  padding: 7px;
-  border-radius: 16px;
-}
-
-.workflow-guide ol {
-  display: grid;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.workflow-guide.is-collapsed ol { display: flex; gap: 5px; }
-.workflow-guide li { margin: 0; }
-
-.workflow-guide-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 43px;
-  padding: 6px 9px;
-  border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 12px;
-  color: #b4b4b4;
-  background: rgba(255, 255, 255, .035);
-  text-align: left;
-  cursor: pointer;
-  transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease;
-}
-
-.workflow-guide.is-collapsed .workflow-guide-step {
-  display: grid;
-  place-items: center;
-  width: 35px;
-  height: 35px;
-  min-height: 35px;
-  padding: 0;
-  border-radius: 50%;
-}
-
-.workflow-guide-step:hover { color: #ffffff; border-color: rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .1); transform: translateY(-1px); }
-.workflow-guide-step .workflow-step-number { display: grid; flex: none; place-items: center; width: 27px; height: 27px; border: 1px solid rgba(255, 255, 255, .18); border-radius: 50%; color: #cccccc; font: 600 12px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-.workflow-guide.is-collapsed .workflow-step-number { width: auto; height: auto; border: 0; color: inherit; font-size: 13px; }
-.workflow-guide li.is-done .workflow-guide-step { border-color: rgba(182, 182, 182, .35); }
-.workflow-guide li.is-done .workflow-step-number,
-.workflow-guide li.is-stale .workflow-guide-step { border-color: rgba(181, 181, 181, .58); }
-.workflow-guide li.is-stale .workflow-step-number,
-.workflow-guide-step[aria-current="step"] { color: #111111; border-color: #f5f5f5; background: #f5f5f5; box-shadow: 0 0 0 3px rgba(245, 245, 245, .1); }
-.workflow-guide-step[aria-current="step"] .workflow-step-number { color: #111111; border-color: rgba(17, 17, 17, .24); }
-
-.workflow-guide-next {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 42px;
-  margin-top: 10px;
-  padding: 7px 9px;
-  border: 1px solid rgba(235, 235, 235, .32);
-  border-radius: 12px;
-  color: #f5f5f5;
-  background: rgba(235, 235, 235, .08);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color .18s ease, background .18s ease, transform .18s ease;
-}
-
-.workflow-guide-next:hover { border-color: rgba(235, 235, 235, .7); background: rgba(235, 235, 235, .14); transform: translateY(-1px); }
-.workflow-guide-next-mark { color: #ebebeb; font: 600 17px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-.workflow-guide-next-copy { display: grid; gap: 2px; min-width: 0; }
-.workflow-guide-next-copy small { color: #b4b4b4; font-size: 9px; line-height: 1; }
-.workflow-guide-next-copy b { overflow: hidden; color: #ffffff; font-size: 11px; font-weight: 600; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-
+/* Resume review and report navigation. */
 .report-matrix,
 .report-advice { scroll-margin-top: 24px; }
 
@@ -531,16 +439,10 @@
 }
 
 @media (max-width: 760px) {
-  .workflow-guide { right: 12px; bottom: 78px; }
-  .workflow-guide.is-collapsed { right: 12px; padding: 7px; }
-  .workflow-guide ol { gap: 5px; }
-  .workflow-guide.is-collapsed .workflow-guide-step { width: 34px; height: 34px; min-height: 34px; }
   .local-draft-settings-panel { padding: 28px 20px; }
 }
 
 @media (max-width: 520px) {
-  .workflow-guide { right: 10px; bottom: 76px; width: min(318px, calc(100vw - 20px)); }
-  .workflow-guide.is-collapsed { width: auto; }
   .path-save-actions { width: 100%; }
   .path-save-actions button { flex: 1 1 100%; white-space: normal; }
 }

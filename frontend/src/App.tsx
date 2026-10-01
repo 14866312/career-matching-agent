@@ -118,7 +118,7 @@ export default function App() {
               onClick={() => navigateWorkflowStep(index)}
             >
               <span className="workflow-step-number" aria-hidden="true">{index + 1}</span>
-              <span className="sr-only">{item.label}：{item.state}</span>
+              <span className="workflow-guide-step-copy"><strong>{item.label}</strong><small>{item.state}</small></span>
             </button>
           </li>)}
         </ol>
