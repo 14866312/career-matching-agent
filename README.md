@@ -1,6 +1,12 @@
 # 大学生职业规划智能体
 
+[![CI](https://github.com/14866312/career-matching-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/14866312/career-matching-agent/actions/workflows/ci.yml)
+
 本地运行的职业规划演示应用：岗位与路径 → 导入简历或手动填写资料 → 按需修改 → 匹配和推荐 → 职业建议与 TXT 导出。
+
+![岗位浏览界面](docs/acceptance/桌面-岗位.png)
+
+![匹配报告界面](docs/acceptance/桌面-简历报告.png)
 
 从安装启动到逐步完成岗位探索、资料整理、匹配和报告导出的操作指南见 [docs/项目使用全过程.md](docs/项目使用全过程.md)。
 
@@ -9,7 +15,8 @@
 需要 Python 3.12、Node.js 20+ 和 npm。首次安装需要网络；前端与 Python 的完整依赖分别锁在 frontend/package-lock.json 和 requirements.txt。
 
 ~~~powershell
-cd C:/Users/Administrator/Desktop/智能体
+git clone https://github.com/14866312/career-matching-agent.git
+cd career-matching-agent
 ./install.ps1
 Copy-Item .env.example .env
 # 用本机编辑器填写 .env，切勿把密钥发送到聊天或提交到版本库。
@@ -68,4 +75,8 @@ npm.cmd --prefix tests/browser test
 
 独立干净Python安装可用 ./install.ps1 -VenvPath .venv-acceptance -SkipFrontend，随后用相同 -VenvPath 启动。最终验收状态和已知限制以 docs/acceptance/后端测试.txt 为准；mock自动化不替代 P2/P5 真实调用门槛。
 
-项目结构：backend/app 为服务与业务逻辑，backend/data 为生成数据，frontend 为界面，scripts 为数据和验收入口，tests 为测试，samples 为虚构示例，competition 为只读原始赛题材料。docs 存放契约、数据字典、审定记录和操作指南；docs/acceptance 为验收产物，docs/learning 为项目教学材料，docs/archive 为历史过程记录；.scratch 为按功能划分的需求与 issue。
+项目结构：backend/app 为服务与业务逻辑，backend/data 为生成数据，frontend 为界面，scripts 为数据和验收入口，tests 为测试，samples 为虚构示例，competition 为只读原始赛题材料。docs 存放契约、数据字典、审定记录和操作指南；docs/acceptance 为验收产物，docs/archive 为历史过程记录。需求、issue、设计参考与学习笔记保存在本地的 本地资料/ 目录，已被 .gitignore 忽略，不随仓库发布。
+
+## 许可证
+
+代码以 [MIT License](LICENSE) 发布。competition/ 下的赛题材料版权归原出题方所有，不在 MIT 授权范围内；samples/ 为虚构数据。
