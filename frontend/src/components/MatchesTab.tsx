@@ -340,12 +340,11 @@ function fallbackCopy(text: string): boolean {
   ta.style.opacity = '0';
   document.body.appendChild(ta);
   ta.select();
-  let ok = false;
   try {
-    ok = document.execCommand('copy');
+    return document.execCommand('copy');
   } catch {
-    ok = false;
+    return false;
+  } finally {
+    ta.remove();
   }
-  ta.remove();
-  return ok;
 }

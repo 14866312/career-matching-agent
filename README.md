@@ -32,7 +32,7 @@
 先装好这两样东西：
 
 - [Python 3.12](https://www.python.org/downloads/)
-- [Node.js 20 或更高版本](https://nodejs.org/)
+- [Node.js 22.12.0 或更高版本](https://nodejs.org/)
 
 然后打开 PowerShell，依次运行：
 
