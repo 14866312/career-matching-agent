@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'docs/acceptance');
+const out = process.env.E2E_OUTPUT_DIR
+  ? path.resolve(process.env.E2E_OUTPUT_DIR)
+  : path.join(root, 'docs/acceptance');
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 const BOM = String.fromCharCode(0xFEFF);
 const stripBom = value => value.startsWith(BOM) ? value.slice(BOM.length) : value;
@@ -104,12 +106,22 @@ async function checkExport(result, filename) {
   assert.equal(stripBom(await fs.readFile(file, 'utf8')), result.export_text, filename + ' differs from the server report');
 }
 
-async function delayRoute(url) {
+async function delayRoute(url, { firstOnly = false, resume = route => route.continue() } = {}) {
   let signal, release, finish;
+  let intercepted = false;
   const started = new Promise(resolve => signal = resolve);
   const gate = new Promise(resolve => release = resolve);
   const done = new Promise(resolve => finish = resolve);
-  const handler = async route => { signal(); await gate; try { await route.continue(); } finally { finish(); } };
+  const handler = async route => {
+    if (firstOnly && intercepted) {
+      await route.continue();
+      return;
+    }
+    intercepted = true;
+    signal();
+    await gate;
+    try { await resume(route); } finally { finish(); }
+  };
   await page.route('**' + url, handler);
   return { started, release: async () => { release(); await done; await page.unroute('**' + url, handler); } };
 }
@@ -433,6 +445,121 @@ async function assertNoLegacyProfileControls() {
     await tab('匹配与建议');
     await until(async () => await page.getByText('正在计算推荐…', { exact: true }).count() === 0, 'recommendations request never finished');
     assert.equal(await reportButton().isDisabled(), true, 'stale recommendation response must not enable report generation');
+  });
+
+  await step('The latest recommendation filter wins when responses arrive out of order', async () => {
+    await clearDraft();
+    await tab('我的能力');
+    await manualMode();
+    await label('专业').fill('软件工程');
+    await loadRecommendations();
+    await openFilterPanel();
+
+    await setFilters({ city: '不存在的测试城市' });
+    const delayed = await delayRoute('/api/recommendations', { firstOnly: true });
+    const firstResponse = page.waitForResponse(r =>
+      r.url().endsWith('/api/recommendations') && r.request().method() === 'POST'
+    );
+    await button('应用筛选').click();
+    await delayed.started;
+
+    await setFilters({ city: '' });
+    const latest = await responseAfter('/api/recommendations', () => button('应用筛选').click());
+    assert.equal(latest.candidate_count, 6);
+    await until(async () => await page.locator('.alternative-grid > button').count() === 5,
+      'latest recommendation results were not displayed');
+    assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '未设置筛选条件');
+
+    await delayed.release();
+    assert.equal((await firstResponse).status(), 200);
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('.alternative-grid > button').count(), 5,
+      'an older response replaced the latest recommendations');
+    assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '未设置筛选条件',
+      'an older response replaced the latest filter summary');
+  });
+
+  await step('Invalid filters and late errors cannot revive an older recommendation request', async () => {
+    await openFilterPanel();
+    await setFilters({ city: '不存在的测试城市' });
+    const delayed = await delayRoute('/api/recommendations', { firstOnly: true });
+    await button('应用筛选').click();
+    await delayed.started;
+
+    await setFilters({ city: '', min: '-1' });
+    await button('应用筛选').click();
+    assert.match(await page.locator('.error-box').first().innerText(), /薪资下限/);
+    await delayed.release();
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('.alternative-grid > button').count(), 5,
+      'a request invalidated by bad filters replaced the current recommendations');
+    assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '未设置筛选条件');
+
+    await setFilters({ min: '', city: '不存在的测试城市' });
+    const delayedError = await delayRoute('/api/recommendations', {
+      firstOnly: true,
+      resume: route => route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: { code: 'LATE_ERROR', message: '旧请求错误', retryable: true, request_id: 'old' } })
+      })
+    });
+    await button('应用筛选').click();
+    await delayedError.started;
+    await setFilters({ city: '' });
+    await responseAfter('/api/recommendations', () => button('应用筛选').click());
+    await delayedError.release();
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('.alternative-grid > button').count(), 5);
+    assert.equal(await page.getByText('旧请求错误', { exact: false }).count(), 0,
+      'a late error from an older request became visible');
+
+    const visibleError = route => route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'CURRENT_ERROR', message: '当前请求错误', retryable: true, request_id: 'current' } })
+    });
+    await page.route('**/api/recommendations', visibleError, { times: 1 });
+    await button('应用筛选').click();
+    await until(async () => await page.getByText('当前请求错误', { exact: false }).count() > 0,
+      'current recommendation error was not shown');
+    await setFilters({ min: '-1' });
+    await button('应用筛选').click();
+    assert.match(await page.locator('.error-box').first().innerText(), /薪资下限/);
+    assert.equal(await page.getByText('当前请求错误', { exact: false }).count(), 0,
+      'invalid filters did not replace the previous request error');
+    assert.equal(await page.locator('.alternative-grid > button').count(), 5,
+      'invalid filters hid the current recommendations');
+  });
+
+  await step('A stale target-job supplement cannot replace the latest recommendations', async () => {
+    await clearDraft();
+    await tab('我的能力');
+    await manualMode();
+    await label('专业').fill('软件工程');
+    await targetJob().selectOption('testing');
+
+    const delayedTarget = await delayRoute('/api/matches', { firstOnly: true });
+    const firstRecommendation = page.waitForResponse(r =>
+      r.url().endsWith('/api/recommendations') && r.request().method() === 'POST'
+    );
+    await tab('匹配与建议');
+    assert.equal((await firstRecommendation).status(), 200);
+    await delayedTarget.started;
+
+    await openFilterPanel();
+    await setFilters({ city: '不存在的测试城市' });
+    const latest = await responseAfter('/api/recommendations', () => button('应用筛选').click());
+    assert.equal(latest.candidate_count, 0);
+    await until(async () => await page.locator('.alternative-grid > button').count() === 1,
+      'latest standalone target result was not displayed');
+    assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '城市 不存在的测试城市');
+
+    await delayedTarget.release();
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('.alternative-grid > button').count(), 1,
+      'an older target supplement replaced the latest filtered result');
+    assert.equal(await page.locator('.match-filter-panel summary span').innerText(), '城市 不存在的测试城市');
   });
 
   await step('PDF, DOCX, and TXT resumes merge automatically while preserving manual values', async () => {
