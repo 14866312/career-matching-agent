@@ -27,6 +27,9 @@ function formatViolations(violations) {
 }
 
 async function scan(page, state) {
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    .map(animation => animation.finished.catch(() => {}))));
   const result = await new AxeBuilder({ page }).analyze();
   const blocking = result.violations.filter(violation => blockingImpacts.has(violation.impact));
   assert.deepEqual(blocking, [], state + ' 存在严重无障碍问题：\n' + formatViolations(blocking));
@@ -117,6 +120,22 @@ async function closeOnboarding(page) {
     await refreshStale.waitFor();
     await scan(page, '过期匹配与刷新');
     await refreshStale.click();
+    await page.getByText('匹配结果最新', { exact: true }).waitFor();
+
+    await page.route('**/api/recommendations', route => route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { code: 'CURRENT_ERROR', message: '模拟服务繁忙，请稍后重试。', retryable: true, request_id: 'a11y-only' }
+      })
+    }), { times: 1 });
+    await page.getByRole('button', { name: '刷新匹配结果', exact: true }).click();
+    const retry = page.getByRole('button', { name: '重新计算推荐', exact: true });
+    await retry.waitFor();
+    await retry.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    await scan(page, '推荐错误与重试');
+    await retry.click();
     await page.getByText('匹配结果最新', { exact: true }).waitFor();
 
     await context.close();

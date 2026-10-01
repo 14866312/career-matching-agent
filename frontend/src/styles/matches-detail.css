@@ -100,12 +100,12 @@
 .match-stale-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .match-stale-action p { margin: 0; }
 .match-stale-action button { flex: none; min-height: 44px; }
-.matches-stitch .match-stale-action button,
-.matches-stitch .error-box .ghost-button { color: #222222; border-color: #8f8f8f; background: transparent; font-size: 14px; }
-.matches-stitch .match-stale-action button:hover,
-.matches-stitch .error-box .ghost-button:hover { background: #dadada; }
-.matches-stitch .match-stale-action button:focus-visible,
-.matches-stitch .error-box .ghost-button:focus-visible { outline-color: #222222; }
+.matches-stitch .match-stale-action button { color: #222222; border-color: #8f8f8f; background: transparent; font-size: 14px; }
+.matches-stitch .match-stale-action button:hover { background: #dadada; }
+.matches-stitch .match-stale-action button:focus-visible { outline-color: #222222; }
+.matches-stitch .error-box .ghost-button { color: #ebebeb; border-color: #a0a0a0; background: transparent; font-size: 14px; }
+.matches-stitch .error-box .ghost-button:hover { background: #333333; }
+.matches-stitch .error-box .ghost-button:focus-visible { outline-color: #ebebeb; }
 .match-report-flow .report-section[tabindex]:focus-visible { outline: 2px solid #dedede; outline-offset: 6px; }
 .match-loading > p, .match-load-error > p { color: #cacaca; font-size: 14px; line-height: 1.7; }
 
