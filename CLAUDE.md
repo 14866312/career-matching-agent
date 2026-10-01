@@ -38,7 +38,7 @@ npm.cmd --prefix frontend run lint                         # TypeScript/React �
 
 后端 `backend/app/`：
 - `main.py`：全部 `/api/*` 路由；中间件统一限制 POST 体积（简历 5MB+余量，其他 1MB）、注入 `X-Request-ID`、`Cache-Control: no-store`；所有错误都返回 `{error: {code, message, retryable, request_id}}` 结构。存在 `frontend/dist` 时挂载为静态站点。
-- `matching.py`：核心业务，纯确定性计算，大模型不参与评分。基础分 / 增强分（matching-2.2：资料已提及且 level>0 即计满足，精确贡献为 1，不按熟练度折算）、资料已提及 / 资料未提及划分、岗位要求等级记录（了解/熟悉/熟练 → 1/2/3，缺省 2，仅展示）、关联技能上限 0.25、推荐（最多 5 个，排序同分按岗位 ID）、城市与薪资筛选（月薪/日薪不换算）。`ALGORITHM_VERSION` 等版本号参与结果指纹，前端据此判断报告是否过期；改变评分口径时要同步升级版本号与测试。README「评分与边界」一节是规则的权威描述。
+- `matching.py`：核心业务，纯确定性计算，大模型不参与评分。基础分 / 增强分（matching-2.2：资料已提及且 level>0 即计满足，精确贡献为 1，不按熟练度折算）、资料已提及 / 资料未提及划分、岗位要求等级记录（了解/熟悉/熟练 → 1/2/3，缺省 2，仅展示）、关联技能上限 0.25、推荐（最多 5 个，排序同分按岗位 ID）、城市与薪资筛选（月薪/日薪不换算）。`ALGORITHM_VERSION` 等版本号参与结果指纹，前端据此判断报告是否过期；改变评分口径时要同步升级版本号与测试。README「给开发者 → 完整评分规则」是规则的权威描述；「匹配度是怎么算的」是给普通读者的通俗版，改口径时两处都要同步。
 - `llm.py`：兼容 Chat Completions / OpenAI Responses 的模型调用（`call_json` 是唯一出口），含 45 秒总时限与一次重试、pydantic 输出校验、简历证据窗口校验与提示注入过滤。`POST /api/llm/config` 只修改进程内 `os.environ`，不写回 `.env`。
 - `resume.py`：PDF/DOCX/TXT 文本提取与大小、字符数限制（无 OCR，不静默截断）。
 - `data.py`：读取生成数据 `backend/data/career-data.json`。该文件由 `scripts/build_data.py` 从只读的 `competition/岗位样例数据.xls` 生成，不要手改；`docs/职业数据审核.md` 也由脚本同步生成。数据口径与证据规则见 `docs/数据字典.md`。
