@@ -370,6 +370,16 @@ export default function App() {
   const continueWorkflow = useCallback(() => {
     navigateWorkflowStep(nextWorkflowStep);
   }, [navigateWorkflowStep, nextWorkflowStep]);
+  const handleSourceModeRequestHandled = useCallback(() => {
+    setProfileSourceModeRequest(null);
+  }, []);
+  const handleProfileFocusHandled = useCallback(() => {
+    setProfileFocus(null);
+  }, []);
+  const handleFreshnessChange = useCallback((match: MatchFreshness, report: ReportFreshness) => {
+    setMatchFreshness(match);
+    setReportFreshness(report);
+  }, []);
   return (
     <div className="exploration-shell">
       <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
@@ -461,9 +471,9 @@ export default function App() {
             onGoMatches={() => navigateTo('matches')}
             onSetTargetJob={setTargetJob}
             sourceModeRequest={profileSourceModeRequest}
-            onSourceModeRequestHandled={() => setProfileSourceModeRequest(null)}
+            onSourceModeRequestHandled={handleSourceModeRequestHandled}
             focusTarget={profileFocus}
-            onFocusHandled={() => setProfileFocus(null)}
+            onFocusHandled={handleProfileFocusHandled}
           />
         </div>
         <div id="page-matches" className={'panel' + (tab === 'matches' ? ' active' : '')} role="tabpanel" aria-label="匹配报告">
@@ -477,7 +487,7 @@ export default function App() {
             showToast={showToast}
             onGoProfile={() => navigateTo('profile')}
             onGoProfileFocus={target => { setProfileFocus({ ...target, token: Date.now() }); navigateTo('profile'); }}
-            onFreshnessChange={(match, report) => { setMatchFreshness(match); setReportFreshness(report); }}
+            onFreshnessChange={handleFreshnessChange}
           />
         </div>
         <div id="page-paths" className={'panel' + (tab === 'paths' ? ' active' : '')} role="tabpanel" aria-label="成长路径">
