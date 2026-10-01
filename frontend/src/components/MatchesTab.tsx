@@ -81,6 +81,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   // 防止旧响应覆盖请求期间的新输入或新选择。
   const revRef = useRef(studentRev);
   const studentRef = useRef(student);
+  const recommendationRequestRef = useRef(0);
   revRef.current = studentRev;
   studentRef.current = student;
 
@@ -124,15 +125,25 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   }, [isActive, hasProfile]);
 
   async function load() {
-    if (!hasProfileContent(studentRef.current)) return;
+    const requestId = ++recommendationRequestRef.current;
+    const isLatestRequest = () => recommendationRequestRef.current === requestId;
+    if (!hasProfileContent(studentRef.current)) {
+      setLoading(false);
+      return;
+    }
     const parsed = parseFilters(city, salaryMin, salaryMax, salaryPeriod, skillText);
     if (!parsed.ok) {
+      setLoading(false);
       setFilterError(parsed.error ?? '筛选条件无效');
       return;
     }
     setFilterError(null);
     const reqStudent = studentRef.current;
     const reqRev = revRef.current;
+    const inputChanged = () => revRef.current !== reqRev;
+    const discardChangedInput = () => {
+      showToast('输入在计算期间已修改，本次推荐已丢弃，请重新计算', 'err');
+    };
     setLoading(true);
     setLoadError(null);
     try {
@@ -140,8 +151,9 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
         '/api/recommendations',
         { student: reqStudent, filters: parsed.filters, sort_by: sortBy }
       );
-      if (revRef.current !== reqRev) {
-        showToast('输入在计算期间已修改，本次推荐已丢弃，请重新计算', 'err');
+      if (!isLatestRequest()) return;
+      if (inputChanged()) {
+        discardChangedInput();
         return;
       }
       const merged = [...d.items];
@@ -150,8 +162,9 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       if (tid && !merged.some(x => x.job_id === tid)) {
         try {
           const t = await apiPost<MatchResult>('/api/matches', { student: reqStudent, job_id: tid });
-          if (revRef.current !== reqRev) {
-            showToast('输入在计算期间已修改，本次推荐已丢弃，请重新计算', 'err');
+          if (!isLatestRequest()) return;
+          if (inputChanged()) {
+            discardChangedInput();
             return;
           }
           merged.unshift({
@@ -164,8 +177,18 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
             standalone: true
           });
         } catch (targetErr) {
+          if (!isLatestRequest()) return;
+          if (inputChanged()) {
+            discardChangedInput();
+            return;
+          }
           showToast('目标岗位单独计算失败：' + errMessage(targetErr), 'err');
         }
+      }
+      if (!isLatestRequest()) return;
+      if (inputChanged()) {
+        discardChangedInput();
+        return;
       }
       setItems(merged);
       setActiveIndex(merged.length > 0 ? 0 : -1);
@@ -174,10 +197,15 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       setReportMeta(null);
       setReportError(null);
     } catch (e) {
+      if (!isLatestRequest()) return;
+      if (inputChanged()) {
+        discardChangedInput();
+        return;
+      }
       setLoadError(e);
       showToast('推荐计算失败：' + errMessage(e), 'err');
     } finally {
-      setLoading(false);
+      if (isLatestRequest()) setLoading(false);
     }
   }
 
