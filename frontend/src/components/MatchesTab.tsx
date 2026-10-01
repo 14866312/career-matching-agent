@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { apiPost, errMessage } from '../api';
 import type { Filters, MatchItem, MatchResult, ProfileFocusTarget, Recommendation, ReportResp, StudentProfile } from '../types';
 import { fmtNum, fmtPct, todayStamp } from '../format';
@@ -77,6 +77,8 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<unknown>(null);
   const [copyState, setCopyState] = useState('');
+  const filterPanelRef = useRef<HTMLDetailsElement>(null);
+  const cityInputRef = useRef<HTMLInputElement>(null);
 
   // 最新值引用：异步请求返回时用 rev / active 判断期间是否发生变化，
   // 防止旧响应覆盖请求期间的新输入或新选择。
@@ -124,6 +126,20 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
       : '当前报告对应的岗位或输入已变化；请刷新匹配结果并生成新建议。';
   const workflowMatch = meta == null ? 'not_run' : resultsStale ? 'stale' : 'current';
   const workflowReport = !report ? 'not_generated' : reportStale ? 'stale' : 'current';
+  const resultStatus = loading ? '正在更新' : !hasProfile ? '待填写资料' : resultsStale ? '结果已过期' : loadError != null ? '本次计算失败' : m ? '匹配结果最新' : '暂无匹配结果';
+  const nextAction = loading
+    ? '正在按当前资料计算。你仍可调整筛选，最后一次提交决定结果。'
+    : !hasProfile
+      ? '当前资料为空，请先补充资料，再重新匹配。'
+      : resultsStale
+        ? '先更新匹配结果，再生成岗位建议；下方保留的是旧结果。'
+        : loadError != null
+          ? '本次计算未完成。请重试，或检查筛选条件后重新应用。'
+          : !m
+            ? '放宽城市、薪资或技能条件，再应用筛选。'
+            : report && !reportStale
+              ? '岗位建议已生成，可查看学习步骤、复制或导出报告。'
+              : '查看岗位要求，按实际情况补充未提及项，或生成当前岗位建议。';
 
   useEffect(() => {
     onFreshnessChange(workflowMatch, workflowReport);
@@ -338,6 +354,18 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
     onGoProfileFocus({ dimension: item.dimension, tag_id: item.tag_id, label: item.label, reason: 'not_provided' });
   }
 
+  function openFilters() {
+    if (filterPanelRef.current) filterPanelRef.current.open = true;
+    cityInputRef.current?.focus();
+  }
+
+  function scrollToReportSection(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    const section = document.getElementById(event.currentTarget.hash.slice(1));
+    section?.focus({ preventScroll: true });
+    section?.scrollIntoView({ block: 'start' });
+  }
+
   if (!hasProfile && meta == null && !loading && loadError == null) {
     return (
       <div className="matches-stitch matches-stitch-empty">
@@ -349,21 +377,29 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
 
   return (
     <div className="matches-stitch">
-      <section className="matches-stitch-hero">
-        <h2>{m?.basic == null ? '—' : fmtNum(m.basic)}<small>/ 100</small></h2>
-        <h3>{m?.job_name || '正在计算目标岗位'}</h3>
+      <section className="matches-stitch-hero matches-overview" aria-label="岗位匹配概览">
+        <div className="match-overview-heading">
+          <div><p className="match-overview-kicker">岗位匹配概览</p><h2>{m?.job_name || (loading ? '正在计算岗位匹配' : '尚无可查看的岗位')}</h2></div>
+          <span className={'match-result-status' + (resultsStale ? ' is-stale' : '')}>{resultStatus}</span>
+        </div>
+        <dl className="match-overview-stats">
+          <div><dt>基础匹配分</dt><dd><strong>{m?.basic == null ? '—' : fmtNum(m.basic)}</strong><small> / 100</small><p>必需要求中，当前资料精确提及的比例。</p></dd></div>
+          <div><dt>增强匹配分</dt><dd><strong>{m?.enhanced == null ? '—' : fmtNum(m.enhanced)}</strong><small> / 100</small><p>计入相关技能的有限贡献，优先项不计分。</p></dd></div>
+          <div><dt>资料未提及</dt><dd><strong>{m ? m.pending_items.length : '—'}</strong><small>{m ? ' 项 / 共 ' + m.required + ' 项' : ' 项'}</small><p>未提及不代表不具备，可按实际情况补充。</p></dd></div>
+        </dl>
+        <p className="match-next-action"><b>下一步</b>{nextAction}</p>
         <div className="matches-hero-actions"><button className="primary-button" type="button" onClick={generateReport} disabled={reportDisabled}>{reportLoading ? '正在生成…' : '生成岗位建议'}</button><button className="ghost-button" type="button" onClick={load} disabled={loading}>刷新匹配结果</button></div>
       </section>
       <div className="match-report-flow">
-        <details className="match-filter-panel"><summary>调整岗位筛选条件 <span>{meta?.summary || '全部岗位'}</span></summary><div className="matches-stitch-filter"><label>城市<input value={city} maxLength={80} placeholder="不限" onChange={e => setCity(e.target.value)} /></label><label>薪资下限<input value={salaryMin} type="number" min={0} step={100} placeholder="如 5000" onChange={e => setSalaryMin(e.target.value)} /></label><label>薪资上限<input value={salaryMax} type="number" min={0} step={100} placeholder="如 12000" onChange={e => setSalaryMax(e.target.value)} /></label><label>计薪周期<select value={salaryPeriod} onChange={e => setSalaryPeriod(e.target.value as Filters['salary_period'])}><option value="month">按月</option><option value="day">按天</option></select></label><label>必须包含技能<input value={skillText} maxLength={200} placeholder="Java, MySQL" onChange={e => setSkillText(e.target.value)} /></label><label>排序<select value={sortBy} onChange={e => setSortBy(e.target.value as 'basic' | 'enhanced')}><option value="basic">按基础分</option><option value="enhanced">按增强分</option></select></label><button className="primary-button" type="button" onClick={load}>应用筛选</button></div></details>
-        {filterError && <div className="error-box"><p>{filterError}</p></div>}
-        {matchesStale && <div className="stale-banner">{meta && meta.targetJobId !== student.intention.target_job_id ? '目标岗位已切换；旧匹配与建议已过期，请刷新匹配结果。' : '简历或资料已变化；旧匹配与建议已过期，请刷新匹配结果。'}</div>}{versionStale && <div className="stale-banner">服务端算法或岗位数据版本已更新，旧匹配与建议已过期，请刷新匹配结果。</div>}
-        {loading ? <Loading text="正在计算推荐…" /> : loadError != null ? <ErrorBox error={loadError} onRetry={load} retryLabel="重新计算推荐" /> : !m ? <EmptyState symbol="◌" title="暂时没有符合条件的岗位"><p>{meta?.note || '请调整筛选条件后重试。'}</p></EmptyState> : <>
-          <section className="report-section report-diagnosis"><header><p>ACT 01 · 双维匹配诊断</p><h2>岗位匹配概览</h2><span>只根据当前资料计算，未提及不代表不具备</span></header><div className="diagnosis-grid"><article><span>BASE FIT INDEX</span><em>基础匹配度</em><strong>{fmtPct(m.basic)}</strong><p>统计当前资料中提及的岗位要求，不推断熟练度。</p><i><b style={{ width: Math.min(100, m.basic ?? 0) + '%' }} /></i></article><article><span>ENHANCED MATCH</span><em>增强匹配度</em><strong>{fmtPct(m.enhanced)}</strong><p>考虑相关技能提供的基础，不代表已掌握全部岗位技能。</p><i><b style={{ width: Math.min(100, m.enhanced ?? 0) + '%' }} /></i></article></div><div className="diagnosis-facts"><div><b>{m.satisfied}</b><span>资料已提及</span></div><div><b>{m.pending_items.length}</b><span>资料未提及</span></div><div><b>{m.required}</b><span>岗位要求总数</span></div></div></section>
-          <section className="report-section report-capability-summary"><header><p>ACT 02 · 能力摘要</p><h2>技能与岗位维度</h2><span>仅展示当前资料中已提及的内容；未提及不代表不具备</span></header><div className="capability-summary-grid">{m.dimensions.map(d => <article key={d.id}><span>{d.label}</span><strong>{d.required === 0 ? '不适用' : d.satisfied + ' / ' + d.required}</strong><p>{d.required === 0 ? '该岗位没有设置此类要求。' : d.satisfied + ' 项要求在当前资料中出现，' + (d.required - d.satisfied) + ' 项可以按实际情况补充。'}</p></article>)}</div></section>
-          <section className="report-section report-matrix" id="report-matrix"><header><p>ACT 03 · REQUIREMENTS</p><h2>岗位要求与当前资料</h2><span>按岗位必需项优先；简历未提及的能力可按实际情况补充</span></header><div className="matrix-list">{[...m.items].sort((a, b) => Number(a.related_only) - Number(b.related_only) || statusOrder(a) - statusOrder(b)).map(x => <div className={'matrix-row ' + (x.status === 'satisfied' ? 'satisfied' : 'pending')} key={x.dimension + x.tag_id}><b aria-hidden="true">{x.status === 'satisfied' ? '✓' : '○'}</b><div><strong>{x.label}</strong><small>{x.dimension}{x.enhancement_basis ? ' · ' + x.enhancement_basis : ''}</small></div>{x.status === 'satisfied' ? <em>资料中已出现</em> : <button type="button" className="matrix-action" onClick={() => focusProfileItem(x)}>补充资料 →</button>}</div>)}</div></section>
-          <section className="report-section report-advice" id="report-advice"><header><p>ACT 04 · INTELLIGENCE ROADMAP</p><h2>AI 智能体建议与行动路径</h2><span>建议只作为职业决策辅助，最终以你的实际经历为准</span></header>{reportError != null && <ErrorBox error={reportError} onRetry={generateReport} retryLabel="重试生成" />}{report ? <ReportBlock report={report} stale={reportStale} staleMessage={reportStaleMessage} onCopy={copyReport} onExport={exportReport} copyState={copyState} /> : <div className="advice-placeholder"><div><b>01</b><h3>生成契合度评价</h3><p>结合当前资料与岗位要求，生成针对目标岗位的判断。</p></div><div><b>02</b><h3>拆解学习方向</h3><p>把岗位要求转换为可开始执行的学习主题与实战任务。</p></div><div><b>03</b><h3>建立成长步骤</h3><p>按优先级排列后续行动，并保留报告导出能力。</p></div></div>}</section>
-          <section className="report-section report-alternatives"><header><p>ACT 05 · 协同备选</p><h2>其他高匹配岗位</h2><span>{meta ? '共 ' + meta.count + ' 个岗位符合 · ' + meta.note : '选择岗位可切换整份报告'}</span></header><div className="alternative-grid">{items.map((x, i) => <button type="button" className={i === activeIndex ? 'active' : ''} key={x.job_id} onClick={() => { setActiveIndex(i); setReport(null); setReportMeta(null); setReportError(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><span>{String(i + 1).padStart(2, '0')}</span><h3>{x.job_name}</h3><strong>{fmtPct(x.match.basic)}</strong><p>{x.reason}</p></button>)}</div></section>
+        <details ref={filterPanelRef} className="match-filter-panel"><summary>调整岗位筛选条件 <span>{meta?.summary || '全部岗位'}</span></summary><div className="matches-stitch-filter"><label>城市<input ref={cityInputRef} value={city} maxLength={80} placeholder="不限" onChange={e => setCity(e.target.value)} /></label><label>薪资下限<input value={salaryMin} type="number" min={0} step={100} placeholder="如 5000" onChange={e => setSalaryMin(e.target.value)} /></label><label>薪资上限<input value={salaryMax} type="number" min={0} step={100} placeholder="如 12000" onChange={e => setSalaryMax(e.target.value)} /></label><label>计薪周期<select value={salaryPeriod} onChange={e => setSalaryPeriod(e.target.value as Filters['salary_period'])}><option value="month">按月</option><option value="day">按天</option></select></label><label>必须包含技能<input value={skillText} maxLength={200} placeholder="Java, MySQL" onChange={e => setSkillText(e.target.value)} /></label><label>排序<select value={sortBy} onChange={e => setSortBy(e.target.value as 'basic' | 'enhanced')}><option value="basic">按基础分</option><option value="enhanced">按增强分</option></select></label><button className="primary-button" type="button" onClick={load}>应用筛选</button></div></details>
+        {filterError && <div className="error-box" role="alert"><p>{filterError}</p><button className="ghost-button" type="button" onClick={openFilters}>修改筛选条件</button></div>}
+        {resultsStale && <div className="stale-banner match-stale-action" role="status"><p>{versionStale ? '服务端算法或岗位数据版本已更新，旧匹配与建议已过期，请刷新匹配结果。' : meta && meta.targetJobId !== student.intention.target_job_id ? '目标岗位已切换；旧匹配与建议已过期，请刷新匹配结果。' : '简历或资料已变化；旧匹配与建议已过期，请刷新匹配结果。'}</p>{hasProfile ? <button className="ghost-button" type="button" onClick={load} disabled={loading}>更新过期结果</button> : <button className="ghost-button" type="button" onClick={onGoProfile}>补充资料后再匹配</button>}</div>}
+        {loading ? <div className="match-loading"><Loading text="正在计算推荐…" /><p>正在核对当前资料与岗位要求。你可以继续修改并应用筛选。</p></div> : loadError != null ? <div className="match-load-error"><ErrorBox error={loadError} onRetry={load} retryLabel="重新计算推荐" /><p>筛选条件仍保留，请检查条件或重试计算。</p><button className="ghost-button" type="button" onClick={openFilters}>检查筛选条件</button></div> : !m ? <EmptyState symbol="◌" title="暂时没有符合条件的岗位"><p>{meta?.note || '请调整筛选条件后重试。'}</p><p>可先移除城市或技能限制，放宽薪资范围。</p><button className="ghost-button" type="button" onClick={openFilters}>调整筛选条件</button></EmptyState> : <>
+          <section className="report-section report-alternatives"><header><p>01 · 候选岗位</p><h2>选择要查看的岗位</h2><span>{meta ? '共 ' + meta.count + ' 个岗位符合 · ' + meta.note : '选择岗位可切换整份报告'}</span></header><div className="alternative-grid">{items.map((x, i) => <button type="button" className={i === activeIndex ? 'active' : ''} aria-pressed={i === activeIndex} key={x.job_id} onClick={() => { setActiveIndex(i); setReport(null); setReportMeta(null); setReportError(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><span>{String(i + 1).padStart(2, '0')}{i === activeIndex ? ' · 当前岗位' : ''}</span><h3>{x.job_name}</h3><strong>基础 {fmtPct(x.match.basic)}</strong><p>{x.reason}</p></button>)}</div></section>
+          <nav className="match-contents" aria-label="匹配报告目录"><span>继续查看</span><a href="#report-dimensions" onClick={scrollToReportSection}>能力摘要</a><a href="#report-matrix" onClick={scrollToReportSection}>岗位要求</a><a href="#report-advice" onClick={scrollToReportSection}>岗位建议</a></nav>
+          <section className="report-section report-capability-summary" id="report-dimensions" tabIndex={-1}><header><p>02 · 能力摘要</p><h2>技能与岗位维度</h2><span>仅展示当前资料中已提及的内容；未提及不代表不具备</span></header><div className="capability-summary-grid">{m.dimensions.map(d => <article key={d.id}><span>{d.label}</span><strong>{d.required === 0 ? '不适用' : d.satisfied + ' / ' + d.required}</strong><p>{d.required === 0 ? '该岗位没有设置此类要求。' : d.satisfied + ' 项要求在当前资料中出现，' + (d.required - d.satisfied) + ' 项可以按实际情况补充。'}</p></article>)}</div></section>
+          <section className="report-section report-matrix" id="report-matrix" tabIndex={-1}><header><p>ACT 03 · REQUIREMENTS</p><h2>岗位要求与当前资料</h2><span>按岗位必需项优先；简历未提及的能力可按实际情况补充</span></header><div className="matrix-list">{[...m.items].sort((a, b) => Number(a.related_only) - Number(b.related_only) || statusOrder(a) - statusOrder(b)).map(x => <div className={'matrix-row ' + (x.status === 'satisfied' ? 'satisfied' : 'pending')} key={x.dimension + x.tag_id}><b aria-hidden="true">{x.status === 'satisfied' ? '✓' : '○'}</b><div><strong>{x.label}</strong><small>{x.dimension}{x.enhancement_basis ? ' · ' + x.enhancement_basis : ''}</small></div>{x.status === 'satisfied' ? <em>资料中已出现</em> : <button type="button" className="matrix-action" onClick={() => focusProfileItem(x)}>补充资料 →</button>}</div>)}</div></section>
+          <section className="report-section report-advice" id="report-advice" tabIndex={-1}><header><p>ACT 04 · INTELLIGENCE ROADMAP</p><h2>AI 智能体建议与行动路径</h2><span>建议只作为职业决策辅助，最终以你的实际经历为准</span></header>{reportError != null && <ErrorBox error={reportError} onRetry={generateReport} retryLabel="重试生成" />}{report ? <ReportBlock report={report} stale={reportStale} staleMessage={reportStaleMessage} onCopy={copyReport} onExport={exportReport} copyState={copyState} /> : <div className="advice-placeholder"><div><b>01</b><h3>生成契合度评价</h3><p>结合当前资料与岗位要求，生成针对目标岗位的判断。</p></div><div><b>02</b><h3>拆解学习方向</h3><p>把岗位要求转换为可开始执行的学习主题与实战任务。</p></div><div><b>03</b><h3>建立成长步骤</h3><p>按优先级排列后续行动，并保留报告导出能力。</p></div></div>}</section>
         </>}
       </div>
     </div>

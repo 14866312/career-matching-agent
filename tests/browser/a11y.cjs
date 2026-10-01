@@ -110,6 +110,15 @@ async function closeOnboarding(page) {
     await page.locator('.report').waitFor();
     await scan(page, '匹配报告');
 
+    await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
+    await page.getByLabel('专业', { exact: true }).fill('计算机科学与技术');
+    await page.getByRole('tab', { name: '匹配报告', exact: true }).click();
+    const refreshStale = page.getByRole('button', { name: '更新过期结果', exact: true });
+    await refreshStale.waitFor();
+    await scan(page, '过期匹配与刷新');
+    await refreshStale.click();
+    await page.getByText('匹配结果最新', { exact: true }).waitFor();
+
     await context.close();
   } finally {
     await browser.close();
