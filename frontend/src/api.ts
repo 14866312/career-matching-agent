@@ -24,7 +24,10 @@ async function request<T>(path: string, opt: RequestInit = {}): Promise<T> {
     if (isAbortError(error)) throw error;
     throw new ApiError('NETWORK', '无法连接后端服务，请确认本地服务已启动后重试。', true);
   }
-  const data: unknown = await res.json().catch(() => null);
+  const data: unknown = await res.json().catch((error: unknown) => {
+    if (isAbortError(error)) throw error;
+    return null;
+  });
   if (!res.ok) {
     const err = (data as { error?: { code?: string; message?: string; retryable?: boolean } } | null)?.error;
     throw new ApiError(
