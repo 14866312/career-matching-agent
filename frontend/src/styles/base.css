@@ -193,7 +193,7 @@ button { font-family: inherit; }
 
 .item-block { margin-top: 18px; }
 
-.item-block h4 {
+.item-block :is(h3, h4) {
   font: 700 11px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   letter-spacing: 0.08em;
   color: var(--muted);

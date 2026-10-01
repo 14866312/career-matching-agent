@@ -22,7 +22,7 @@
 .matches-stitch .item-block { border-top-color: var(--stitch-line); }
 .matches-stitch .item, .matches-stitch .report .item { background: rgba(255, 255, 255, .035); border-color: var(--stitch-line); color: #d0d0d0; }
 .matches-stitch .report { border-top-color: var(--stitch-line); }
-.matches-stitch .report h4, .matches-stitch .item-block h4 { color: #f0f0f0; }
+.matches-stitch .report :is(h3, h4), .matches-stitch .item-block :is(h3, h4) { color: #f0f0f0; }
 .matches-stitch .error-box { background: rgba(93, 93, 93, .15); border-color: rgba(172, 172, 172, .35); color: #cbcbcb; }
 .matches-stitch .primary-button { background: var(--stitch-accent); color: #111111; }
 .matches-stitch .ghost-button { color: var(--stitch-accent); border-color: rgba(235, 235, 235, .4); background: transparent; }

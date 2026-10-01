@@ -141,6 +141,7 @@ export default function App() {
         onFinish={finishOnboarding}
       />}
       <main className="exploration-pages" data-active-page={tab}>
+        <h1 className="sr-only">大学生职业探索与岗位匹配</h1>
         <div id="page-jobs" className={'panel' + (tab === 'jobs' ? ' active' : '')} role="tabpanel" aria-label="职业探索">
           <JobsTab
             jobs={jobs}

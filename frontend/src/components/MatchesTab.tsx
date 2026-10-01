@@ -29,15 +29,15 @@ function ReportBlock({ report, stale, staleMessage, onCopy, onExport, copyState 
         </div>
       )}
       <div className="item-block">
-        <h4>契合度评价</h4>
+        <h3>契合度评价</h3>
         <p>{report.advice.fit_evaluation}</p>
       </div>
       <div className="item-block">
-        <h4>学习方向</h4>
+        <h3>学习方向</h3>
         {report.advice.learning_directions.map((x, i) => <div className="item" key={i}>→ {x}</div>)}
       </div>
       <div className="item-block">
-        <h4>学习建议</h4>
+        <h3>学习建议</h3>
         {report.advice.learning_steps.map((x, i) => <div className="item" key={i}>→ {x}</div>)}
       </div>
       <div className="detail-actions">
@@ -354,7 +354,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
         <h3>{m?.job_name || '正在计算目标岗位'}</h3>
         <div className="matches-hero-actions"><button className="primary-button" type="button" onClick={generateReport} disabled={reportDisabled}>{reportLoading ? '正在生成…' : '生成岗位建议'}</button><button className="ghost-button" type="button" onClick={load} disabled={loading}>刷新匹配结果</button></div>
       </section>
-      <main className="match-report-flow">
+      <div className="match-report-flow">
         <details className="match-filter-panel"><summary>调整岗位筛选条件 <span>{meta?.summary || '全部岗位'}</span></summary><div className="matches-stitch-filter"><label>城市<input value={city} maxLength={80} placeholder="不限" onChange={e => setCity(e.target.value)} /></label><label>薪资下限<input value={salaryMin} type="number" min={0} step={100} placeholder="如 5000" onChange={e => setSalaryMin(e.target.value)} /></label><label>薪资上限<input value={salaryMax} type="number" min={0} step={100} placeholder="如 12000" onChange={e => setSalaryMax(e.target.value)} /></label><label>计薪周期<select value={salaryPeriod} onChange={e => setSalaryPeriod(e.target.value as Filters['salary_period'])}><option value="month">按月</option><option value="day">按天</option></select></label><label>必须包含技能<input value={skillText} maxLength={200} placeholder="Java, MySQL" onChange={e => setSkillText(e.target.value)} /></label><label>排序<select value={sortBy} onChange={e => setSortBy(e.target.value as 'basic' | 'enhanced')}><option value="basic">按基础分</option><option value="enhanced">按增强分</option></select></label><button className="primary-button" type="button" onClick={load}>应用筛选</button></div></details>
         {filterError && <div className="error-box"><p>{filterError}</p></div>}
         {matchesStale && <div className="stale-banner">{meta && meta.targetJobId !== student.intention.target_job_id ? '目标岗位已切换；旧匹配与建议已过期，请刷新匹配结果。' : '简历或资料已变化；旧匹配与建议已过期，请刷新匹配结果。'}</div>}{versionStale && <div className="stale-banner">服务端算法或岗位数据版本已更新，旧匹配与建议已过期，请刷新匹配结果。</div>}
@@ -365,7 +365,7 @@ export default function MatchesTab({ isActive, student, studentRev, serverAlgori
           <section className="report-section report-advice" id="report-advice"><header><p>ACT 04 · INTELLIGENCE ROADMAP</p><h2>AI 智能体建议与行动路径</h2><span>建议只作为职业决策辅助，最终以你的实际经历为准</span></header>{reportError != null && <ErrorBox error={reportError} onRetry={generateReport} retryLabel="重试生成" />}{report ? <ReportBlock report={report} stale={reportStale} staleMessage={reportStaleMessage} onCopy={copyReport} onExport={exportReport} copyState={copyState} /> : <div className="advice-placeholder"><div><b>01</b><h3>生成契合度评价</h3><p>结合当前资料与岗位要求，生成针对目标岗位的判断。</p></div><div><b>02</b><h3>拆解学习方向</h3><p>把岗位要求转换为可开始执行的学习主题与实战任务。</p></div><div><b>03</b><h3>建立成长步骤</h3><p>按优先级排列后续行动，并保留报告导出能力。</p></div></div>}</section>
           <section className="report-section report-alternatives"><header><p>ACT 05 · 协同备选</p><h2>其他高匹配岗位</h2><span>{meta ? '共 ' + meta.count + ' 个岗位符合 · ' + meta.note : '选择岗位可切换整份报告'}</span></header><div className="alternative-grid">{items.map((x, i) => <button type="button" className={i === activeIndex ? 'active' : ''} key={x.job_id} onClick={() => { setActiveIndex(i); setReport(null); setReportMeta(null); setReportError(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><span>{String(i + 1).padStart(2, '0')}</span><h3>{x.job_name}</h3><strong>{fmtPct(x.match.basic)}</strong><p>{x.reason}</p></button>)}</div></section>
         </>}
-      </main>
+      </div>
     </div>
   );
 }
