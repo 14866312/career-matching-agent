@@ -277,7 +277,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
             <button className={sourceMode === 'resume' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'resume'} onClick={() => setSourceMode('resume')}>导入现有简历</button>
             <button className={sourceMode === 'manual' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'manual'} onClick={() => setSourceMode('manual')}>手动录入资料</button>
           </div>
-          <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
+          <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" aria-label="选择简历文件" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
           {sourceMode === 'resume' ? <>
             <button type="button" className="profile-upload-card" disabled={resumeBusy || submitBusy} onClick={() => document.getElementById('resumeFile')?.click()}>
               <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '点击此区域选择简历文件'}</strong><small>支持 PDF、DOCX、TXT 格式（≤5MB）。系统会提取可识别的姓名、经历、技能、证书与通用素质。</small><i>{resumeBusy ? '处理中' : '选择文件解析'}</i>
