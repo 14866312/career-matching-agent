@@ -66,20 +66,32 @@
 .alternative-grid strong { position: absolute; right: 18px; top: 18px; color: #eeeeee; font: 400 13px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
 .alternative-grid p { margin: 0; color: #696969; font-size: 9px; line-height: 1.6; }
 
-.matches-stitch-hero.matches-overview { min-height: 0; max-width: 1120px; padding: 52px 24px 28px; align-items: stretch; text-align: left; }
+.matches-stitch-hero.matches-overview { min-height: 0; max-width: var(--stitch-page-width); padding: 32px 24px 24px; align-items: stretch; text-align: left; }
 .match-overview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .match-overview-heading > div { min-width: 0; }
 .match-overview-kicker { margin: 0 0 12px; color: #bdbdbd; font-size: 14px; }
 .matches-stitch .matches-stitch-hero.matches-overview h2 { font: 500 clamp(26px, 3vw, 40px)/1.25 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -.04em; overflow-wrap: anywhere; }
 .match-result-status { flex: none; padding: 8px 12px; border: 1px solid var(--stitch-line-strong); border-radius: 999px; color: #dedede; font-size: 13px; }
 .match-result-status.is-stale { border-style: dashed; }
-.match-overview-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 24px 0 0; }
-.match-overview-stats > div { min-width: 0; padding: 20px; border: 1px solid var(--stitch-line); border-radius: 14px; background: var(--stitch-surface); }
+.match-overview-stats { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--stitch-gap); margin: 20px 0 0; }
+.match-overview-stats > div { min-width: 0; padding: 20px; border: 1px solid var(--stitch-line); border-radius: var(--stitch-radius); background: var(--stitch-surface); }
+.match-overview-stats .match-basic-stat { grid-row: span 2; border-color: var(--stitch-line-strong); }
 .match-overview-stats dt { color: #dedede; font-size: 15px; }
 .match-overview-stats dd { margin: 14px 0 0; }
 .match-overview-stats strong { color: #ffffff; font: 400 clamp(30px, 4vw, 44px)/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; letter-spacing: -.05em; }
 .match-overview-stats small { color: #bdbdbd; font-size: 12px; }
 .match-overview-stats p { margin: 12px 0 0; color: #bdbdbd; font-size: 14px; line-height: 1.6; }
+.match-overview-stats .match-secondary-stat strong { font-size: 26px; }
+.match-overview-stats .match-secondary-stat dd { margin-top: 8px; }
+.match-overview-stats .match-enhanced-stat { background: transparent; }
+.match-overview-stats .match-enhanced-stat strong { font-size: 22px; color: #dedede; }
+.match-coverage { width: 100%; height: 8px; margin-top: 16px; display: block; overflow: hidden; appearance: none; border: 0; border-radius: 999px; background: #3a3a3a; accent-color: #f5f5f5; }
+.match-coverage::-webkit-progress-bar { background: #3a3a3a; border-radius: 999px; }
+.match-coverage::-webkit-progress-value { background: #f5f5f5; border-radius: 999px; }
+.match-coverage::-moz-progress-bar { background: #f5f5f5; border-radius: 999px; }
+.match-coverage-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.match-coverage-actions :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin: 0; padding: 0 14px; border: 1px solid var(--stitch-line-strong); border-radius: 999px; color: #eeeeee; background: transparent; font-size: 14px; text-decoration: none; }
+.match-coverage-actions :is(a, button):hover { background: var(--stitch-surface-2); }
 .match-next-action { margin: 18px 0 0; color: #cacaca; font-size: 14px; line-height: 1.7; }
 .match-next-action b { margin-right: 12px; color: #f5f5f5; font-weight: 500; }
 .matches-overview .matches-hero-actions { margin-top: 16px; flex-wrap: wrap; }
@@ -144,9 +156,9 @@
 @media (max-width: 680px) {
   .matches-stitch-hero.matches-overview { padding: 32px 16px 24px; }
   .match-overview-heading { flex-wrap: wrap; gap: 12px; }
-  .match-overview-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .match-overview-stats { grid-template-columns: 1fr; gap: 10px; }
   .match-overview-stats > div { padding: 16px; }
-  .match-overview-stats > div:last-child { grid-column: 1 / -1; }
+  .match-overview-stats .match-basic-stat { grid-row: auto; }
   .capability-summary-grid { grid-template-columns: 1fr; }
   .match-stale-action { align-items: flex-start; flex-direction: column; }
   .match-filter-panel summary span { float: none; display: block; margin-top: 8px; overflow-wrap: anywhere; }

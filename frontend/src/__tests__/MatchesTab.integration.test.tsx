@@ -46,6 +46,31 @@ afterEach(() => {
 });
 
 describe('MatchesTab integration', () => {
+  it.each([
+    { label: 'exact mentions', satisfied: 1, required: 6, basic: 16.7, enhanced: 16.7 },
+    { label: 'related-only enhancement', satisfied: 0, required: 6, basic: 0, enhanced: 4.2 }
+  ])('uses server counts for the coverage bar with $label', async ({ satisfied, required, basic, enhanced }) => {
+    const result = recommendationsFor();
+    result.items[0].match = { ...result.items[0].match, satisfied, required, basic, enhanced };
+    vi.mocked(apiPost).mockResolvedValue(result);
+    renderMatches();
+    const bar = await screen.findByRole('progressbar', { name: '必需项资料提及比例' });
+    expect(bar).toHaveAttribute('value', String(satisfied));
+    expect(bar).toHaveAttribute('max', String(required));
+    expect(bar).toHaveAttribute('aria-valuetext', `资料已提及 ${satisfied} 项，共 ${required} 项`);
+    expect(screen.getByText(`必需项中，资料已提及 ${satisfied}／${required} 项`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '补充个人资料' })).toBeEnabled();
+  });
+
+  it('does not present a percentage bar for a job with no required items', async () => {
+    const result = recommendationsFor();
+    result.items[0].match = { ...result.items[0].match, satisfied: 0, required: 0, basic: null, enhanced: null };
+    vi.mocked(apiPost).mockResolvedValue(result);
+    renderMatches();
+    await screen.findByText('该岗位未设置必需项，基础匹配分不适用。');
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
   it('keeps the last submitted filter result when an earlier request completes late', async () => {
     const requests: Array<{ response: Deferred<ReturnType<typeof recommendationsFor>>; signal?: AbortSignal }> = [];
     vi.mocked(apiPost).mockImplementation((_path, _body, options) => {

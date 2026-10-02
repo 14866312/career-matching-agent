@@ -11,7 +11,7 @@
   min-height: 720px;
   margin: -20px -12px;
   padding: 74px clamp(22px, 5vw, 78px) 90px;
-  overflow: hidden;
+  overflow: clip;
   position: relative;
 }
 .paths-stitch::before { content: ""; position: absolute; width: 520px; height: 520px; left: -220px; bottom: -330px; border-radius: 50%; background: radial-gradient(circle, rgba(235, 235, 235, .08), transparent 68%); pointer-events: none; }

@@ -127,38 +127,31 @@
   .exploration-pages :is(.empty-state p, .error-box p) { font-size: 14px; }
   .exploration-pages :is(.empty-state, .error-box) button { min-height: 44px; font-size: 14px; }
   .toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); left: 16px; right: 16px; max-width: none; font-size: 14px; }
-  .jobs-stitch-section-head { display: grid; justify-items: center; }
+  .jobs-stitch-section-head { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch; gap: 12px; }
   .jobs-stitch-section-head > div { padding-left: 0; }
-  .jobs-stitch-search { width: min(100%, 320px); }
+  .jobs-stitch-search { width: 100%; }
   .profile-basic-grid { grid-template-columns: 1fr 1fr; }
   .profile-basic-grid label:nth-child(3) { grid-column: 1 / -1; }
 }
 
 @media (max-width: 680px) {
+  .exploration-header { grid-template-columns: 1fr; gap: 8px; padding: 12px 16px; }
+  .exploration-wordmark { grid-column: 1; grid-row: 1; font-size: 15px; }
+  .exploration-wordmark > span { width: 24px; height: 24px; font-size: 16px; }
+  .exploration-header-actions { grid-column: 1; grid-row: 2; justify-self: stretch; justify-content: flex-end; }
   .exploration-nav { width: calc(100vw - 20px); justify-content: space-between; overflow-x: auto; }
   .exploration-nav-item { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 12px; line-height: 1.35; white-space: normal; }
   .jobs-stitch-hero,
   .matches-stitch-hero,
-  .paths-hero { min-height: calc(100vh - 58px); padding-left: 18px; padding-right: 18px; }
+  .paths-hero { padding-left: 18px; padding-right: 18px; }
   .jobs-stitch-hero h2,
   .profile-stitch-hero h2,
   .paths-hero h2 { font-size: 44px; }
-  .jobs-stitch-stats { padding: 27px 17px 18px; grid-template-columns: repeat(2,1fr); }
-  .jobs-stitch-stats > div:nth-child(3) { grid-column: 1 / -1; margin-top: 25px; padding-top: 25px; border-top: 1px solid var(--stitch-line); }
-  .jobs-stitch-stats > div:nth-child(2) { border-left: 1px solid var(--stitch-line); }
-  .jobs-stitch-stats strong { font-size: 36px; }
-  .jobs-stats-action { align-items: flex-start !important; gap: 14px; }
   .jobs-stitch-section { padding-left: 16px; padding-right: 16px; }
-  .jobs-stitch-card { padding: 23px 20px; grid-template-columns: 1fr; }
-  .jobs-card-score { text-align: left; }
-  .jobs-card-score i { max-width: 200px; }
-  .jobs-card-metrics { gap: 13px; flex-wrap: wrap; }
-  .jobs-card-footer { align-items: flex-start; flex-direction: column; }
-  .profile-stitch-hero { padding: 95px 18px 70px; }
   .profile-meta-line { align-items: center; flex-direction: column; gap: 8px; }
   .profile-stitch-progress div { width: 105px; padding: 0 5px; }
   .profile-stitch-progress div:not(:last-child)::after { left: 75px; right: -18px; }
-  .profile-step { padding: 78px 16px; }
+  .profile-step { padding: 32px 16px; }
   .profile-basic-grid { grid-template-columns: 1fr; }
   .profile-basic-grid label:nth-child(3) { grid-column: auto; }
   .matches-stitch-hero h2 { font-size: 82px; }
@@ -167,8 +160,7 @@
   .match-report-flow,
   .path-flow { padding-left: 16px; padding-right: 16px; }
   .matches-stitch-filter { grid-template-columns: 1fr; }
-  .report-section,
-  .path-section { padding: 80px 0; }
+  .report-section { padding: 32px 0; }
   .diagnosis-grid,
   .advice-placeholder,
   .alternative-grid,
@@ -196,52 +188,52 @@
   .ai-provider-grid { grid-template-columns: 1fr; }
 }
 
-/* Unified hero treatment: one centered title scale across the four main views. */
+/* Compact title scale and spacing shared by the four main views. */
 .jobs-stitch-hero h2,
 .profile-stitch-hero h2,
 .matches-stitch-empty .matches-stitch-hero h2.empty-title,
 .paths-hero h2 {
   margin: 0;
   max-width: none;
-  white-space: nowrap;
+  white-space: normal;
   text-align: center;
   color: #ffffff;
-  font-size: clamp(42px, 5.2vw, 72px);
+  font-size: clamp(30px, 3.4vw, 44px);
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: -.065em;
+  line-height: 1.2;
+  letter-spacing: -.04em;
 }
 
 .jobs-stitch-hero {
   min-height: auto;
-  padding: clamp(88px, 11vh, 132px) 24px 42px;
+  padding: 32px 24px 24px;
 }
 
-.jobs-stitch-stats { margin-top: 38px; }
+.jobs-stitch-stats { margin-top: 20px; }
 
 .profile-stitch-hero {
-  padding: clamp(88px, 11vh, 132px) 24px 62px;
+  padding: 32px 24px;
 }
 
-.profile-stitch-hero h2 { margin-bottom: 32px; }
+.profile-stitch-hero h2 { margin-bottom: 16px; }
 .profile-meta-line { margin-top: 0; }
-.profile-stitch-progress { margin-top: 34px; }
+.profile-stitch-progress { margin-top: 20px; }
 
 .matches-stitch-hero {
-  min-height: min(calc(100vh - 64px), 720px);
-  padding: 70px 24px 34px;
+  min-height: auto;
+  padding: 32px 24px 24px;
 }
 
 .matches-stitch-empty .matches-stitch-hero {
   min-height: auto;
-  padding: clamp(88px, 11vh, 132px) 24px 80px;
+  padding: 32px 24px;
   justify-content: flex-start;
 }
 
 .matches-stitch-empty .matches-stitch-hero h2.empty-title {
-  font-size: clamp(42px, 5.2vw, 72px);
-  line-height: 1;
-  letter-spacing: -.065em;
+  font-size: clamp(30px, 3.4vw, 44px);
+  line-height: 1.2;
+  letter-spacing: -.04em;
 }
 
 .matches-stitch-hero h2:not(.empty-title) {
@@ -250,16 +242,16 @@
 
 .matches-stitch-hero h3 { margin-top: 17px; }
 .matches-hero-actions { margin-top: 20px; }
-.match-empty-card { margin: 0 auto 120px; }
+.match-empty-card { margin: 0 auto 64px; }
 
 .paths-hero {
   min-height: auto;
-  padding: clamp(88px, 11vh, 132px) 24px 72px;
+  padding: 32px 24px 24px;
 }
 
-.paths-hero h2 { margin-bottom: 28px; }
+.paths-hero h2 { margin-bottom: 16px; }
 .path-job-select { margin-top: 0; }
-.path-overview { margin-top: 28px; }
+.path-overview { margin-top: 20px; }
 
 /* Job details use the same dark editorial surface as the main Stitch views. */
 .jobs-stitch .modal-backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(8px); }
@@ -387,8 +379,6 @@
 .jobs-stitch .soft-note { color: #bdbdbd; }
 .jobs-stitch-stats span,
 .jobs-stitch-stats em,
-.jobs-card-score span,
-.jobs-card-metrics,
 .match-filter-panel summary span,
 .matches-stitch-filter label,
 .matrix-row small,
@@ -412,14 +402,10 @@
 .jobs-stitch-search input::placeholder { color: #bfbfbf; }
 .jobs-stitch-family,
 .jobs-stitch-level,
-.jobs-card-score strong small,
-.jobs-card-score span,
-.jobs-card-metrics,
 .jobs-stitch-pills span,
 .jobs-card-link { color: #c8c8c8; }
 .jobs-card-main > p,
 .jobs-stitch-note { color: #cacaca; }
-.jobs-card-metrics b { color: #f1f1f1; }
 
 /* Native menus may open on a light platform surface; keep their labels visible. */
 
@@ -449,14 +435,17 @@
   .jobs-stitch-hero h2,
   .profile-stitch-hero h2,
   .matches-stitch-empty .matches-stitch-hero h2.empty-title,
-  .paths-hero h2 { font-size: clamp(26px, 8.3vw, 52px); }
+  .paths-hero h2 { font-size: clamp(26px, 7.4vw, 32px); }
 
   .jobs-stitch-hero,
   .profile-stitch-hero,
-  .paths-hero { padding-left: 18px; padding-right: 18px; }
+  .paths-hero { padding: 24px 18px; }
+  .jobs-stitch-hero { padding: 20px 18px 16px; }
+  .jobs-stitch-stats { margin-top: 12px; }
+  .jobs-stitch-section-head h3 { margin: 0; }
 
   .matches-stitch-hero { padding-left: 18px; padding-right: 18px; }
-  .matches-stitch-empty .matches-stitch-hero { padding-top: 88px; padding-bottom: 56px; }
+  .matches-stitch-empty .matches-stitch-hero { padding-top: 24px; padding-bottom: 24px; }
   .match-empty-card { width: calc(100% - 32px); }
   .matches-stitch-hero h2:not(.empty-title) { font-size: clamp(52px, 15vw, 76px); }
   .jobs-stitch .modal { width: calc(100vw - 24px); padding: 24px 18px 18px; border-radius: 16px; }

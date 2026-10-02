@@ -6,6 +6,14 @@ const path = require('node:path');
 
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 
+async function saveUiEvidence(page, name) {
+  if (!process.env.E2E_OUTPUT_DIR) return;
+  const out = path.resolve(process.env.E2E_OUTPUT_DIR);
+  await fs.mkdir(out, { recursive: true });
+  await page.locator('.toast').waitFor({ state: 'hidden' });
+  await page.screenshot({ path: path.join(out, `ui-${name}.jpg`), fullPage: false, animations: 'disabled', quality: 92 });
+}
+
 async function assertTouchTargets(locator, label) {
   let visible = 0;
   for (const control of await locator.all()) {
@@ -55,6 +63,26 @@ async function assertActionsAboveNavigation(page, locator, label) {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const unobstructed = await locator.evaluate(element => element.getBoundingClientRect().bottom <= document.querySelector('.exploration-nav').getBoundingClientRect().top);
   assert.ok(unobstructed, `滚动到底后${label}不能被底部导航遮挡`);
+}
+
+async function assertSelectedPlan(page, plan, activity) {
+  assert.equal(await plan.locator('.path-next-task p').innerText(), activity, '顶部活动应对应实际选中路线');
+  assert.equal(await plan.evaluate(section => section === document.activeElement), true, '选择后应聚焦顶部计划');
+  const position = await plan.locator('header').evaluate(header => ({
+    top: header.getBoundingClientRect().top,
+    bottom: header.getBoundingClientRect().bottom,
+    headerBottom: document.querySelector('.exploration-header').getBoundingClientRect().bottom
+  }));
+  assert.ok(position.top >= position.headerBottom && position.bottom < 700, '选择后计划标题必须出现在顶栏下方：' + JSON.stringify(position));
+}
+
+async function assertPageTitleBelowGuide(page, selector, label) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const position = await page.locator(selector).evaluate(title => ({
+    top: title.getBoundingClientRect().top,
+    guideBottom: document.querySelector('.workflow-guide').getBoundingClientRect().bottom
+  }));
+  assert.ok(position.top >= position.guideBottom, label + '返回页顶后标题不能被流程导航遮挡：' + JSON.stringify(position));
 }
 
 (async () => {
@@ -239,6 +267,14 @@ async function assertActionsAboveNavigation(page, locator, label) {
     assert.equal(await currentMatchStep.getByText('最新', { exact: true }).isVisible(), true);
     assert.equal(await currentMatchStep.getAttribute('aria-current'), 'step');
     const contents = page.getByRole('navigation', { name: '匹配报告目录', exact: true });
+    await page.getByRole('link', { name: '查看匹配依据', exact: true }).click();
+    assert.equal(new URL(page.url()).hash, '#matches', '覆盖条依据入口应保留匹配页面');
+    assert.equal(await page.locator('#report-matrix').evaluate(section => section === document.activeElement), true, '覆盖条入口应聚焦岗位要求');
+    const coverage = page.getByRole('progressbar', { name: '必需项资料提及比例', exact: true });
+    assert.equal(await coverage.getAttribute('value'), '1', '只填写 Java 时应精确提及一项必需要求');
+    assert.equal(await coverage.getAttribute('max'), '6', '覆盖条分母应与 Java 岗位六项必需要求一致');
+    await assertPageTitleBelowGuide(page, '.matches-overview h2', '桌面匹配概览');
+    await saveUiEvidence(page, 'matches-desktop');
     for (const [label, sectionId] of [['能力摘要', 'report-dimensions'], ['岗位要求', 'report-matrix'], ['岗位建议', 'report-advice']]) {
       await contents.getByRole('link', { name: label, exact: true }).click();
       assert.equal(await page.getByRole('tab', { name: '匹配报告', exact: true }).getAttribute('aria-selected'), 'true', '目录跳转必须保留匹配页面');
@@ -248,6 +284,8 @@ async function assertActionsAboveNavigation(page, locator, label) {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await assertNarrowLayout(page, '手机匹配报告');
+    await assertPageTitleBelowGuide(page, '.matches-overview h2', '手机匹配概览');
+    await saveUiEvidence(page, 'matches-mobile');
     await assertTouchTargets(page.locator('.matches-hero-actions, .alternative-grid, .matrix-list').getByRole('button'), '匹配操作');
     await assertTouchTargets(contents.getByRole('link'), '匹配报告目录');
     await assertTextScale(page.locator('.match-overview-stats p, .capability-summary-grid p, .matrix-row strong, .alternative-grid p, .advice-placeholder p'), 14, '手机匹配正文');
@@ -269,21 +307,81 @@ async function assertActionsAboveNavigation(page, locator, label) {
 
     await page.getByRole('tab', { name: '成长路径', exact: true }).click();
     await page.locator('.path-overview').waitFor();
+    const plan = page.getByRole('region', { name: '当前成长计划', exact: true });
+    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '未选择时不应自动指定路线');
+    for (const disclosure of await page.locator('.path-disclosure').all()) {
+      assert.equal(await disclosure.getAttribute('open'), null, '其他阶段与活动默认折叠');
+    }
+    await assertTouchTargets(page.locator('.path-disclosure > summary'), '路径展开操作');
+    await page.locator('.path-ladder > summary').press('Enter');
+    assert.notEqual(await page.locator('.path-ladder').getAttribute('open'), null, '路径应支持键盘展开');
     await assertTouchTargets(page.getByRole('combobox', { name: /^聚焦岗位/ }), '手机路径岗位选择');
     await assertTouchTargets(page.locator('.path-flow').getByRole('button'), '手机路径操作');
     await assertTextScale(page.locator('.path-overview b, .timeline-copy p, .timeline-card p, .path-branch-grid p, .sprint-list strong, .path-action-hub p'), 14, '手机路径正文');
     await assertTextScale(page.locator('.path-overview small, .timeline-card small, .path-branch-grid small, .sprint-list small'), 12, '手机路径说明');
-    await page.locator('.timeline-card:enabled').first().click();
+    const firstRoute = page.locator('.timeline-card:enabled').first();
+    const firstActivity = await firstRoute.locator('small').innerText();
+    await firstRoute.click();
+    await assertSelectedPlan(page, plan, firstActivity);
+    await plan.getByRole('button', { name: '保存当前路径', exact: true }).click();
+    await plan.getByRole('button', { name: '更新已保存路径', exact: true }).waitFor();
+    await plan.getByRole('button', { name: '清除已保存路径', exact: true }).click();
+    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '清除后应回到未选路线');
+    assert.equal(await plan.locator('.path-selected-detail').count(), 0, '清除后不能继续展示旧路线');
+    await firstRoute.click();
+    await assertSelectedPlan(page, plan, firstActivity);
+    await page.locator('.path-branches > summary').click();
+    await page.locator('.path-sprints > summary').click();
+    const branch = page.locator('.path-branch-grid button').first();
+    const branchActivity = await branch.locator('p').innerText();
+    await branch.click();
+    await assertSelectedPlan(page, plan, branchActivity);
+    const sprint = page.locator('.sprint-list button').last();
+    const sprintActivity = await sprint.locator('strong').innerText();
+    await sprint.click();
+    await assertSelectedPlan(page, plan, sprintActivity);
     await assertTextScale(page.locator('.path-selected-detail p'), 14, '手机选中路径详情');
     await assertNarrowLayout(page, '手机成长路径');
     await assertActionsAboveNavigation(page, page.locator('.path-action-hub'), '路径保存操作');
+    await page.getByRole('combobox', { name: /^聚焦岗位/ }).selectOption('testing');
+    assert.equal(await plan.locator('.path-selected-detail').count(), 0, '更换聚焦岗位应清除旧路线');
+    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '更换岗位不应默认选择路线');
+    await page.getByRole('combobox', { name: /^聚焦岗位/ }).selectOption('java');
+    for (const width of [320, 901, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const headerLayout = await page.locator('.exploration-header').evaluate(header => ({
+        viewport: document.documentElement.clientWidth,
+        controls: [...header.querySelectorAll('.exploration-wordmark, button')].map(element => {
+          const rect = element.getBoundingClientRect();
+          return { text: element.textContent.trim(), left: rect.left, right: rect.right, height: rect.height };
+        })
+      }));
+      assert.deepEqual(headerLayout.controls.filter(control => control.left < 0 || control.right > headerLayout.viewport + 1 || control.height > 44), [], width + 'px 顶栏与导航应完整可见且文案不挤成多行');
+      if (width === 320) await assertNarrowLayout(page, '320px 成长路径');
+      else {
+        await firstRoute.click();
+        await assertSelectedPlan(page, plan, firstActivity);
+      }
+      await assertPageTitleBelowGuide(page, '.paths-hero h2', width + 'px 成长路径');
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
 
     await page.getByRole('tab', { name: '职业探索', exact: true }).click();
     await assertNarrowLayout(page, '手机岗位目录');
     await assertTouchTargets(page.getByRole('textbox', { name: '搜索岗位', exact: true }), '手机岗位搜索');
     await assertTouchTargets(page.locator('.jobs-stitch-card'), '手机岗位卡片');
     await assertTextScale(page.locator('.jobs-card-main > p, .jobs-stitch-note'), 14, '手机岗位正文');
-    await assertTextScale(page.locator('.jobs-card-metrics, .jobs-stitch-pills span, .jobs-card-link'), 12, '手机岗位说明');
+    await assertTextScale(page.locator('.jobs-stitch-pills span, .jobs-card-link'), 12, '手机岗位说明');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const mobileCards = await page.locator('.jobs-stitch-card').evaluateAll(elements => elements.slice(0, 2).map(element => { const rect = element.getBoundingClientRect(); return { left: rect.left, top: rect.top, width: rect.width }; }));
+    assert.ok(Math.abs(mobileCards[0].left - mobileCards[1].left) < 1 && mobileCards[1].top > mobileCards[0].top, '手机岗位卡片必须单列');
+    assert.ok(mobileCards[0].top < 700, '390px 首屏应能看到第一张岗位卡片，实际顶部：' + mobileCards[0].top);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const desktopCards = await page.locator('.jobs-stitch-card').evaluateAll(elements => elements.slice(0, 2).map(element => { const rect = element.getBoundingClientRect(); return { left: rect.left, top: rect.top, width: rect.width }; }));
+    assert.ok(Math.abs(desktopCards[0].top - desktopCards[1].top) < 1 && desktopCards[1].left > desktopCards[0].left, '桌面岗位卡片必须双列');
+    assert.ok(desktopCards[0].top < 600, '桌面首屏应展示岗位卡片');
+    assert.match(await page.locator('.exploration-wordmark').innerText(), /职业罗盘/);
+    await page.setViewportSize({ width: 390, height: 844 });
     const jobTrigger = page.getByRole('button', { name: '查看 Java 开发工程师 详情', exact: true });
     await jobTrigger.click();
     const jobDialog = page.getByRole('dialog', { name: 'Java 开发工程师', exact: true });
