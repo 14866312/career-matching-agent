@@ -237,6 +237,7 @@ async function assertNoLegacyProfileControls() {
       await targetJob().selectOption('java');
       await addTag('skills', 'Java');
       await tab('职业路径');
+      await page.locator('.path-branches > summary').click();
       const branch = page.locator('.path-branch-grid > button').first();
       await branch.waitFor();
       await branch.click();
@@ -267,6 +268,8 @@ async function assertNoLegacyProfileControls() {
       await ready();
       await page.locator('.path-action-hub').waitFor();
       await until(async () => (await page.locator('.path-action-hub').innerText()).includes('已保存于'), 'saved path was not restored');
+      assert.equal(await page.locator('.path-current-plan .path-selected-detail').isVisible(), true, 'restored selection must be visible in the current plan');
+      assert.equal(await page.locator('.path-branches').getAttribute('open'), null, 'restored route must not require expanding all branches');
       assert.equal(await page.locator('.path-job-select select').inputValue(), 'java');
       await tab('我的能力');
       assert.equal(await page.locator('.resume-review-item').count(), 0, 'resume review state must not be restored');
@@ -317,10 +320,12 @@ async function assertNoLegacyProfileControls() {
     const paths = await (await context.request.get(base + '/api/career-paths')).json();
     assert.equal(paths.nodes.length, 18);
     assert.equal(paths.edges.filter(edge => edge.type === 'transition').length, 12);
+    await page.locator('.path-ladder > summary').click();
     await page.locator('.path-timeline .timeline-stage').first().waitFor();
     assert.equal(await page.locator('.path-timeline .timeline-stage').count(), 3);
     const branches = page.locator('.path-branch-grid > button');
     assert.ok(await branches.count() >= 2);
+    await page.locator('.path-branches > summary').click();
     await branches.first().click();
     await page.locator('.path-selected-detail').waitFor();
     await page.screenshot({ path: path.join(out, '桌面-路径.png'), fullPage: true });

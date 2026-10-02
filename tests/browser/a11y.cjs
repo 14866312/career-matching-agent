@@ -125,6 +125,13 @@ async function closeOnboarding(page) {
     await page.getByRole('tab', { name: '成长路径', exact: true }).click();
     await page.locator('.path-overview').waitFor();
     await scan(page, '成长路径', [mobileViewport]);
+    await page.locator('.path-route-options button').first().click();
+    await page.locator('.path-current-plan .path-selected-detail').waitFor();
+    await scan(page, '已选成长路线');
+    for (const summary of await page.locator('.path-disclosure > summary').all()) {
+      await summary.click();
+    }
+    await scan(page, '展开成长阶段与活动');
 
     await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
     await page.getByLabel('专业', { exact: true }).fill('计算机科学与技术');

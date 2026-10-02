@@ -10,12 +10,12 @@
 .path-overview b { color: #e5e5e5; font-size: 10px; font-weight: 500; }
 .path-overview > span { color: #565656; }
 .path-overview > em { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #111111; background: #eeeeee; font-style: normal; }
-.path-flow { max-width: 1020px; margin: 0 auto; padding: 0 24px 170px; }
+.path-flow { max-width: var(--stitch-page-width); margin: 0 auto; padding: 0 24px 64px; }
 .path-section { padding: 115px 0; border-top: 1px solid rgba(255, 255, 255, .045); }
 .path-section > header { margin-bottom: 55px; text-align: center; }
 .path-section > header h2 { margin: 0 0 10px; color: #ffffff; font-size: 35px; font-weight: 500; letter-spacing: -.05em; }
 .path-section > header span { color: #6c6c6c; font-size: 10px; }
-.path-timeline { max-width: 860px; margin: 0 auto; position: relative; display: grid; gap: 55px; }
+.path-timeline { max-width: 960px; margin: 0 auto; position: relative; display: grid; gap: 32px; }
 .path-timeline::before { content: ""; position: absolute; top: 20px; bottom: 20px; left: 50%; width: 1px; background: linear-gradient(transparent, rgba(255, 255, 255, .16) 10%, rgba(255, 255, 255, .16) 90%, transparent); }
 .timeline-stage { display: grid; grid-template-columns: 1fr 48px 1fr; gap: 25px; align-items: center; }
 .timeline-copy { text-align: right; }
@@ -39,14 +39,14 @@
 .path-branch-grid button:hover,
 .path-branch-grid button.active { border-color: var(--stitch-line-strong); background: var(--stitch-surface-2); }
 .path-branch-grid span { color: #6c6c6c; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-.path-branch-grid h3 { margin: 54px 0 12px; color: #eeeeee; font-size: 16px; }
+.path-branch-grid h3 { margin: 20px 0 12px; color: #eeeeee; font-size: 18px; }
 .path-branch-grid p { color: #727272; font-size: 10px; line-height: 1.7; }
 .path-branch-grid small { position: absolute; left: 21px; bottom: 20px; color: #606060; font-size: 8px; }
 .path-branch-grid em { position: absolute; right: 18px; bottom: 16px; color: #aaaaaa; font-style: normal; }
 .path-selected-detail { margin-top: 13px; padding: 20px; border: 1px solid var(--stitch-line); border-radius: 13px; background: rgba(255, 255, 255, .018); }
 .path-selected-detail > span { color: #787878; font: 400 8px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
 .path-selected-detail h3 { color: #eeeeee; font-size: 15px; }
-.path-selected-detail p { color: #787878; font-size: 10px; }
+.path-selected-detail p { color: #bdbdbd; font-size: 14px; line-height: 1.7; }
 .path-selected-detail b { color: #bbbbbb; }
 .path-selected-detail small { color: #575757; }
 .sprint-list { display: grid; gap: 8px; }
@@ -62,6 +62,34 @@
 .path-action-hub h3 { margin: 8px 0 5px; color: #eeeeee; font-size: 17px; }
 .path-action-hub p { margin: 0; color: #6a6a6a; font-size: 9px; }
 .path-action-hub button { min-height: 38px; padding: 0 17px; border-radius: 999px; white-space: nowrap; }
+
+.path-current-plan { padding: 24px; margin-bottom: 24px; border: 1px solid var(--stitch-line-strong); border-radius: var(--stitch-radius); background: var(--stitch-surface); scroll-margin-top: 88px; }
+.path-current-plan:focus-visible { outline: 2px solid #dedede; outline-offset: 4px; }
+.path-current-plan > header p { margin: 0 0 8px; color: #bdbdbd; font-size: 12px; }
+.path-current-plan > header h2 { margin: 0; color: #f5f5f5; font-size: 26px; font-weight: 500; letter-spacing: -.035em; }
+.path-plan-intro { margin: 12px 0 16px; color: #bdbdbd; font-size: 14px; line-height: 1.7; }
+.path-route-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.path-route-options button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 60px; padding: 16px; border: 1px solid var(--stitch-line-strong); border-radius: 12px; text-align: left; color: #eeeeee; background: var(--stitch-surface-2); font-size: 14px; line-height: 1.6; cursor: pointer; }
+.path-route-options button:hover { border-color: #aaaaaa; }
+.path-current-plan .path-selected-detail { padding: 0; margin-top: 16px; border: 0; background: transparent; }
+.path-current-plan .path-selected-detail h3 { margin: 8px 0 16px; font-size: 20px; line-height: 1.5; }
+.path-next-task { padding: 16px; border-left: 2px solid #dedede; border-radius: 0 12px 12px 0; background: var(--stitch-surface-2); }
+.path-next-task > b { color: #eeeeee; font-size: 14px; font-weight: 500; }
+.path-next-task p { margin: 8px 0 0; }
+.path-current-plan .path-action-hub { margin-top: 20px; padding: 20px 0 0; border: 0; border-top: 1px solid var(--stitch-line); border-radius: 0; background: transparent; }
+.path-current-plan .path-action-hub h3 { margin-top: 0; font-size: 16px; }
+.path-save-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.path-save-actions button { min-height: 44px; margin: 0; font-size: 14px; }
+.path-disclosure { margin-top: 12px; border: 1px solid var(--stitch-line); border-radius: var(--stitch-radius); background: rgba(255, 255, 255, .018); }
+.path-disclosure > summary { display: flex; align-items: center; gap: 16px; min-height: 76px; padding: 18px 20px; list-style: none; cursor: pointer; }
+.path-disclosure > summary::-webkit-details-marker { display: none; }
+.path-disclosure > summary::after { content: '+'; flex: none; color: #dedede; font-size: 22px; }
+.path-disclosure[open] > summary::after { content: '−'; }
+.path-disclosure > summary > span { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.path-disclosure > summary strong { color: #f5f5f5; font-size: 17px; font-weight: 500; }
+.path-disclosure > summary :is(small, b) { color: #bdbdbd; font-size: 12px; font-weight: 400; line-height: 1.6; }
+.path-disclosure > summary b { flex: none; }
+.path-disclosure-body { padding: 8px 20px 24px; }
 
 @media (max-width: 900px) {
   .path-job-select { max-width: 100%; font-size: 14px; }
@@ -96,6 +124,17 @@
 }
 
 @media (max-width: 680px) {
+  .path-current-plan { padding: 20px; scroll-margin-top: 112px; }
+  .path-current-plan > header h2 { font-size: 23px; }
+  .path-route-options { grid-template-columns: 1fr; }
+  .path-disclosure > summary { gap: 10px; padding: 16px; flex-wrap: wrap; }
+  .path-disclosure > summary > span { flex-basis: calc(100% - 32px); }
+  .path-disclosure > summary b { order: 1; width: 100%; }
+  .path-disclosure-body { padding: 8px 16px 20px; }
   .sprint-list button { grid-template-columns: 32px minmax(0, 1fr); }
   .sprint-list em { grid-column: 2; justify-self: start; }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  .path-current-plan { scroll-margin-top: 132px; }
 }

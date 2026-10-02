@@ -79,6 +79,7 @@ export default function App() {
   return (
     <div className="exploration-shell">
       <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
+        <span className="exploration-wordmark"><span aria-hidden="true">↗</span>职业罗盘</span>
         <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
           {CAREER_TABS.map(t => (
             <button

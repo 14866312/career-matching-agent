@@ -45,7 +45,7 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
   return (
     <div className="job-detail">
       <header className="job-detail-head">
-        <p className="eyebrow">JOB PROFILE</p>
+        <p className="eyebrow">岗位画像</p>
         <h3>{job.name}</h3>
         <p className="mono detail-meta">{job.family} · {job.level} · 数据版本 {job.version}</p>
         <p className="detail-summary">{job.summary}</p>
@@ -126,7 +126,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   }, [jobs, query]);
 
   const requirementCount = jobs.reduce((total, job) => total + job.requirements.length, 0);
-  const maxRequirementCount = Math.max(1, ...jobs.map(job => job.requirements.length));
+  const targetJobName = jobs.find(job => job.id === targetJobId)?.name;
 
   async function openJob(id: string) {
     openIdRef.current = id;
@@ -151,19 +151,16 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
       <section className="jobs-stitch-hero">
         <h2>探索职业岗位</h2>
         <div className="jobs-stitch-stats" aria-label="岗位数据概览">
-          <div><span>目标岗位</span><strong className="is-text">{targetJobId ? '已选择' : '待选择'}</strong><em>{targetJobId ? '可前往简历与个人报告继续' : '从岗位详情中设为目标'}</em></div>
-          <div><span>岗位目录</span><strong>{jobs.length}<small>个</small></strong><em>来自当前岗位样本库</em></div>
-          <div><span>能力要求</span><strong>{requirementCount}<small>项</small></strong><em>技能、证书与通用素质</em></div>
-          <div className="jobs-stats-action"><span>数据已完成结构化，可继续查看岗位详情</span><a href="#curated-roles">开始探索 <b>↓</b></a></div>
+          <div><span>目标岗位</span><strong className="is-text">{targetJobName || (targetJobId ? '已选择' : '待选择')}</strong></div>
+          <div><span>岗位目录</span><strong>{jobs.length}<small>个</small></strong></div>
+          <div><span>能力要求</span><strong>{requirementCount}<small>项</small></strong></div>
         </div>
       </section>
 
       <section className="jobs-stitch-section" id="curated-roles">
         <div className="jobs-stitch-section-head">
           <div>
-            <div className="jobs-stitch-kicker">CAREER CATALOG</div>
-            <h3>岗位详情</h3>
-            <p>点击岗位卡片，查看核心技能、证书要求、通用素质和来源样本。</p>
+            <h3>岗位目录</h3>
           </div>
           <label className="jobs-stitch-search">
             <span className="sr-only">搜索岗位</span>
@@ -172,7 +169,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
           </label>
         </div>
         <p className="jobs-stitch-note">
-          这里展示岗位目录；个性化推荐请前往匹配报告。要求等级用于能力基线整理，不代表每条招聘广告的统一硬门槛。
+          目录供探索，个性化推荐见匹配报告；能力基线不代表统一招聘门槛。
         </p>
       {error != null ? (
         <ErrorBox error={error} onRetry={onRetry} retryLabel="重新加载岗位" />
@@ -188,25 +185,18 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
             <button type="button" className={'jobs-stitch-card' + (j.id === targetJobId ? ' is-target' : '')} key={j.id} onClick={() => openJob(j.id)} aria-label={'查看 ' + j.name + ' 详情'}>
               <div className="jobs-card-main">
                 <div className="jobs-stitch-card-top">
-                  <span className="jobs-stitch-family">{j.id === targetJobId ? 'TARGET ROLE' : j.family}</span>
+                  {j.id === targetJobId && <span className="jobs-stitch-family">目标岗位 ✓</span>}
                   <span className="jobs-stitch-level">{j.level}</span>
                 </div>
                 <div className="jobs-stitch-title-row"><h4>{j.name}</h4></div>
                 <p>{j.summary}</p>
-              </div>
-              <div className="jobs-card-score"><strong>{j.requirements.length}<small>项</small></strong><span>核心能力要求</span><i><b style={{ width: `${(j.requirements.length / maxRequirementCount) * 100}%` }} /></i></div>
-              <div className="jobs-stitch-divider" />
-              <div className="jobs-card-metrics">
-                <span><b>{j.requirements.length}</b> 项核心要求</span>
-                <span><b>{j.preferred.length}</b> 项优先项（不计分）</span>
-                <span><b>{j.version}</b> 数据版本</span>
               </div>
               <div className="jobs-card-footer">
                 <div className="jobs-stitch-pills">
                   {j.requirements.slice(0, 4).map(r => <span key={r.tag_id}>{r.label}</span>)}
                   {j.requirements.length > 4 && <span>+{j.requirements.length - 4}</span>}
                 </div>
-                <span className="jobs-card-link">{j.id === targetJobId ? '目标岗位 ✓' : '了解岗位要求'} <b>↗</b></span>
+                <span className="jobs-card-link">查看岗位详情 <b>↗</b></span>
               </div>
             </button>
           ))}
