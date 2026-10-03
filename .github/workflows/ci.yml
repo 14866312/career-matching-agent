@@ -67,7 +67,7 @@ jobs:
       - run: tests/browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Run browser acceptance
         run: |
-          export E2E_OUTPUT_DIR="$RUNNER_TEMP/career-compass-browser"
+          export E2E_OUTPUT_DIR="$RUNNER_TEMP/career-planning-browser"
           python tests/e2e_server.py > "$RUNNER_TEMP/e2e-server.log" 2>&1 &
           server_pid=$!
           cleanup() {

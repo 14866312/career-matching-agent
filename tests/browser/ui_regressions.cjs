@@ -380,7 +380,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     const desktopCards = await page.locator('.jobs-stitch-card').evaluateAll(elements => elements.slice(0, 2).map(element => { const rect = element.getBoundingClientRect(); return { left: rect.left, top: rect.top, width: rect.width }; }));
     assert.ok(Math.abs(desktopCards[0].top - desktopCards[1].top) < 1 && desktopCards[1].left > desktopCards[0].left, '桌面岗位卡片必须双列');
     assert.ok(desktopCards[0].top < 600, '桌面首屏应展示岗位卡片');
-    assert.match(await page.locator('.exploration-wordmark').innerText(), /职业罗盘/);
+    assert.match(await page.locator('.exploration-wordmark').innerText(), /大学生职业规划/);
     await page.setViewportSize({ width: 390, height: 844 });
     const jobTrigger = page.getByRole('button', { name: '查看 Java 开发工程师 详情', exact: true });
     await jobTrigger.click();

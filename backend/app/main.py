@@ -30,7 +30,7 @@ logger = logging.getLogger('career')
 # The bounded request is rejected before multipart parsing. Accepted files stay in memory.
 UPLOAD_LIMIT = MAX_BYTES + 65536
 MultiPartParser.spool_max_size = UPLOAD_LIMIT + 1
-app = FastAPI(title='Career Compass', version='1.1.0')
+app = FastAPI(title='Student Career Planning', version='1.1.0')
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'], allow_methods=['GET', 'POST'], allow_headers=['Content-Type'])
 
 
