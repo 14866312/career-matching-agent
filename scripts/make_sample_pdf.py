@@ -36,7 +36,7 @@ def build_pdf(text_path: Path | str, pdf_path: Path | str) -> None:
         topMargin=54,
         bottomMargin=54,
         title='虚构学生演示简历',
-        author='Career Compass',
+        author='Student Career Planning',
     )
     document.build([Paragraph(escape(line), title if index == 0 else body) for index, line in enumerate(lines)])
 

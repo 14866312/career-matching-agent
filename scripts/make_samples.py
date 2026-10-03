@@ -85,7 +85,7 @@ def student_profiles():
 
 def write_docx(path: Path) -> None:
     document = Document()
-    document.core_properties.creator = 'Career Compass'
+    document.core_properties.author = 'Student Career Planning'
     document.core_properties.title = '虚构学生演示简历'
     normal = document.styles['Normal']
     normal.font.name = 'Microsoft YaHei'

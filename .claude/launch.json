@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "career-compass",
+      "name": "career-planning",
       "runtimeExecutable": ".venv/Scripts/python.exe",
       "runtimeArgs": ["backend/run.py"],
       "port": 8000

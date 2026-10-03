@@ -1,77 +1,92 @@
 {
-  "tested_at": "2026-09-30T12:31:47.726Z",
+  "tested_at": "2026-10-03T04:16:04.380Z",
   "ai": "MOCK ONLY — not real API acceptance",
   "base": "http://127.0.0.1:8011",
   "results": [
     {
       "name": "Local draft restores profile and saved path, keeps resume name session-only, and clears completely",
       "status": "passed",
-      "ms": 5378
+      "ms": 5682
     },
     {
       "name": "Six jobs, job detail, and career paths",
       "status": "passed",
-      "ms": 1978
+      "ms": 1670
     },
     {
       "name": "A profile without a target can see recommendations",
       "status": "passed",
-      "ms": 1047
+      "ms": 1024
     },
     {
       "name": "Canonical aliases deduplicate and binary absence differs from missing evidence",
       "status": "passed",
-      "ms": 974
+      "ms": 977
     },
     {
       "name": "Manual profile, personal analysis, recommendations, and independent report scores",
       "status": "passed",
-      "ms": 2113
+      "ms": 2359
     },
     {
       "name": "Changing the target invalidates existing recommendations and report",
       "status": "passed",
-      "ms": 1696
+      "ms": 1749
     },
     {
       "name": "Editing profile data invalidates report and export",
       "status": "passed",
-      "ms": 842
+      "ms": 859
     },
     {
       "name": "Delayed profile, report, and recommendation responses are discarded",
       "status": "passed",
-      "ms": 5271
+      "ms": 3171
+    },
+    {
+      "name": "The latest recommendation filter wins when responses arrive out of order",
+      "status": "passed",
+      "ms": 1896
+    },
+    {
+      "name": "Invalid filters and late errors cannot revive an older recommendation request",
+      "status": "passed",
+      "ms": 372
+    },
+    {
+      "name": "A stale target-job supplement cannot replace the latest recommendations",
+      "status": "passed",
+      "ms": 1941
     },
     {
       "name": "PDF, DOCX, and TXT resumes merge automatically while preserving manual values",
       "status": "passed",
-      "ms": 4993
+      "ms": 3707
     },
     {
       "name": "Delayed resume merging keeps the newest manual values",
       "status": "passed",
-      "ms": 959
+      "ms": 975
     },
     {
       "name": "Invalid upload and upstream profile errors preserve editable input",
       "status": "passed",
-      "ms": 195
+      "ms": 187
     },
     {
       "name": "Resume profile, real samples in filters, reset, and a new target report",
       "status": "passed",
-      "ms": 4291
+      "ms": 3088
     },
     {
       "name": "A server version change invalidates existing match and report",
       "status": "passed",
-      "ms": 56
+      "ms": 66
     },
     {
       "name": "Zero skills, target outside top five, and narrow viewport remain usable",
       "status": "passed",
-      "ms": 4013
+      "ms": 3009
     }
   ],
   "page_errors": []
