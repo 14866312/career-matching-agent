@@ -1,15 +1,43 @@
+# 本机模型配置；只公开不含密钥的模板
 .env
+.env.*
+!.env.example
+
+# 安装依赖、构建输出及 Python 缓存
 .venv*/
 node_modules/
 frontend/dist/
 __pycache__/
+*.py[cod]
+*.egg-info/
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 .cache/
+
+# 自动生成的测试输出；精选公开证据由 docs/acceptance/ 单独维护
 test-results/
 playwright-report/
+coverage/
+htmlcov/
+.coverage
+.coverage.*
 *.log
-*.pyc
+
+# 临时文件、操作系统及编辑器的本机设置
 tmp/
-.claude/settings.local.json
-# 本地需求、issue、设计参考与学习笔记，不公开
+temp/
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# Claude 仅共享项目启动配置，权限与其他本机设置不公开
+.claude/*
+!.claude/launch.json
+
+# 本地需求、issue、设计参考、演示材料、历史工作记录与学习笔记
 本地资料/
