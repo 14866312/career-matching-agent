@@ -367,6 +367,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await page.setViewportSize({ width: 390, height: 844 });
 
     await page.getByRole('tab', { name: '职业探索', exact: true }).click();
+    await page.getByRole('button', { name: '切换到白色护眼模式', exact: true }).click();
     await assertNarrowLayout(page, '手机岗位目录');
     await assertTouchTargets(page.getByRole('textbox', { name: '搜索岗位', exact: true }), '手机岗位搜索');
     await assertTouchTargets(page.locator('.jobs-stitch-card'), '手机岗位卡片');
@@ -386,6 +387,20 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await jobTrigger.click();
     const jobDialog = page.getByRole('dialog', { name: 'Java 开发工程师', exact: true });
     await jobDialog.locator('.detail-summary').waitFor();
+    const lightDialogColors = await jobDialog.evaluate(dialog => ({
+      surface: getComputedStyle(dialog).backgroundColor,
+      text: getComputedStyle(dialog).color,
+      backdrop: getComputedStyle(dialog.parentElement).backgroundColor,
+      requirementSurface: getComputedStyle(dialog.querySelector('.req-item')).backgroundColor,
+      requirementText: getComputedStyle(dialog.querySelector('.req-item summary')).color
+    }));
+    assert.deepEqual(lightDialogColors, {
+      surface: 'rgb(255, 254, 251)',
+      text: 'rgb(41, 43, 37)',
+      backdrop: 'rgba(48, 47, 40, 0.38)',
+      requirementSurface: 'rgb(239, 238, 231)',
+      requirementText: 'rgb(41, 43, 37)'
+    }, '白色护眼模式下岗位详情应使用浅色表面、柔和遮罩和深色文字');
     assert.equal(await jobDialog.evaluate(dialog => dialog.contains(document.activeElement)), true, '手机打开岗位详情应聚焦弹窗');
     const jobClose = jobDialog.getByRole('button', { name: '关闭岗位详情', exact: true });
     await jobClose.focus();
