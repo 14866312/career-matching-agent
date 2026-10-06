@@ -194,6 +194,58 @@
   outline-color: #52634c;
 }
 
+.exploration-shell[data-theme='light'] .jobs-stitch .modal-backdrop {
+  background: rgba(48, 47, 40, .38);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch .modal {
+  border-color: var(--stitch-line);
+  color: var(--stitch-text);
+  background: var(--stitch-surface);
+  box-shadow: 0 24px 70px rgba(53, 52, 43, .2);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch .modal-close {
+  border-color: var(--stitch-line);
+  color: var(--stitch-text);
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch .modal-close:hover {
+  border-color: var(--stitch-line-strong);
+  background: #e8e7de;
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch :is(
+  .job-detail .eyebrow, .detail-meta, .detail-summary, .req-basis, .soft-note,
+  .item-block h4, .job-detail-aside h4 span, .req-quote, .req-quote cite,
+  .job-detail-samples .sample-row span, .req-item summary .mono
+) {
+  color: var(--stitch-muted) !important;
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages .jobs-stitch .req-item {
+  border-color: var(--stitch-line);
+  color: var(--stitch-text);
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch .req-quote {
+  border-left-color: var(--stitch-line-strong);
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages .jobs-stitch .item.pending {
+  border-color: var(--stitch-line-strong);
+  color: var(--stitch-muted);
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch .sample-row {
+  color: var(--stitch-text);
+  border-bottom-color: var(--stitch-line);
+}
+
 @media (max-width: 900px) {
   .theme-toggle { min-height: 44px; padding-inline: 10px; font-size: 14px; }
 }
