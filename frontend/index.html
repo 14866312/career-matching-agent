@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>基于 AI 的大学生职业规划智能体</title>
+    <script>
+      // Apply the stored appearance before first paint so the theme never flashes.
+      // Keep the key in sync with THEME_STORAGE_KEY in src/lib/theme.ts.
+      try {
+        var stored = localStorage.getItem('career-appearance');
+        document.documentElement.dataset.theme = stored === 'dark' ? 'dark' : 'light';
+      } catch (error) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

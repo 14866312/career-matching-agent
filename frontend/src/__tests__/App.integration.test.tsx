@@ -7,6 +7,7 @@ import App from '../App';
 import { apiGet, apiPost } from '../api';
 import { AUTOSAVE_STORAGE_KEY, DRAFT_STORAGE_KEY, createLocalDraft } from '../lib/localDraft';
 import { ONBOARDING_STORAGE_KEY } from '../lib/onboarding';
+import { THEME_STORAGE_KEY } from '../lib/theme';
 import { jobs, recommendationsFor, report, student } from './componentFixtures';
 
 vi.mock('../api', async importOriginal => {
@@ -41,6 +42,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  delete document.documentElement.dataset.theme;
 });
 
 describe('App integration', () => {
@@ -84,5 +86,24 @@ describe('App integration', () => {
 
     await user.click(screen.getByRole('tab', { name: /匹配报告/ }));
     await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'matches'));
+  });
+
+  it('toggles between the light eye-care theme and the dark workspace', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = screen.getByRole('button', { name: '护眼模式' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
   });
 });

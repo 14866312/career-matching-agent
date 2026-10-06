@@ -10,3 +10,7 @@
 @import './styles/paths-detail.css';
 @import './styles/shared-overrides.css';
 @import './styles/onboarding.css';
+/* Light / eye-care theme. Generated file first, hand-written corrections second, so the
+   patch layer always wins. Both are scoped under [data-theme="light"]. */
+@import './styles/theme-light.css';
+@import './styles/theme-light-patch.css';

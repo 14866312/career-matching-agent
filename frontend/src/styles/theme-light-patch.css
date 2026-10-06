@@ -1,0 +1,51 @@
+/* Hand-written corrections for the generated light theme.
+ *
+ * theme-light.css is rebuilt by scripts/make_light_theme.py, so anything that needs
+ * judgement rather than a mechanical luminance inversion lives here instead, and is
+ * imported after it.  Everything is scoped under [data-theme="light"], so the dark
+ * theme is left completely untouched.
+ */
+
+/* Page canvas: keep it light even outside the shell so no dark edge can show through. */
+html[data-theme="light"] body {
+  background: #f5f3ed;
+  color: #1d1b15;
+}
+
+/* Overlays must stay dark.  Inverting them produced a pale veil that no longer reads
+ * as "this dialog sits above the page". */
+html[data-theme="light"] .modal-backdrop,
+html[data-theme="light"] .jobs-stitch .modal-backdrop,
+html[data-theme="light"] .ai-config-backdrop,
+html[data-theme="light"] .local-draft-settings-backdrop,
+html[data-theme="light"] .onboarding-wizard-backdrop {
+  background: rgba(26, 22, 14, .44);
+}
+
+/* Toast: a dark chip is the only way to keep it legible against a light page. */
+html[data-theme="light"] .toast {
+  background: #2a2820;
+  color: #f7f5ef;
+  box-shadow: 0 10px 30px rgba(26, 22, 14, .22);
+}
+
+html[data-theme="light"] .toast.err {
+  background: #4a4740;
+}
+
+/* base.css keeps a light-palette token set that the dark theme then shadows with the
+ * --stitch-* tokens.  After inversion those tokens flip, so the few rules that still
+ * read them directly need pinning back to a light-theme meaning. */
+html[data-theme="light"] .modal {
+  background: #fdfbf6;
+  color: #1d1b15;
+}
+
+html[data-theme="light"] .modal-close {
+  background: #ece9e1;
+  color: #1d1b15;
+}
+
+html[data-theme="light"] .empty-state h3 {
+  color: #1d1b15;
+}

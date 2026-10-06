@@ -7,11 +7,21 @@ import AIConfigPanel from './components/AIConfigPanel';
 import LocalDraftSettingsPanel from './components/LocalDraftSettingsPanel';
 import OnboardingWizard, { type OnboardingOutcome, type OnboardingStart } from './components/OnboardingWizard';
 import { CAREER_TABS, useCareerSession } from './lib/useCareerSession';
+import { applyTheme, getThemeStorage, readTheme, writeTheme, type Theme } from './lib/theme';
 
 export default function App() {
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => readTheme(getThemeStorage()));
+  const toggleTheme = useCallback(() => {
+    setTheme(current => (current === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+    writeTheme(getThemeStorage(), theme);
+  }, [theme]);
   const showToast = useCallback((msg: string, kind: 'ok' | 'err' = 'ok') => {
     setToast({ msg, kind });
   }, []);
@@ -96,6 +106,15 @@ export default function App() {
           ))}
         </nav>
         <div className="exploration-header-actions">
+          <button
+            className="theme-trigger"
+            type="button"
+            aria-pressed={theme === 'light'}
+            title={theme === 'light' ? '关闭护眼模式，切换回深色界面' : '开启护眼模式，切换为明亮界面'}
+            onClick={toggleTheme}
+          >
+            <span aria-hidden="true">◐</span> 护眼模式
+          </button>
           <button className="onboarding-trigger" type="button" onClick={() => setOnboardingOpen(true)}>
             <span aria-hidden="true">?</span> 新手教程
           </button>
