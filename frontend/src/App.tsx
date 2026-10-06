@@ -9,6 +9,9 @@ import OnboardingWizard, { type OnboardingOutcome, type OnboardingStart } from '
 import { CAREER_TABS, useCareerSession } from './lib/useCareerSession';
 
 export default function App() {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() =>
+    window.localStorage.getItem('career-planning-theme') === 'light' ? 'light' : 'dark'
+  );
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -66,6 +69,10 @@ export default function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(onboardingRequired);
 
   useEffect(() => {
+    window.localStorage.setItem('career-planning-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 3600);
     return () => window.clearTimeout(timer);
@@ -77,7 +84,7 @@ export default function App() {
   }, [completeOnboarding]);
 
   return (
-    <div className="exploration-shell">
+    <div className="exploration-shell" data-theme={theme}>
       <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
         <span className="exploration-wordmark"><span aria-hidden="true">↗</span>大学生职业规划</span>
         <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
@@ -96,6 +103,15 @@ export default function App() {
           ))}
         </nav>
         <div className="exploration-header-actions">
+          <button
+            className="theme-toggle"
+            type="button"
+            aria-label={theme === 'dark' ? '切换到白色护眼模式' : '切换到深色模式'}
+            aria-pressed={theme === 'light'}
+            onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? '白色护眼' : '深色模式'}
+          </button>
           <button className="onboarding-trigger" type="button" onClick={() => setOnboardingOpen(true)}>
             <span aria-hidden="true">?</span> 新手教程
           </button>
