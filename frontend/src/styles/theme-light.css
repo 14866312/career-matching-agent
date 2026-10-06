@@ -1,0 +1,199 @@
+.theme-toggle {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  color: #d8d8d8;
+  background: rgba(255, 255, 255, .025);
+  font: 400 10px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, color .2s ease;
+}
+
+.theme-toggle:hover { color: #ffffff; border-color: rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .08); }
+
+.exploration-shell[data-theme='light'] {
+  --stitch-bg: #f6f5ef;
+  --stitch-surface: #fffefb;
+  --stitch-surface-2: #efeee7;
+  --stitch-line: #deddd4;
+  --stitch-line-strong: #c6c4b9;
+  --stitch-text: #292b25;
+  --stitch-muted: #676960;
+  --stitch-dim: #77796f;
+  color-scheme: light;
+  color: var(--stitch-text);
+  background: var(--stitch-bg);
+}
+
+.exploration-shell[data-theme='light']::before {
+  background:
+    radial-gradient(ellipse 70% 35% at 50% 0%, rgba(224, 219, 199, .28), transparent 70%),
+    radial-gradient(ellipse 55% 28% at 10% 55%, rgba(229, 226, 213, .22), transparent 72%),
+    #f6f5ef;
+}
+
+.exploration-shell[data-theme='light'] .exploration-header {
+  border-color: var(--stitch-line);
+  background: rgba(250, 249, 244, .94);
+}
+
+.exploration-shell[data-theme='light'] .exploration-wordmark,
+.exploration-shell[data-theme='light'] .exploration-nav-item.active,
+.exploration-shell[data-theme='light'] .exploration-nav-item:hover,
+.exploration-shell[data-theme='light'] .settings-trigger:hover,
+.exploration-shell[data-theme='light'] .model-config-trigger:hover,
+.exploration-shell[data-theme='light'] .onboarding-trigger:hover,
+.exploration-shell[data-theme='light'] .theme-toggle:hover {
+  color: var(--stitch-text);
+}
+
+.exploration-shell[data-theme='light'] .exploration-nav {
+  border-color: var(--stitch-line);
+  background: rgba(41, 43, 37, .04);
+}
+
+.exploration-shell[data-theme='light'] .exploration-nav-item { color: #686a61; }
+.exploration-shell[data-theme='light'] .exploration-nav-item:hover { background: rgba(41, 43, 37, .06); }
+.exploration-shell[data-theme='light'] .exploration-nav-item.active {
+  background: #e8e7de;
+  box-shadow: 0 1px 8px rgba(41, 43, 37, .08);
+}
+
+.exploration-shell[data-theme='light'] :is(.theme-toggle, .onboarding-trigger, .settings-trigger, .model-config-trigger) {
+  border-color: var(--stitch-line-strong);
+  color: #44463e;
+  background: rgba(41, 43, 37, .035);
+}
+
+.exploration-shell[data-theme='light'] .theme-toggle:hover,
+.exploration-shell[data-theme='light'] .onboarding-trigger:hover,
+.exploration-shell[data-theme='light'] .settings-trigger:hover,
+.exploration-shell[data-theme='light'] .model-config-trigger:hover {
+  border-color: #96988b;
+  background: rgba(41, 43, 37, .08);
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch,
+.exploration-shell[data-theme='light'] .profile-stitch,
+.exploration-shell[data-theme='light'] .matches-stitch,
+.exploration-shell[data-theme='light'] .paths-stitch {
+  --stitch-bg: #f6f5ef;
+  --stitch-card: #fffefb;
+  --stitch-card-hover: #efeee7;
+  --stitch-surface: #fffefb;
+  --stitch-surface-2: #efeee7;
+  --stitch-line: #deddd4;
+  --stitch-line-strong: #c6c4b9;
+  --stitch-text: #292b25;
+  --stitch-muted: #676960;
+  --stitch-dim: #77796f;
+  --stitch-accent: #52594a;
+  background: var(--stitch-bg);
+  color: var(--stitch-text);
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages :is(
+  h1, h2, h3, h4, h5, h6, p, span, small, strong, b, em, i, label, summary,
+  a, button, li, dt, dd, th, td, blockquote, code
+),
+.exploration-shell[data-theme='light'] :is(.workflow-guide, .onboarding-wizard, .ai-config-panel, .local-draft-settings-panel) :is(
+  h1, h2, h3, h4, h5, h6, p, span, small, strong, b, em, i, label, summary,
+  a, button, li, dt, dd, th, td, blockquote, code
+) {
+  color: var(--stitch-text) !important;
+}
+
+.exploration-shell[data-theme='light'] .workflow-guide {
+  border-color: var(--stitch-line);
+  background: #eeede6;
+}
+
+.exploration-shell[data-theme='light'] .workflow-guide-step,
+.exploration-shell[data-theme='light'] .workflow-guide-next {
+  border-color: var(--stitch-line);
+  color: var(--stitch-text);
+  background: rgba(255, 254, 251, .85);
+}
+
+.exploration-shell[data-theme='light'] .workflow-guide-step:hover,
+.exploration-shell[data-theme='light'] .workflow-guide-next:hover {
+  border-color: var(--stitch-line-strong);
+  background: #fffefb;
+}
+
+.exploration-shell[data-theme='light'] .workflow-guide-step[aria-current='step'] {
+  border-color: #9b9d90;
+  background: #e2e1d7;
+}
+
+.exploration-shell[data-theme='light'] .workflow-guide-step[aria-current='step'] .workflow-guide-step-copy small {
+  color: #55574f !important;
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages .primary-button {
+  color: #ffffff !important;
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages :is(
+  .jobs-stitch-card, .match-empty-card, .report, .diagnosis-grid article, .diagnosis-facts div,
+  .capability-summary-grid article, .matrix-row, .advice-placeholder > div, .alternative-grid button,
+  .profile-manual-panel, .profile-upload-card, .profile-analysis-group, .profile-evidence,
+  .tag-editor, .item, .req-item, .path-overview, .timeline-card, .path-branch-grid button,
+  .path-selected-detail, .sprint-list button, .path-action-hub, .path-current-plan,
+  .path-route-options button, .profile-action-dock
+) {
+  border-color: var(--stitch-line);
+  background: var(--stitch-surface);
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages :is(input, textarea, select, .jobs-stitch-search) {
+  border-color: var(--stitch-line-strong);
+  color: var(--stitch-text);
+  background-color: #fffefb;
+}
+
+.exploration-shell[data-theme='light'] .exploration-pages :is(input, textarea)::placeholder {
+  color: #73756b;
+  opacity: 1;
+}
+
+.exploration-shell[data-theme='light'] .profile-stitch select { color-scheme: light; }
+.exploration-shell[data-theme='light'] .profile-stitch select option { color: #292b25; background: #fffefb; }
+
+.exploration-shell[data-theme='light'] .profile-action-dock {
+  background: rgba(255, 254, 251, .94);
+  box-shadow: 0 18px 55px rgba(53, 52, 43, .16);
+}
+
+.exploration-shell[data-theme='light'] :is(.onboarding-wizard, .ai-config-panel, .local-draft-settings-panel) {
+  border-color: var(--stitch-line);
+  color: var(--stitch-text);
+  background: #fffefb;
+  box-shadow: 0 24px 70px rgba(53, 52, 43, .2);
+}
+
+.exploration-shell[data-theme='light'] .onboarding-wizard-backdrop,
+.exploration-shell[data-theme='light'] .ai-config-backdrop,
+.exploration-shell[data-theme='light'] .local-draft-settings-backdrop {
+  background: rgba(48, 47, 40, .38);
+}
+
+.exploration-shell[data-theme='light'] :is(.ai-config-panel, .local-draft-settings-panel) :is(input, select) {
+  border-color: var(--stitch-line-strong);
+  color: var(--stitch-text);
+  background: #f8f7f1;
+}
+
+.exploration-shell[data-theme='light'] :is(.ai-config-panel, .local-draft-settings-panel) select option {
+  color: var(--stitch-text);
+  background: #fffefb;
+}
+
+.exploration-shell[data-theme='light'] :is(.onboarding-trigger, .theme-toggle, .settings-trigger, .model-config-trigger):focus-visible {
+  outline-color: #52634c;
+}
+
+@media (max-width: 900px) {
+  .theme-toggle { min-height: 44px; padding-inline: 10px; font-size: 14px; }
+}

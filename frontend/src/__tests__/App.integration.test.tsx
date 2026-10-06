@@ -44,6 +44,22 @@ afterEach(() => {
 });
 
 describe('App integration', () => {
+  it('switches between dark and eye-friendly light themes and remembers the selection', async () => {
+    const user = userEvent.setup();
+    const app = render(<App />);
+    const shell = document.querySelector('.exploration-shell');
+
+    expect(shell).toHaveAttribute('data-theme', 'dark');
+    await user.click(screen.getByRole('button', { name: '切换到白色护眼模式' }));
+    expect(shell).toHaveAttribute('data-theme', 'light');
+    expect(window.localStorage.getItem('career-planning-theme')).toBe('light');
+
+    app.unmount();
+    render(<App />);
+    expect(document.querySelector('.exploration-shell')).toHaveAttribute('data-theme', 'light');
+    expect(screen.getByRole('button', { name: '切换到深色模式' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('restores a local draft and marks matching plus advice stale after the profile changes', async () => {
     const user = userEvent.setup();
     render(<App />);

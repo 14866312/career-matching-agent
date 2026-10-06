@@ -440,7 +440,7 @@
   .jobs-stitch-hero,
   .profile-stitch-hero,
   .paths-hero { padding: 24px 18px; }
-  .jobs-stitch-hero { padding: 20px 18px 16px; }
+  .jobs-stitch-hero { padding: 16px 18px 0; }
   .jobs-stitch-stats { margin-top: 12px; }
   .jobs-stitch-section-head h3 { margin: 0; }
 
