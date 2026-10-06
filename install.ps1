@@ -5,8 +5,8 @@ $venvFull = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot $VenvPath))
 $pythonExe = Join-Path $venvFull 'Scripts/python.exe'
 if (-not (Test-Path -LiteralPath $pythonExe)) {
     $basePython = Get-Command python -ErrorAction Stop
-    & $basePython.Source -c 'import sys; assert sys.version_info[:2] == (3,12), "Python 3.12 is required"'
-    if ($LASTEXITCODE -ne 0) { throw 'Install Python 3.12 and retry.' }
+    & $basePython.Source -c 'import sys; assert sys.version_info >= (3,12), "Python 3.12 or newer is required"'
+    if ($LASTEXITCODE -ne 0) { throw 'Install Python 3.12 or newer and retry.' }
     & $basePython.Source -m venv $venvFull
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create Python environment.' }
 }
