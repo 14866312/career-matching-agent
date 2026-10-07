@@ -104,10 +104,10 @@ async function closeOnboarding(page) {
     await detail.waitFor({ state: 'detached' });
 
     await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
-    await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
+    await page.getByRole('tab', { name: '手动填写', exact: true }).click();
     await page.getByLabel('专业', { exact: true }).fill('软件工程');
     await page.locator('.profile-target-select select').selectOption('java');
-    const skill = page.getByLabel('新增技能标签', { exact: true });
+    const skill = page.getByLabel('新增技能', { exact: true });
     await skill.fill('Java');
     await skill.press('Enter');
     await page.locator('.profile-stitch .empty-state').scrollIntoViewIfNeeded();

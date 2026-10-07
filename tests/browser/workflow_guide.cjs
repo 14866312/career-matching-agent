@@ -59,12 +59,12 @@ async function checkWorkflowGuide(browser, base) {
           assert.ok(position.top >= position.guideBottom - 1, '步骤跳转的标题不能被吸顶向导遮挡：' + JSON.stringify(position));
         }
         await steps.nth(0).click();
-        await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
+        await page.getByRole('tab', { name: '手动填写', exact: true }).click();
         await page.getByLabel('专业', { exact: true }).fill('软件工程');
         await page.locator('.profile-target-select select').selectOption('java');
-        const skill = page.getByLabel('新增技能标签', { exact: true });
+        const skill = page.getByLabel('新增技能', { exact: true });
         await skill.fill('Java');
-        await page.getByRole('button', { name: '确认添加技能标签', exact: true }).click();
+        await page.getByRole('button', { name: '确认添加技能', exact: true }).click();
         await steps.nth(2).click();
         await page.locator('#report-matrix').waitFor();
         await settleScroll(page);

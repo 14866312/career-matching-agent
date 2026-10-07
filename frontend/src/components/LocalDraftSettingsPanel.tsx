@@ -90,12 +90,12 @@ export default function LocalDraftSettingsPanel({
         </button>
         <p className="local-draft-settings-kicker">PRIVATE ON THIS BROWSER</p>
         <h2 id="local-draft-settings-title">本机数据设置</h2>
-        <p className="local-draft-settings-lead">控制职业规划草稿是否保存在当前浏览器。这里的设置只影响这台设备和这个浏览器，不会上传到服务端。</p>
+        <p className="local-draft-settings-lead">草稿仅存于当前浏览器，不上传服务端。</p>
 
         <div className="local-draft-setting-card">
           <div>
             <strong>自动保存到本机浏览器</strong>
-            <p>保存已整理的简历资料、目标岗位、当前页面和已选成长路径，刷新后可以继续。</p>
+            <p>刷新后继续上次规划。</p>
           </div>
           <label className="local-draft-switch">
             <span className="sr-only">自动保存到本机浏览器</span>
@@ -121,14 +121,14 @@ export default function LocalDraftSettingsPanel({
         <div className="local-draft-privacy">
           <strong>保存范围</strong>
           <ul>
-            <li>会保存已整理的简历资料、目标岗位、当前流程页面和已选成长路径。</li>
-            <li>不会保存简历姓名、原始简历文件、AI 报告或模型密钥。</li>
-            <li>关闭自动保存后，已有草稿仍会保留，直到你主动清除。</li>
+            <li>保存整理后的资料、目标岗位、页面和成长路径。</li>
+            <li>不保存姓名、原文件、AI 报告和密钥。</li>
+            <li>关闭自动保存不会删除已有草稿。</li>
           </ul>
         </div>
 
         <div className="local-draft-settings-actions">
-          <button className="ghost-button" type="button" onClick={onClear}>清除本机草稿并重置流程</button>
+          <button className="ghost-button" type="button" onClick={onClear}>清除草稿并重置</button>
           <button className="primary-button" type="button" onClick={onClose}>完成</button>
         </div>
       </section>

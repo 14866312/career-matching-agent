@@ -5,10 +5,13 @@ import json
 import logging
 import os
 import re
+import tempfile
+from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 import httpx
+from dotenv import set_key
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .data import dataset
@@ -72,7 +75,8 @@ def _is_allowed_model_url(value: str) -> bool:
     return bool(parsed.hostname) and (parsed.scheme.lower() == 'https' or _is_loopback_http_url(value))
 
 
-def update_config(base_url: str, model: str, api_key: str | None = None, adapter: str = 'chat-completions'):
+def update_config(base_url: str, model: str, api_key: str | None = None,
+                  adapter: str = 'chat-completions', *, config_path: Path | None = None):
     base_url = base_url.strip().rstrip('/')
     model = model.strip()
     adapter = adapter.strip()
@@ -90,11 +94,28 @@ def update_config(base_url: str, model: str, api_key: str | None = None, adapter
     loopback_change = _is_loopback_http_url(previous_base_url) and _is_loopback_http_url(base_url)
     if base_changed and not loopback_change and not supplied_key:
         raise AIError('LLM_CONFIG', '修改接口地址时必须重新输入 API 密钥。')
-    os.environ['LLM_BASE_URL'] = base_url
-    os.environ['LLM_MODEL'] = model
-    os.environ['LLM_ADAPTER'] = adapter
-    if supplied_key:
-        os.environ['LLM_API_KEY'] = supplied_key
+    values = {'LLM_BASE_URL': base_url, 'LLM_MODEL': model, 'LLM_ADAPTER': adapter}
+    key = supplied_key or os.environ.get('LLM_API_KEY', '').strip()
+    if key:
+        values['LLM_API_KEY'] = key
+    if config_path is not None:
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=config_path.parent, prefix='.env.', suffix='.tmp', delete=False
+            ) as handle:
+                temporary = Path(handle.name)
+            if config_path.exists():
+                temporary.write_bytes(config_path.read_bytes())
+            for name, value in values.items():
+                set_key(temporary, name, value)
+            temporary.replace(config_path)
+        except OSError:
+            raise AIError('LLM_CONFIG', '配置保存失败，请检查本机文件权限后重试。') from None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+    os.environ.update(values)
     return config_snapshot()
 
 

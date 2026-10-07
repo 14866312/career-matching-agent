@@ -59,7 +59,7 @@ describe('MatchesTab integration', () => {
     expect(bar).toHaveAttribute('max', String(required));
     expect(bar).toHaveAttribute('aria-valuetext', `资料已提及 ${satisfied} 项，共 ${required} 项`);
     expect(screen.getByText(`必需项中，资料已提及 ${satisfied}／${required} 项`)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '补充个人资料' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '补充资料' })).toBeEnabled();
   });
 
   it('does not present a percentage bar for a job with no required items', async () => {
@@ -84,7 +84,7 @@ describe('MatchesTab integration', () => {
     expect(screen.getByRole('status')).toHaveTextContent('正在计算推荐…');
     await waitFor(() => expect(requests).toHaveLength(1));
 
-    await user.click(screen.getByText(/调整岗位筛选条件/));
+    await user.click(screen.getByText(/筛选岗位/));
     await user.type(screen.getByLabelText('城市'), '上海');
     await user.click(screen.getByRole('button', { name: '应用筛选' }));
     await waitFor(() => expect(requests).toHaveLength(2));
@@ -105,7 +105,7 @@ describe('MatchesTab integration', () => {
 
     renderMatches();
     expect((await screen.findAllByRole('heading', { name: '前端工程师' })).length).toBeGreaterThan(0);
-    await user.click(screen.getByText(/调整岗位筛选条件/));
+    await user.click(screen.getByText(/筛选岗位/));
     await user.type(screen.getByLabelText('薪资下限'), '10000');
     await user.type(screen.getByLabelText('薪资上限'), '5000');
     await user.click(screen.getByRole('button', { name: '应用筛选' }));
@@ -135,7 +135,7 @@ describe('MatchesTab integration', () => {
       />
     );
 
-    expect(await screen.findByText('简历或资料已变化；旧匹配与建议已过期，请刷新匹配结果。')).toBeInTheDocument();
+    expect(await screen.findByText('资料已修改，请刷新匹配。')).toBeInTheDocument();
     expect(freshness).toHaveBeenLastCalledWith('stale', 'not_generated');
     await user.click(screen.getByRole('button', { name: '更新过期结果' }));
     await waitFor(() => expect(freshness).toHaveBeenLastCalledWith('current', 'not_generated'));

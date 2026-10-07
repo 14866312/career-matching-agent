@@ -21,21 +21,21 @@ const START_POINTS: Array<{
     id: 'resume',
     eyebrow: '已有材料',
     title: '我有简历',
-    description: '导入简历后，系统提取专业、经历和技能；你可以按需修改或删除。',
+    description: '导入简历，检查并修改提取结果。',
     action: '从简历开始'
   },
   {
     id: 'manual',
     eyebrow: '从零开始',
     title: '我没有简历',
-    description: '直接填写专业、经历和技能，随后生成个人报告；目标岗位可以稍后再选。',
+    description: '填写专业、经历和技能，岗位稍后再选。',
     action: '手动建立档案'
   },
   {
     id: 'jobs',
     eyebrow: '先找方向',
     title: '我先看看岗位',
-    description: '先浏览岗位和要求，再决定要不要建档，不需要先准备任何资料。',
+    description: '先看岗位要求，无需填写资料。',
     action: '先浏览岗位'
   }
 ];
@@ -43,7 +43,7 @@ const START_POINTS: Array<{
 const FLOW_STEPS = [
   { number: '1', title: '导入或填写资料', detail: '从简历提取技能，也能直接手动填写。' },
   { number: '2', title: '生成个人报告', detail: '查看技能、经历与提升方向。' },
-  { number: '3', title: '匹配岗位', detail: '查看岗位要求与当前资料的对应情况。' },
+  { number: '3', title: '匹配岗位', detail: '查看岗位要求的对应情况。' },
   { number: '4', title: '查看针对性建议', detail: '选定岗位后生成建议，按需探索成长路径。' }
 ];
 
@@ -172,8 +172,8 @@ export default function OnboardingWizard({
           <>
             <div className="onboarding-wizard-intro">
               <span className="onboarding-section-label">四步路线</span>
-              <h2 id="onboarding-wizard-title">从简历到下一步求职行动</h2>
-              <p id="onboarding-wizard-description">先导入简历或手动填写资料，查看个人分析，再匹配岗位和获取建议。也可以先浏览岗位；目标岗位不是开始的前提。</p>
+              <h2 id="onboarding-wizard-title">开始职业规划</h2>
+              <p id="onboarding-wizard-description">整理资料、查看分析、匹配岗位、获取建议。也可先看岗位。</p>
             </div>
 
             {autosaveChoicePending && (
@@ -263,7 +263,7 @@ export default function OnboardingWizard({
                 </li>
               ))}
             </ol>
-            <p className="onboarding-confirmation-note">每一步都可以返回修改。重新导入简历会更新提取的内容，并保留手动补充的信息。</p>
+            <p className="onboarding-confirmation-note">资料随时可改；重新导入保留手动补充。</p>
             <div className="onboarding-principles">
               <div><b>技能可修改</b><span>提取有误时直接修改或删除；缺少内容时手动添加。</span></div>
               <div><b>个人报告</b><span>根据当前资料梳理技能、经历和提升方向。</span></div>

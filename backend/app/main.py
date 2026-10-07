@@ -123,7 +123,10 @@ def llm_config(request: Request):
 def save_llm_config(request: Request, payload: LLMConfigUpdate):
     if not _local_config_host(request):
         return error(request, 'HOST_NOT_ALLOWED', '模型配置只允许从本机访问。', 403)
-    return update_config(payload.base_url, payload.model, payload.api_key, payload.adapter)
+    return update_config(
+        payload.base_url, payload.model, payload.api_key, payload.adapter,
+        config_path=ROOT / '.env',
+    )
 
 
 @app.post('/api/llm/test')

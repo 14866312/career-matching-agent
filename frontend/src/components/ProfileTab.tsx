@@ -58,7 +58,7 @@ function TagEditor({ cfg, items, dict, onAdd, onRename, onRemove, focusTarget, o
         <button type="button" onClick={submit} aria-label={'确认添加' + cfg.label}>添加</button>
       </div>
       <div className="tag-list" aria-live="polite">
-        {items.length === 0 && <span className="tag-empty">暂无内容，可从简历提取或手动添加。</span>}
+        {items.length === 0 && <span className="tag-empty">暂无内容，可手动添加</span>}
         {items.map((x, i) => {
           return (
             <div className="tag-row" key={x.tag_id + i}>
@@ -101,7 +101,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   focusTarget: ProfileFocusTarget | null;
   onFocusHandled: () => void;
 }) {
-  const [resumeStatus, setResumeStatus] = useState('支持文本型 PDF / DOCX / TXT（≤5MB）；导入后可补充或修改提取结果。');
+  const [resumeStatus, setResumeStatus] = useState('文本型 PDF / DOCX / TXT，≤5MB。');
   const [resumeError, setResumeError] = useState<unknown>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
@@ -230,7 +230,7 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
     }
     setSubmitError(null);
     setSubmitBusy(true);
-    setSubmitMsg('正在生成个人分析报告…');
+    setSubmitMsg('正在生成个人报告…');
     const reqRev = revRef.current;
     try {
       const d = await apiPost<ProfileResp>('/api/student/profile', student);
@@ -258,11 +258,11 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
   return (
     <div className="profile-stitch">
       <section className="profile-stitch-hero">
-        <h2>简历分析与个人报告</h2>
+        <h2>个人资料</h2>
         <div className="profile-meta-line">
           <span>专业 · {student.major || '待填写'}</span>
-          <label className="profile-target-select">目标岗位（可选）<select value={student.intention.target_job_id} onChange={e => onSetTargetJob(e.target.value, jobs.find(j => j.id === e.target.value)?.name || '未选择')}><option value="">先建档，之后可选</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
-          <span>已整理 {total} 项能力信息</span>
+          <label className="profile-target-select">目标岗位（可选）<select value={student.intention.target_job_id} onChange={e => onSetTargetJob(e.target.value, jobs.find(j => j.id === e.target.value)?.name || '未选择')}><option value="">暂不选择</option>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
+          <span>共 {total} 项能力</span>
         </div>
         <div className="profile-stitch-progress" aria-label="简历分析流程">
           <div className="is-current"><b>01</b><span>导入简历</span></div>
@@ -272,41 +272,41 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       </section>
       <form className="profile-flow" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate aria-label="简历分析表单">
         <section id="profile-source" className="profile-step profile-source-step">
-          <header><p>第 1 步 · 导入简历与项目经历</p><h3>导入简历与项目经历</h3></header>
+          <header><p>第 1 步</p><h3>整理资料</h3></header>
           <div className="profile-source-actions" role="tablist" aria-label="资料录入方式">
-            <button className={sourceMode === 'resume' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'resume'} onClick={() => setSourceMode('resume')}>导入现有简历</button>
-            <button className={sourceMode === 'manual' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'manual'} onClick={() => setSourceMode('manual')}>手动录入资料</button>
+            <button className={sourceMode === 'resume' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'resume'} onClick={() => setSourceMode('resume')}>导入简历</button>
+            <button className={sourceMode === 'manual' ? 'is-active' : ''} type="button" role="tab" aria-selected={sourceMode === 'manual'} onClick={() => setSourceMode('manual')}>手动填写</button>
           </div>
           <input type="file" accept=".pdf,.docx,.txt" hidden id="resumeFile" aria-label="选择简历文件" onChange={e => { const f = e.target.files?.[0]; if (f) handleResume(f); e.target.value = ''; }} />
           {sourceMode === 'resume' ? <>
             <button type="button" className="profile-upload-card" disabled={resumeBusy || submitBusy} onClick={() => document.getElementById('resumeFile')?.click()}>
-              <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '点击此区域选择简历文件'}</strong><small>支持 PDF、DOCX、TXT 格式（≤5MB）。系统会提取可识别的姓名、经历、技能、证书与通用素质。</small><i>{resumeBusy ? '处理中' : '选择文件解析'}</i>
+              <span className="profile-upload-icon">⇧</span><strong>{resumeBusy ? '正在解析简历…' : '选择简历文件'}</strong><small>文本型 PDF / DOCX / TXT，≤5MB。</small><i>{resumeBusy ? '处理中' : '导入解析'}</i>
             </button>
             <label className="profile-name-field">简历姓名
-              <input aria-label="简历姓名" value={resumeName} maxLength={80} placeholder="未识别时可手动填写" onChange={e => setResumeName(e.target.value)} />
-              <small>请核对或修改；仅保存在当前会话，不参与匹配计算。</small>
+              <input aria-label="简历姓名" value={resumeName} maxLength={80} placeholder="可手动填写" onChange={e => setResumeName(e.target.value)} />
+              <small>请核对姓名；仅本次会话使用，不参与匹配。</small>
             </label>
             <p className="profile-resume-status">{resumeStatus}</p>
             {resumeError != null && <ErrorBox error={resumeError} />}
-            <p className="profile-source-hint">提取结果已填入下方技能清单。专业、城市或经历可在“手动录入资料”中修改；重新导入会更新简历提取项，并保留手动补充内容。</p>
+            <p className="profile-source-hint">结果已填入下方，可手动修改。重新导入保留手动补充。</p>
           </> : <div className="profile-manual-panel">
-            <p className="profile-source-hint">直接填写你的背景信息，完成后在下方整理能力标签。已导入的简历内容不会被清空。</p>
+            <p className="profile-source-hint">填写背景和能力，已导入内容会保留。</p>
             <div className="profile-basic-grid">
               <label>专业<input value={student.major} maxLength={120} placeholder="例如：计算机科学与技术" onChange={e => updateStudent(s => ({ ...s, major: e.target.value, major_source: 'manual' }))} /></label>
               <label>意向城市<input value={student.intention.city} maxLength={80} placeholder="例如：上海" onChange={e => updateStudent(s => ({ ...s, intention: { ...s.intention, city: e.target.value } }))} /></label>
-              <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="写下你做过什么、承担了什么、产出了什么…" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value, experiences_source: 'manual' }))} /></label>
+              <label className="wide">项目 / 实习经历<textarea rows={5} maxLength={12000} placeholder="填写经历、职责与成果" value={student.experiences} onChange={e => updateStudent(s => ({ ...s, experiences: e.target.value, experiences_source: 'manual' }))} /></label>
             </div>
           </div>}
         </section>
         <section className="profile-step profile-skill-step">
-          <header><p>第 2 步 · 整理技能信息</p><h3>检查提取结果，按需补充</h3><span>当前资料包含 {total} 项技能、证书与通用素质</span></header>
+          <header><p>第 2 步</p><h3>整理能力</h3><span>共 {total} 项能力</span></header>
           {focusNotice && <p className="profile-focus-notice" role="status">{focusNotice}</p>}
-          <p className="profile-step-copy">简历未提及的能力不等于不具备。发现遗漏时直接添加；发现不准确时修改或删除。</p>
+          <p className="profile-step-copy">未提及不代表不具备。</p>
           <div className="profile-editor-stack">{DIM_CONFIGS.map(cfg => <TagEditor key={cfg.key} cfg={cfg} items={student[cfg.key]} dict={tags.filter(t => t.dimension === cfg.key)} onAdd={text => addAbility(cfg.key, text)} onRename={(i, text) => renameAbility(cfg.key, i, text)} onRemove={i => removeAbility(cfg.key, i)} focusTarget={focusTarget} onFocusHandled={onFocusHandled} />)}</div>
           {tags.length === 0 && <p className="soft-note">标签字典未加载：新加标签可能无法与岗位要求对应，刷新页面可重试。</p>}
         </section>
         <section id="profile-report" className="profile-step profile-result-step">
-          <header><p>第 3 步 · 个人分析</p><h3>个人分析报告</h3><span>整理当前资料中的技能、经历与提升方向；岗位契合度在下一步单独计算</span></header>
+          <header><p>第 3 步</p><h3>个人分析报告</h3><span>查看分析与建议</span></header>
           {analysis ? <div className="profile-analysis-list" aria-label="个人分析结果">
             <article className="profile-analysis-group">
               <h4>当前资料</h4>
@@ -320,19 +320,19 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
               {total === 0 && <p>当前资料尚未提及技能、证书或通用素质；这不代表你不具备。</p>}
             </article>
             <article className="profile-analysis-group">
-              <h4>可展示的优势</h4>
+              <h4>个人优势</h4>
               {student.advantages.length > 0 ? student.advantages.map((item, i) => <p key={i}>{item}</p>) : <p>当前资料尚不足以归纳展示重点，可补充真实经历后重新生成。</p>}
             </article>
             <article className="profile-analysis-group">
-              <h4>下一步提升</h4>
+              <h4>提升建议</h4>
               {student.improvements.length > 0 ? student.improvements.map((item, i) => <p key={i}>{item}</p>) : <p>本次没有生成具体学习建议。</p>}
             </article>
             <p className="soft-note">{analysis.notice}</p>
-          </div> : <EmptyState symbol="◎" title="根据你的资料生成分析"><p>填写或导入资料后点击“生成个人分析报告”。没有模型配置时，仍可直接查看岗位匹配。</p></EmptyState>}
-          {analysis && analysis.evidence_quotes.length > 0 && <details className="profile-evidence"><summary>查看相关简历原文 · {analysis.evidence_quotes.length} 条</summary>{analysis.evidence_quotes.map((q, i) => <blockquote key={i}>「{q}」</blockquote>)}</details>}
+          </div> : <EmptyState symbol="◎" title="暂无个人报告"><p>填写资料后生成分析。未配置 AI 也可匹配岗位。</p></EmptyState>}
+          {analysis && analysis.evidence_quotes.length > 0 && <details className="profile-evidence"><summary>查看简历原文 · {analysis.evidence_quotes.length} 条</summary>{analysis.evidence_quotes.map((q, i) => <blockquote key={i}>「{q}」</blockquote>)}</details>}
           {submitError != null && <ErrorBox error={submitError} onRetry={() => void handleSubmit()} retryLabel="重试生成个人报告" />}<p className="form-message" aria-live="polite">{submitMsg}</p>
         </section>
-        <div className="profile-action-dock"><div><span><b>资料可随时修改</b><small>修改后重新生成个人报告或刷新岗位匹配即可。</small></span></div><button className="ghost-button" type="submit" disabled={submitBusy || resumeBusy}>{submitBusy ? '正在生成…' : '生成个人分析报告'}</button><button className="primary-button" type="button" onClick={onGoMatches}>查看岗位匹配</button></div>
+        <div className="profile-action-dock"><div><span><b>资料可随时修改</b><small>修改后请更新报告或匹配结果。</small></span></div><button className="ghost-button" type="submit" disabled={submitBusy || resumeBusy}>{submitBusy ? '正在生成…' : '生成个人报告'}</button><button className="primary-button" type="button" onClick={onGoMatches}>查看匹配</button></div>
       </form>
     </div>
   );

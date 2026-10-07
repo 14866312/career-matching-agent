@@ -108,7 +108,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
   return (
     <div className="jobs-stitch">
       <section className="jobs-stitch-hero">
-        <h2>探索职业岗位</h2>
+        <h2>岗位目录</h2>
         <div className="jobs-stitch-stats" aria-label="岗位数据概览">
           <div><span>目标岗位</span><strong className="is-text">{targetJobName || (targetJobId ? '已选择' : '待选择')}</strong></div>
           <div><span>岗位目录</span><strong>{jobs.length}<small>个</small></strong></div>
@@ -124,7 +124,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
           <label className="jobs-stitch-search">
             <span className="sr-only">搜索岗位</span>
             <span aria-hidden="true">⌕</span>
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="搜索岗位、方向或技能" />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="搜索岗位或技能" />
           </label>
         </div>
         <p className="jobs-stitch-note">
@@ -155,7 +155,7 @@ export default function JobsTab({ jobs, loading, error, onRetry, onSetTarget, ta
                   {j.requirements.slice(0, 4).map(r => <span key={r.tag_id}>{r.label}</span>)}
                   {j.requirements.length > 4 && <span>+{j.requirements.length - 4}</span>}
                 </div>
-                <span className="jobs-card-link">查看岗位详情 <b>↗</b></span>
+                <span className="jobs-card-link">查看详情 <b>↗</b></span>
               </div>
             </button>
           ))}
