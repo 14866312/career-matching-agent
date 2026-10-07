@@ -7,6 +7,7 @@ import AIConfigPanel from './components/AIConfigPanel';
 import LocalDraftSettingsPanel from './components/LocalDraftSettingsPanel';
 import OnboardingWizard, { type OnboardingOutcome, type OnboardingStart } from './components/OnboardingWizard';
 import { CAREER_TABS, useCareerSession } from './lib/useCareerSession';
+import { useWorkflowGuideLayout } from './lib/useWorkflowGuideLayout';
 
 export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() =>
@@ -67,6 +68,7 @@ export default function App() {
     finishOnboarding: completeOnboarding
   } = useCareerSession(showToast);
   const [onboardingOpen, setOnboardingOpen] = useState(onboardingRequired);
+  const { shellRef, headerRef, guideRef, compact } = useWorkflowGuideLayout(!autosaveChoicePending);
 
   useEffect(() => {
     window.localStorage.setItem('career-planning-theme', theme);
@@ -84,8 +86,8 @@ export default function App() {
   }, [completeOnboarding]);
 
   return (
-    <div className="exploration-shell" data-theme={theme}>
-      <header className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
+    <div ref={shellRef} className="exploration-shell" data-theme={theme}>
+      <header ref={headerRef} className={autosaveChoicePending || onboardingOpen ? 'exploration-header is-blocked' : 'exploration-header'}>
         <span className="exploration-wordmark"><span aria-hidden="true">↗</span>大学生职业规划</span>
         <nav className="exploration-nav" role="tablist" aria-label="职业探索主导航">
           {CAREER_TABS.map(t => (
@@ -123,7 +125,7 @@ export default function App() {
           </button>
         </div>
       </header>
-      {!autosaveChoicePending && <aside className="workflow-guide" aria-label="流程导航">
+      {!autosaveChoicePending && <aside ref={guideRef} className={'workflow-guide' + (compact ? ' is-compact' : '')} aria-label="流程导航">
         <ol>
           {workflowSteps.map((item, index) => <li key={item.label} className={item.state === '已过期' ? 'is-stale' : item.state.startsWith('已') || item.state === '最新' ? 'is-done' : ''}>
             <button
