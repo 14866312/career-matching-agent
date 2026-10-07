@@ -14,6 +14,50 @@ from backend.app.models import Ability, StudentProfile
 REAL_SLEEP = asyncio.sleep
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter, budget_field', [
+    ('chat-completions', 'max_tokens'),
+    ('openai-responses', 'max_output_tokens'),
+])
+async def test_profile_reserves_reasoning_budget(fake_http, monkeypatch, adapter, budget_field):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+
+    async def budget_sensitive_provider(request):
+        body = json.loads(request.content)
+        output = {'strength_tag_ids': [], 'improvements': []}
+        if body[budget_field] < 16000:
+            envelope = ({'status': 'incomplete', 'output_text': ''}
+                        if adapter == 'openai-responses' else
+                        {'choices': [{'finish_reason': 'length', 'message': {'content': ''}}]})
+        else:
+            envelope = ({'output_text': json.dumps(output)}
+                        if adapter == 'openai-responses' else
+                        {'choices': [{'finish_reason': 'stop',
+                                      'message': {'content': json.dumps(output)}}]})
+        return httpx.Response(200, json=envelope)
+
+    calls = fake_http([budget_sensitive_provider])
+    result = await llm.generate_profile(StudentProfile())
+    assert result['mode'] == 'live'
+    assert calls[0][budget_field] == 16000
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter', ['chat-completions', 'openai-responses'])
+async def test_profile_rejects_truncation_even_with_larger_budget(fake_http, monkeypatch, adapter):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+    content = '{"strength_tag_ids": [], "improvements": []}'
+    envelope = ({'status': 'incomplete', 'output_text': content}
+                if adapter == 'openai-responses' else
+                {'choices': [{'finish_reason': 'length', 'message': {'content': content}}]})
+    calls = fake_http([httpx.Response(200, json=envelope)])
+    with pytest.raises(llm.AIError) as exc:
+        await llm.generate_profile(StudentProfile())
+    assert exc.value.code == 'LLM_INVALID_OUTPUT'
+    assert len(calls) == 1
+
+
 @pytest.fixture
 def fake_http(monkeypatch):
     original = httpx.AsyncClient
