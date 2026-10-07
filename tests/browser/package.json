@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node run.cjs",
     "test:ui": "node ui_regressions.cjs",
-    "test:a11y": "node a11y.cjs"
+    "test:a11y": "node a11y.cjs",
+    "test:theme": "node theme_display.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

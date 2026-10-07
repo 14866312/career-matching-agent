@@ -131,8 +131,14 @@
   color: #55574f !important;
 }
 
-.exploration-shell[data-theme='light'] .exploration-pages .primary-button {
+.exploration-shell[data-theme='light'] :is(.exploration-pages, .onboarding-wizard, .ai-config-panel, .local-draft-settings-panel) .primary-button {
+  border-color: var(--stitch-accent, #52594a);
+  background: var(--stitch-accent, #52594a);
   color: #ffffff !important;
+}
+
+.exploration-shell[data-theme='light'] .primary-button :is(span, b, strong, i) {
+  color: inherit !important;
 }
 
 .exploration-shell[data-theme='light'] .exploration-pages :is(
@@ -245,6 +251,123 @@
   color: var(--stitch-text);
   border-bottom-color: var(--stitch-line);
 }
+
+/* Interactive states need their own surfaces; changing text alone hides selection. */
+.exploration-shell[data-theme='light'] :is(
+  .ghost-button, .onboarding-wizard-close, .ai-config-close, .local-draft-settings-close,
+  .onboarding-start-card, .onboarding-storage-choice, .onboarding-flow-list li,
+  .onboarding-principles div, .local-draft-setting-card, .ai-provider-grid button,
+  .profile-source-actions, .editable-tag, .tag-input button, .timeline-node,
+  .match-filter-panel, .path-disclosure, .profile-focus-notice
+) {
+  border-color: var(--stitch-line-strong);
+  color: var(--stitch-text);
+  background: var(--stitch-surface);
+}
+
+.exploration-shell[data-theme='light'] :is(
+  .primary-button:hover, .primary-button:focus-visible
+) {
+  background: #414a3a;
+}
+
+.exploration-shell[data-theme='light'] :is(
+  .ghost-button:hover, .onboarding-start-card:hover, .ai-provider-grid button:hover,
+  .onboarding-wizard-close:hover, .ai-config-close:hover, .local-draft-settings-close:hover
+) {
+  border-color: #96988b;
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] :is(
+  .profile-source-actions button.is-active, .onboarding-start-card.is-selected,
+  .ai-provider-grid button.active, .timeline-node.active, .timeline-card.active,
+  .path-branch-grid button.active, .sprint-list button.active, .alternative-grid button.active
+) {
+  border-color: #7d8772;
+  background: #e2e6da;
+  box-shadow: inset 0 0 0 1px #7d8772;
+}
+
+.exploration-shell[data-theme='light'] .jobs-stitch-card.is-target {
+  border-color: #7d8772;
+  box-shadow: inset 0 0 0 1px #7d8772;
+}
+
+.exploration-shell[data-theme='light'] :is(
+  .workflow-step-number, .onboarding-route-number, .onboarding-route-line,
+  .onboarding-flow-number, .onboarding-wizard-footer, .onboarding-confirmation-note,
+  .onboarding-principles div, .local-draft-privacy, .path-section, .path-next-task
+) {
+  border-color: var(--stitch-line-strong);
+}
+
+.exploration-shell[data-theme='light'] :is(
+  .onboarding-confirmation-note, .profile-evidence blockquote, .profile-upload-icon,
+  .matrix-row > b, .matrix-row.pending > b, .sprint-list button > b, .path-overview > em
+) {
+  background: var(--stitch-surface-2);
+}
+
+.exploration-shell[data-theme='light'] .path-timeline::before {
+  background: linear-gradient(transparent, #c6c4b9 10%, #c6c4b9 90%, transparent);
+}
+
+.exploration-shell[data-theme='light'] .match-coverage {
+  background: #deddd4;
+  accent-color: #52594a;
+}
+
+.exploration-shell[data-theme='light'] .match-coverage::-webkit-progress-bar { background: #deddd4; }
+.exploration-shell[data-theme='light'] .match-coverage::-webkit-progress-value { background: #52594a; }
+.exploration-shell[data-theme='light'] .match-coverage::-moz-progress-bar { background: #52594a; }
+
+.exploration-shell[data-theme='light'] .diagnosis-grid article > i { background: #deddd4; }
+.exploration-shell[data-theme='light'] .diagnosis-grid article > i b { background: #52594a; }
+
+.exploration-shell[data-theme='light'] .local-draft-switch > span {
+  border-color: #96988b;
+  background: #deddd4;
+}
+
+.exploration-shell[data-theme='light'] .local-draft-switch > span::after { background: #fffefb; }
+.exploration-shell[data-theme='light'] .local-draft-switch input:checked + span {
+  border-color: #52594a;
+  background: #52594a;
+}
+.exploration-shell[data-theme='light'] .local-draft-switch input:checked + span::after { background: #fffefb; }
+
+.exploration-shell[data-theme='light'] :is(
+  .ai-config-state.ready i, .local-draft-settings-state.is-enabled i, .profile-action-dock > div > i.ok
+) {
+  background: #52594a;
+  box-shadow: none;
+}
+
+.exploration-shell[data-theme='light'] :is(.error-box, .ai-config-error) {
+  color: #743c2d;
+  border-color: #c9a697;
+  background: #f5e9e2;
+}
+
+.exploration-shell[data-theme='light'] :is(input, textarea, select)::placeholder {
+  color: #73756b;
+  opacity: 1;
+}
+
+.exploration-shell[data-theme='light'] :is(input, textarea, select):focus {
+  border-color: #7d8772;
+  box-shadow: 0 0 0 3px rgba(82, 99, 76, .15);
+}
+
+.exploration-shell[data-theme='light'] :is(button, a, summary, input, select, textarea, [tabindex]):focus-visible,
+.exploration-shell[data-theme='light'] .local-draft-switch input:focus-visible + span {
+  outline: 2px solid #52634c;
+  outline-offset: 3px;
+}
+
+.exploration-shell[data-theme='light'] .exploration-nav { box-shadow: 0 4px 18px rgba(53, 52, 43, .12); }
+.exploration-shell[data-theme='light'] .exploration-nav-item span { color: inherit; }
 
 @media (max-width: 900px) {
   .theme-toggle { min-height: 44px; padding-inline: 10px; font-size: 14px; }
