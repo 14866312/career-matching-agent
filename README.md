@@ -1,6 +1,7 @@
 # 基于 AI 的大学生职业规划智能体
 
 [![CI](https://github.com/14866312/career-matching-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/14866312/career-matching-agent/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/14866312/career-matching-agent)](https://github.com/14866312/career-matching-agent/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 一个在自己电脑上运行的职业探索工具：整理你的资料，对照岗位要求，查看匹配依据和成长路线，再按需让 AI 帮你写行动建议。
@@ -9,7 +10,7 @@
 
 **匹配分由固定规则计算；AI 负责整理资料和生成建议。** 分数表示资料与岗位要求的覆盖程度，不能证明真实能力，也不代表录用概率。
 
-[安装运行](#快速开始windows) · [功能与限制](#功能与当前状态) · [完整使用指南](docs/项目使用全过程.md) · [公开文件范围](docs/仓库文件管理.md)
+**[下载最新版](https://github.com/14866312/career-matching-agent/releases/latest)** · [快速开始](#快速开始windows) · [功能说明](#功能与当前状态) · [使用指南](docs/项目使用全过程.md) · [开发文档](#给开发者)
 
 ## 界面预览
 
@@ -29,11 +30,25 @@
 | 个人分析与岗位建议 | 根据当前资料生成分析报告和行动建议 | 需要 |
 | 复制与 TXT 导出 | 保存已经生成的报告 | 导出本身不需要；生成 AI 报告需要 |
 
-当前算法为 `matching-2.2`。已有后端、前端和浏览器自动化检查；**真实模型供应商调用仍待验证**，浏览器测试使用模拟模型响应。岗位要求等级只用于展示，尚不具备对学生熟练程度的完整判断。验收范围见 [项目稳定性验收](docs/acceptance/项目稳定性验收.md)与 [真实模型验收](docs/acceptance/真实模型验收.md)。
+当前算法为 `matching-2.2`。2026-10-07 检查通过：后端 **374** 项、前端 **55** 项、浏览器 **17** 个模拟 AI 场景；22 次无障碍扫描无违规。真实供应商下虚构简历与个人报告已成功调用；用户原资料及不同供应商的完整流程仍需验证。浏览器测试使用模拟模型响应。岗位要求等级只用于展示，尚不具备对学生熟练程度的完整判断。验收范围见 [项目稳定性验收](docs/acceptance/项目稳定性验收.md)与 [真实模型验收](docs/acceptance/真实模型验收.md)。
 
 ## 快速开始（Windows）
 
-准备 Git、Python **3.12**、Node.js **22.12.0 或更高版本**（含 npm），在 PowerShell 依次运行：
+### 推荐：下载预构建包
+
+在 [最新 Release](https://github.com/14866312/career-matching-agent/releases/latest) 下载附件 **career-matching-agent-v1.2.0.zip**，解压后在项目根目录打开 PowerShell。需要 **Python 3.12 或以上**，首次安装需要联网；无需 Node.js。
+
+~~~powershell
+./install.ps1 -SkipFrontend
+./start.ps1
+~~~
+
+附件已包含网页构建资源，提供 `SHA256SUMS.txt` 校验文件。它不是独立 EXE，Python 运行环境与依赖仍需安装。
+
+<details>
+<summary>从源码安装或参与开发（需要 Git 与 Node.js）</summary>
+
+准备 Git、Python **3.12 或以上**、Node.js **22.12.0 或以上**（含 npm）。GitHub 自动提供的 Source code ZIP/TAR 也适用此方式。
 
 ~~~powershell
 git clone https://github.com/14866312/career-matching-agent.git
@@ -41,6 +56,8 @@ cd career-matching-agent
 ./install.ps1
 ./start.ps1
 ~~~
+
+</details>
 
 浏览器打开 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**。首次安装需要联网；之后通常只需运行 `./start.ps1`。在服务窗口按 `Ctrl+C` 停止；Windows 下关闭启动终端也会自动停止服务并释放端口。端口被占用时，使用 `./start.ps1 -Port 8001`，再打开 [http://127.0.0.1:8001](http://127.0.0.1:8001)。
 
@@ -55,14 +72,14 @@ cd career-matching-agent
 
 ## 接入 AI 模型（可选）
 
-准备一个兼容 OpenAI 接口的模型服务，在项目根目录执行：
+在界面打开「AI 模型配置」，填写服务地址、模型名称和密钥后保存并测试连接。也可使用配置文件（首次配置时执行，已有 `.env` 请直接编辑）：
 
 ~~~powershell
 Copy-Item .env.example .env
 notepad .env
 ~~~
 
-在本机填写 `LLM_BASE_URL`（服务地址）、`LLM_MODEL`（模型名称）和 `LLM_API_KEY`（密钥），保存并重启 `./start.ps1`。界面也提供「AI 模型配置」入口；界面设置仅在当前服务进程有效，不会写回 `.env`。
+在本机填写 `LLM_BASE_URL`（服务地址）、`LLM_MODEL`（模型名称）和 `LLM_API_KEY`（密钥），保存并重启 `./start.ps1`。也可直接在界面「AI 模型配置」中填写并保存；配置会原子写入本机 `.env`，重启后恢复，已保存的密钥不会回显。
 
 配置后，可用 `samples/虚构简历.pdf`、`.docx` 或 `.txt` 试用简历导入，核对提取内容，再生成分析或岗位建议。支持文字版文件，单个不超过 **5MB、3 万字符**；扫描件、加密文件不支持，项目没有 OCR。
 
@@ -90,6 +107,18 @@ notepad .env
 - 简历姓名仅在当前会话展示和修改，不进入匹配、后续模型请求、本机草稿或导出的报告，刷新后清空；解析请求中的原始简历仍可能含姓名。
 - 本机草稿不保存简历原文件、姓名、AI 报告或模型密钥。
 
+## 文档导航
+
+| 想了解什么 | 文档 |
+| --- | --- |
+| 完整操作流程 | [使用指南](docs/项目使用全过程.md) |
+| 已验证范围与限制 | [稳定性验收](docs/acceptance/项目稳定性验收.md) · [真实模型验收](docs/acceptance/真实模型验收.md) |
+| API、模型与数据口径 | [AI 接口契约](docs/AI接口契约.md) · [数据字典](docs/数据字典.md) · [领域上下文](CONTEXT.md) |
+| 公开文件与本机资料 | [仓库文件管理](docs/仓库文件管理.md) |
+
+<details>
+<summary>仓库公开内容与本机文件（点击展开）</summary>
+
 ## 仓库里放什么
 
 | 公开到 GitHub | 只留在本机 |
@@ -100,6 +129,8 @@ notepad .env
 | 使用指南、接口/数据说明、ADR、精选验收证据 | `本地资料/` 中的工单、方案、PPT、Word、笔记与个人工作记录 |
 
 本地比 GitHub 多出这些目录是正常现象。具体归档决定、例外与核对命令见 [仓库文件管理](docs/仓库文件管理.md)。
+
+</details>
 
 ## 给开发者
 
