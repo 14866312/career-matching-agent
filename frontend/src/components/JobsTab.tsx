@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { apiGet } from '../api';
+import { skillDescription } from '../lib/skillDescriptions';
 import type { JobDetail, JobSummary, Requirement } from '../types';
 import { EmptyState, ErrorBox, JobModal, Loading } from './ui';
 
@@ -9,101 +10,48 @@ const DIM_GROUPS: Array<{ key: 'skills' | 'certificates' | 'qualities'; label: s
   { key: 'qualities', label: '通用素质' }
 ];
 
-function levelSummary(r: Requirement): string {
-  if (r.level_source === 'binary_requirement') return '具备即可';
-  if (r.required_level == null) return '等级未标注';
-  const label = ['未标注', '了解', '熟悉', '熟练'][r.required_level] ?? '等级 ' + r.required_level;
-  return label + (r.level_source === 'default_baseline' ? ' · 默认基线' : '');
-}
-
 function RequirementItem({ r }: { r: Requirement }) {
   return (
-    <details className="req-item">
-      <summary>
-        <b>{r.label}</b>
-        <span className="req-level">{levelSummary(r)}<span className="req-chevron" aria-hidden="true">⌄</span></span>
-      </summary>
-      <div className="req-content">
-        {r.evidence && r.evidence.length > 0 && (
-          <>
-            {r.evidence.slice(0, 2).map((q, i) => (
-              <blockquote key={i} className="req-quote">
-                「{q.quote}」<cite>样本 {q.source_id}</cite>
-              </blockquote>
-            ))}
-            {r.evidence.length > 2 && <p className="req-basis">其余 {r.evidence.length - 2} 条证据从略。</p>}
-          </>
-        )}
-        {(r.level_basis || r.selection_basis) && (
-          <details className="req-method">
-            <summary>查看整理依据</summary>
-            {r.level_basis && <p className="req-basis">{r.level_basis}</p>}
-            {r.selection_basis && <p className="req-basis">{r.selection_basis}</p>}
-          </details>
-        )}
-      </div>
-    </details>
+    <article className="req-item">
+      <h5>{r.label}</h5>
+      <p className="req-description">{skillDescription(r.label)}</p>
+    </article>
   );
 }
 
 function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id: string, name: string) => void }) {
-  const samples = job.samples ?? [];
   return (
     <div className="job-detail">
       <header className="job-detail-head">
         <p className="eyebrow">职业需要的技能</p>
         <h3>{job.name}</h3>
-        <p className="detail-meta">{job.level}</p>
         <p className="detail-summary">{job.summary}</p>
       </header>
       <div className="job-detail-layout">
         <section className="job-detail-main" aria-label="岗位能力要求">
           {DIM_GROUPS.map(g => {
             const items = (job.requirements ?? []).filter(r => r.dimension === g.key);
-            if (g.key !== 'certificates' && items.length === 0) return null;
+            if (items.length === 0) return null;
             return (
               <div className="item-block job-detail-group" key={g.key}>
-                <h4>{g.label} · {items.length}</h4>
+                <h4>{g.label}</h4>
                 <div className="job-detail-items">
-                  {items.length > 0
-                    ? items.map(r => <RequirementItem key={r.tag_id} r={r} />)
-                    : <p className="soft-note">样本未提及证书要求，不代表无要求。</p>}
+                  {items.map(r => <RequirementItem key={r.tag_id} r={r} />)}
                 </div>
-                {g.key === 'certificates' && job.certificate_note && (
-                  <details className="job-detail-note">
-                    <summary>证书要求说明</summary>
-                    <p className="soft-note">{job.certificate_note}</p>
-                  </details>
-                )}
               </div>
             );
           })}
-        </section>
-        <aside className="job-detail-aside" aria-label="岗位补充信息">
           {(job.preferred ?? []).length > 0 && (
-            <div className="item-block">
-              <h4>优先项 · {job.preferred.length}<span>只作补充建议，不计入基础分和增强分</span></h4>
-              {job.preferred.map(r => (
-                <div className="item pending" key={r.tag_id}>＋ {r.label}{r.required_level ? <span className="mono"> · 建议等级 {r.required_level}</span> : null}</div>
-              ))}
+            <div className="item-block job-detail-group">
+              <h4>拓展技能</h4>
+              <p className="preferred-description">还可以进一步学习{job.preferred.map(r => r.label).join('、')}。</p>
             </div>
           )}
-          <details className="item-block job-detail-samples">
-            <summary>来源样本 · {samples.length} 条</summary>
-            <p className="soft-note">历史招聘样本，仅用于整理能力基线；以下展示前 3 条。数据版本 {job.version}。</p>
-            {samples.slice(0, 3).map(s => (
-              <div className="sample-row" key={s.id}>
-                <b>{s.company}</b>
-                <span>{s.city ?? '—'} · {s.salary?.raw || '薪资面议'}</span>
-                <span className="mono">{s.updated_raw ?? ''}</span>
-              </div>
-            ))}
-          </details>
-        </aside>
+        </section>
       </div>
       <div className="detail-actions">
         <button className="primary-button" type="button" onClick={() => onSetTarget(job.id, job.name)}>
-          设为目标岗位 <span>↗</span>
+          设为目标岗位
         </button>
       </div>
     </div>

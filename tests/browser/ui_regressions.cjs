@@ -398,7 +398,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
       text: getComputedStyle(dialog).color,
       backdrop: getComputedStyle(dialog.parentElement).backgroundColor,
       requirementSurface: getComputedStyle(dialog.querySelector('.req-item')).backgroundColor,
-      requirementText: getComputedStyle(dialog.querySelector('.req-item summary')).color
+      requirementText: getComputedStyle(dialog.querySelector('.req-item h5')).color
     }));
     assert.deepEqual(lightDialogColors, {
       surface: 'rgb(255, 254, 251)',
@@ -417,13 +417,10 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     assert.equal(await jobClose.evaluate(button => button === document.activeElement), true, '岗位详情 Tab 应循环到关闭按钮');
     await assertDialogLayout(jobDialog, '手机岗位详情');
     await assertTouchTargets(jobDialog.getByRole('button'), '岗位详情操作');
-    await assertTouchTargets(jobDialog.locator('.req-item summary'), '岗位要求展开');
-    await assertTextScale(jobDialog.locator('.detail-summary, .item-block h4'), 14, '手机岗位详情正文');
-    await assertTextScale(jobDialog.locator('.detail-meta, .job-detail-aside h4 span'), 12, '手机岗位详情说明');
-    await assertTextScale(jobDialog.locator('.job-detail .mono'), 12, '手机岗位等级与样本说明');
-    await jobDialog.locator('.req-item summary').first().click();
-    await assertTextScale(jobDialog.locator('.req-basis, .req-quote, .req-quote cite'), 12, '手机岗位依据');
-    await assertDialogLayout(jobDialog, '手机展开岗位依据');
+    await assertTextScale(jobDialog.locator('.detail-summary, .item-block h4, .req-description'), 14, '手机岗位技能说明');
+    assert.doesNotMatch(await jobDialog.innerText(), /样本|来源|整理依据|默认基线|row-\d+|建议等级/);
+    assert.equal(await jobDialog.locator('details').count(), 0, '技能说明直接展示');
+    await assertDialogLayout(jobDialog, '手机岗位技能说明');
     await page.keyboard.press('Escape');
     await jobDialog.waitFor({ state: 'detached' });
     assert.equal(await jobTrigger.evaluate(button => button === document.activeElement), true, '手机关闭岗位详情应恢复触发卡片焦点');
