@@ -10,5 +10,5 @@ if ($Port -ne 0) {
     if ($Port -lt 1 -or $Port -gt 65535) { throw 'Port must be between 1 and 65535.' }
     $env:PORT = [string]$Port
 }
-& $pythonExe (Join-Path $PSScriptRoot 'backend/run.py')
+& $pythonExe (Join-Path $PSScriptRoot 'backend/run.py') --parent-pid $PID
 if ($LASTEXITCODE -ne 0) { throw 'Local service failed. See the error above; for port conflicts use -Port 8001.' }
