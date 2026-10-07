@@ -20,7 +20,7 @@
 - 一次业务调用最多发起两次上游请求。仅 httpx.ConnectError、httpx.ConnectTimeout、HTTP 429、HTTP 500—599 会在首次失败后等待0.5秒并自动重试一次；混合故障也共用一次重试额度。ConnectTimeout 属于契约允许重试的临时连接故障，第二次仍失败时返回 LLM_CONNECTION。
 - 总时限到期，以及 ReadTimeout、WriteTimeout、PoolTimeout 等其他阶段超时，均立即返回 LLM_TIMEOUT，绝不自动重试。外部任务取消继续向上传播，不转为模型错误，也不重试。
 - “45秒”是每次上游请求的预算；发生允许重试的快速失败后，第二次请求有独立45秒预算。整个业务调用不是统一45秒，最多两次预算加0.5秒退避及本地处理。asyncio 的取消为协作式机制，不是对事件循环阻塞代码的强制终止。
-- 其他 HTTPX 网络/协议错误返回 LLM_CONNECTION，不自动重试。非200状态除上述重试项外均立即失败。输出格式和证据校验失败也不自动重试；错误中的 retryable=true 仅表示用户可再次尝试。
+- 其他 HTTPX 网络/协议错误返回 LLM_CONNECTION，不自动重试。非200状态除上述重试项外均立即失败。输出格式和证据校验失败也不自动重试；解析时接受被 Markdown 围栏或前后说明文字包裹的单个 JSON 对象，以及 content 为文本片段列表的网关响应，结果仍须通过严格 Schema 与证据校验；finish_reason=length 或 status=incomplete 返回 LLM_INVALID_OUTPUT，并提示输出被长度上限截断（推理类模型会占用输出额度）；日志只记录适配器、HTTP 状态和固定的原因标签，不记录响应正文；错误中的 retryable=true 仅表示用户可再次尝试。
 
 ## 实际 Prompt
 

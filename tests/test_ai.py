@@ -258,6 +258,43 @@ async def test_malformed_envelopes_have_safe_error_and_no_retry(fake_http, envel
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('content', [
+    '好的，结果如下：\n{"ok": true}\n希望对你有帮助。',
+    '```json\n{"ok": true}\n```',
+    [{'type': 'text', 'text': '{"ok": '}, {'type': 'text', 'text': 'true}'}],
+], ids=['surrounding-prose', 'fenced', 'list-of-text-parts'])
+async def test_call_json_accepts_common_wrappers_around_one_json_object(fake_http, content):
+    fake_http([httpx.Response(200, json={'choices': [{'finish_reason': 'stop', 'message': {'content': content}}]})])
+    assert await llm.call_json('test', {}) == {'ok': True}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter, envelope', [
+    ('chat-completions', {'choices': [{'finish_reason': 'length', 'message': {'content': '{"a":'}}]}),
+    ('openai-responses', {'status': 'incomplete', 'output_text': '{"a":'}),
+], ids=['chat-length', 'responses-incomplete'])
+async def test_truncated_output_explains_length_limit_without_leaking_body(fake_http, monkeypatch, adapter, envelope, caplog):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+    fake_http([httpx.Response(200, json=envelope)])
+    with caplog.at_level('WARNING', logger='backend.app.llm'):
+        with pytest.raises(llm.AIError) as exc:
+            await llm.call_json('test', {})
+    assert exc.value.code == 'LLM_INVALID_OUTPUT' and exc.value.retryable
+    assert '长度上限' in exc.value.message
+    assert 'reason=truncated' in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_unparseable_output_logs_reason_label_only(fake_http, caplog):
+    fake_http([httpx.Response(200, json={'choices': [{'message': {'content': '秘密简历正文，没有任何花括号'}}]})])
+    with caplog.at_level('WARNING', logger='backend.app.llm'):
+        with pytest.raises(llm.AIError):
+            await llm.call_json('test', {})
+    assert 'reason=not_json_object' in caplog.text
+    assert '秘密简历正文' not in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_missing_credentials(monkeypatch):
     monkeypatch.delenv('LLM_API_KEY', raising=False)
     with pytest.raises(llm.AIError) as e:

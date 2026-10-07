@@ -102,6 +102,28 @@ SYSTEM = '''你是大学生职业规划的信息整理助手。用户消息中�
 只输出指定的JSON对象。不得编造既有技能、证书、经历或掌握程度；不承诺就业、薪资或录用。证据必须逐字存在于给定原文。只提供未来学习活动，不陈述用户已经具备某种能力。'''
 
 
+def _parse_json_object(content):
+    """Parse a JSON object, tolerating a markdown fence or short prose around it.
+
+    The result is still validated against a strict schema and verbatim-evidence
+    rules, so accepting surrounding text does not admit unverified content.
+    """
+    text = content.strip()
+    fence = chr(96) * 3
+    if text.startswith(fence) and text.endswith(fence):
+        text = text[len(fence):-len(fence)].removeprefix('json').strip()
+    try:
+        value = json.loads(text)
+    except ValueError:
+        start, end = text.find('{'), text.rfind('}')
+        if start < 0 or end <= start:
+            raise
+        value = json.loads(text[start:end + 1])
+    if not isinstance(value, dict):
+        raise ValueError()
+    return value
+
+
 async def call_json(instruction, payload):
     if not configured():
         raise AIError('LLM_NOT_CONFIGURED', '请在本机 .env 配置模型接口、模型名和密钥，然后重启服务。')
@@ -158,12 +180,16 @@ async def call_json(instruction, payload):
                         f'模型接口不支持当前请求路径或方法（/{endpoint}），请检查适配器和接口地址。'
                     )
                 raise AIError('LLM_REQUEST', '模型接口请求失败，请核对兼容接口和模型配置。')
+            # Diagnostic reasons below are fixed labels: never log the response body,
+            # which may echo resume text.
+            reason = 'unparseable_envelope'
             try:
                 envelope = response.json()
                 if not isinstance(envelope, dict):
                     raise ValueError()
                 if adapter == 'openai-responses':
                     if envelope.get('status') == 'incomplete':
+                        reason = 'truncated'
                         raise ValueError()
                     content = envelope.get('output_text')
                     if not isinstance(content, str):
@@ -181,19 +207,26 @@ async def call_json(instruction, payload):
                         raise ValueError()
                     choice = choices[0]
                     if choice.get('finish_reason') == 'length':
+                        reason = 'truncated'
                         raise ValueError()
                     content = choice['message']['content']
-                if not isinstance(content, str) or len(content) > 50000:
+                    if isinstance(content, list):
+                        # Some gateways return content as a list of text parts.
+                        content = ''.join(p['text'] for p in content if isinstance(p, dict) and isinstance(p.get('text'), str))
+                reason = 'empty_or_oversized_content'
+                if not isinstance(content, str) or not content.strip() or len(content) > 50000:
                     raise ValueError()
-                fence = chr(96) * 3
-                content = content.strip()
-                if content.startswith(fence) and content.endswith(fence):
-                    content = content[len(fence):-len(fence)].removeprefix('json').strip()
-                value = json.loads(content)
-                if not isinstance(value, dict):
-                    raise ValueError()
+                reason = 'not_json_object'
+                value = _parse_json_object(content)
                 return value
             except (KeyError, IndexError, ValueError, TypeError) as exc:
+                logger.warning('Model response rejected: adapter=%s reason=%s status=%s', adapter, reason, response.status_code)
+                if reason == 'truncated':
+                    raise AIError(
+                        'LLM_INVALID_OUTPUT',
+                        '模型输出被长度上限截断，无法解析。推理类模型会占用输出额度，可换用非推理模型后重试。',
+                        True,
+                    ) from exc
                 raise AIError('LLM_INVALID_OUTPUT', '模型返回格式无法解析，输入已保留，请重试。', True) from exc
 
 
