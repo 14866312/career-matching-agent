@@ -273,7 +273,13 @@ def _normalize_profile_output(value):
 async def generate_profile(student: StudentProfile):
     verified = {canonical(a.tag_id): a for a in student.skills + student.certificates + student.qualities if a.level > 0}
     instruction = '''根据学生当前资料整理个人分析。只输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}，不要添加其他字段。strength_tag_ids最多12项且不重复，只能从known_tags选择；improvements最多4项，每项为1到500字符的字符串。没有内容时返回空数组，不返回null。不新增任何技能，不据经历推断熟练度。建议只写未来活动，不陈述既有能力，不打分。'''
-    raw = await call_json(instruction, {'student': student.model_dump(exclude={'advantages', 'improvements'}), 'known_tags': list(verified)})
+    # Reasoning tokens share the output budget with the final report JSON.
+    raw = await call_json(
+        instruction,
+        {'student': student.model_dump(exclude={'advantages', 'improvements'}),
+         'known_tags': list(verified)},
+        max_output_tokens=16000,
+    )
     response = validate(ProfileAnalysis, _normalize_profile_output(raw))
     if any(tag_id not in verified for tag_id in response.strength_tag_ids):
         raise AIError('LLM_EVIDENCE', '模型新增了资料中没有的能力，结果已拦截，请重试。', True)
