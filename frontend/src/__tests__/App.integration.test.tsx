@@ -44,6 +44,39 @@ afterEach(() => {
 });
 
 describe('App integration', () => {
+  it('starts without an active workflow step and highlights only the selected step', async () => {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    const user = userEvent.setup();
+    render(<App />);
+    const guide = screen.getByRole('complementary', { name: '流程导航' });
+    const steps = within(guide).getAllByRole('button').slice(0, 4);
+    expect(guide.querySelectorAll('[aria-current="step"]')).toHaveLength(0);
+
+    for (const step of steps) {
+      await user.click(step);
+      expect(step).toHaveAttribute('aria-current', 'step');
+      expect(guide.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
+    }
+
+    for (const name of ['成长路径', '职业探索']) {
+      await user.click(screen.getByRole('tab', { name: new RegExp(name) }));
+      expect(guide.querySelectorAll('[aria-current="step"]')).toHaveLength(0);
+    }
+    await user.click(within(guide).getByRole('button', { name: '下一步：导入简历或填写资料' }));
+    expect(steps[0]).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('does not activate a step when restoring a draft or opening a page directly', async () => {
+    const app = render(<App />);
+    await waitFor(() => expect(document.querySelector('.exploration-pages')).toHaveAttribute('data-active-page', 'profile'));
+    expect(document.querySelectorAll('.workflow-guide [aria-current="step"]')).toHaveLength(0);
+    app.unmount();
+    window.localStorage.setItem(AUTOSAVE_STORAGE_KEY, 'false');
+    window.history.replaceState(null, '', '#matches');
+    render(<App />);
+    expect(document.querySelectorAll('.workflow-guide [aria-current="step"]')).toHaveLength(0);
+  });
+
   it('switches between dark and eye-friendly light themes and remembers the selection', async () => {
     const user = userEvent.setup();
     const app = render(<App />);
@@ -97,6 +130,7 @@ describe('App integration', () => {
     const settings = await screen.findByRole('dialog', { name: '本机数据设置' });
     await user.click(within(settings).getByRole('button', { name: '清除本机草稿并重置流程' }));
     await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'jobs'));
+    expect(document.querySelectorAll('.workflow-guide [aria-current="step"]')).toHaveLength(0);
 
     await user.click(screen.getByRole('tab', { name: /匹配报告/ }));
     await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'matches'));
