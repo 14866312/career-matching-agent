@@ -1,6 +1,6 @@
 # AI 调用与校验契约
 
-本文记录 backend/app/llm.py 的实际行为；公共输入模型仍由 backend/app/models.py 定义。模型与供应商由本机服务端配置，不由本模块选择。测试均使用模拟传输，不能作为真实 API 验收证据。适配器下列3500为默认输出额度，简历任务的16000额度见“请求、总时限与重试”。
+本文记录 backend/app/llm.py 的实际行为；公共输入模型仍由 backend/app/models.py 定义。模型与供应商由本机服务端配置，不由本模块选择。测试均使用模拟传输，不能作为真实 API 验收证据。适配器下列3500为默认输出额度，简历与个人报告任务的16000额度见“请求、总时限与重试”。
 
 ## 模型适配器
 
@@ -9,11 +9,11 @@
 - `openai-responses` 请求地址在基础地址后追加 `/responses`，使用 Responses API 的 `instructions`、`input` 和 `max_output_tokens=3500` 字段。响应优先读取 `output_text`，没有该字段时拼接 `output[].content[].text`。
 - 配置接口会返回适配器名称，但不会返回 API 密钥。DeepSeek 和 OpenAI 兼容接口预设默认使用 `chat-completions`，因为大多数兼容服务实现的是该协议；用户可以在配置页切换到 `openai-responses`。
 - GET/POST /api/llm/config 只接受本机 Host（localhost、127.0.0.1 或 ::1）；其他 Host 返回 HOST_NOT_ALLOWED，不会读取或更新配置。
-- 已有远程地址发生变化时必须重新提供 API 密钥；同一地址留空表示保留现有密钥。本机回环 HTTP 地址之间切换可以保留现有密钥。接口只在进程内更新环境变量，不写回 .env。
+- 已有远程地址发生变化时必须重新提供 API 密钥；同一地址留空表示保留现有密钥。本机回环 HTTP 地址之间切换可以保留现有密钥。配置保存接口先原子写入本机 .env，成功后更新进程环境变量；写入失败不改变运行配置。重启可恢复保存值，密钥仍不回显。
 
 ## 请求、总时限与重试
 
-- 输出额度按任务设置：连接测试、画像和建议保持3500 token；简历抽取使用16000 token，对应 Chat Completions 的 max_tokens 或 Responses 的 max_output_tokens。简历原文完整保留，只发送原文中按现有ASCII边界规则出现的标签ID、名称或别名所对应的候选字典；要求紧凑JSON、同维度标签去重及简短逐字证据。截断输出仍拒绝，不追加自动重试，不延长45秒时限。
+- 输出额度按任务设置：连接测试和岗位建议使用3500 token；简历抽取与个人报告使用16000 token（推理与最终JSON共享额度），对应 Chat Completions 的 max_tokens 或 Responses 的 max_output_tokens。简历原文完整保留，只发送原文中按现有ASCII边界规则出现的标签ID、名称或别名所对应的候选字典；要求紧凑JSON、同维度标签去重及简短逐字证据。截断输出仍拒绝，不追加自动重试，不延长45秒时限。
 
 - 必需环境变量：LLM_BASE_URL、LLM_MODEL、LLM_API_KEY。空值或已知示例密钥返回 LLM_NOT_CONFIGURED；不读取额外的 LLM_TIMEOUT 配置，时限固定为45秒。
 - 地址使用 HTTPS，或带端口的 localhost/127.0.0.1 HTTP。末尾不是当前适配器对应的接口路径时追加该路径；不跟随重定向。

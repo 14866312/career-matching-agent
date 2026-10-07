@@ -21,13 +21,13 @@ const tab = name => page.getByRole('tab', {
 const button = name => page.getByRole('button', { name, exact: true });
 const label = name => page.getByLabel(name, { exact: true });
 const reportButton = () => button('生成岗位建议');
-const profileButton = () => button('生成个人分析报告');
+const profileButton = () => button('生成个人报告');
 const onboardingDialog = () => page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true });
 const targetJob = () => page.locator('.profile-target-select select');
 const filterSelect = index => page.locator('.matches-stitch-filter select').nth(index);
 const tagRow = name => page.locator('.tag-row').filter({ hasText: name });
 const guideStep = index => page.locator('.workflow-guide ol button').nth(index);
-const ADD_LABELS = { skills: '新增技能标签', certificates: '新增证书', qualities: '新增通用素质' };
+const ADD_LABELS = { skills: '新增技能', certificates: '新增证书', qualities: '新增通用素质' };
 
 async function assertUnavailable(locator, description) {
   const count = await locator.count();
@@ -58,8 +58,8 @@ async function responseAfter(url, action) {
   return response.json();
 }
 
-async function manualMode() { await page.getByRole('tab', { name: '手动录入资料', exact: true }).click(); }
-async function resumeMode() { await page.getByRole('tab', { name: '导入现有简历', exact: true }).click(); }
+async function manualMode() { await page.getByRole('tab', { name: '手动填写', exact: true }).click(); }
+async function resumeMode() { await page.getByRole('tab', { name: '导入简历', exact: true }).click(); }
 
 async function addTag(dimension, text) {
   const input = label(ADD_LABELS[dimension]);
@@ -76,7 +76,7 @@ async function draftSettings() {
 
 async function clearDraft() {
   const dialog = await draftSettings();
-  await dialog.getByRole('button', { name: '清除本机草稿并重置流程', exact: true }).click();
+  await dialog.getByRole('button', { name: '清除草稿并重置', exact: true }).click();
   await dialog.getByRole('button', { name: '完成', exact: true }).click();
   await dialog.waitFor({ state: 'detached' });
 }
@@ -242,7 +242,7 @@ async function assertNoLegacyProfileControls() {
       await branch.waitFor();
       await branch.click();
       await page.locator('.path-selected-detail').waitFor();
-      await button('保存当前路径').click();
+      await button('保存路线').click();
       await until(async () => (await page.locator('.path-action-hub').innerText()).includes('已保存于'), 'path selection was not marked saved');
 
       await tab('我的能力');
@@ -352,7 +352,7 @@ async function assertNoLegacyProfileControls() {
     assert.equal(await tagRow('Vue').count(), 1, 'Vue.js and Vue must map to one canonical tag');
     await addTag('certificates', 'CET-4');
     await addTag('qualities', '沟通能力');
-    const profile = await responseAfter('/api/student/profile', () => button('生成个人分析报告').click());
+    const profile = await responseAfter('/api/student/profile', () => button('生成个人报告').click());
     assert.equal(profile.profile.confirmed, false);
     assert.deepEqual(profile.profile.skills.map(x => x.tag_id), ['vue']);
     assert.deepEqual(profile.profile.certificates.map(x => x.tag_id), ['cet4']);
@@ -375,7 +375,7 @@ async function assertNoLegacyProfileControls() {
     await targetJob().selectOption('java');
     await addTag('skills', 'Java');
     await addTag('skills', 'SQL');
-    const profile = await responseAfter('/api/student/profile', () => button('生成个人分析报告').click());
+    const profile = await responseAfter('/api/student/profile', () => button('生成个人报告').click());
     assert.deepEqual(profile.profile.skills.map(x => x.tag_id), ['java', 'sql']);
     assert.equal(await page.locator('.profile-analysis-list').count(), 1);
     const rec = await loadRecommendations();
@@ -418,7 +418,7 @@ async function assertNoLegacyProfileControls() {
     assert.equal(await reportButton().isDisabled(), true);
     await assertUnavailable(button('复制报告'), 'copy report');
     await assertUnavailable(button('导出报告TXT'), 'export report');
-    assert.match(await page.locator('.stale-banner').first().innerText(), /旧匹配与建议已过期|失效/);
+    assert.match(await page.locator('.stale-banner').first().innerText(), /资料已修改，请刷新匹配/);
     assert.equal(await guideStep(2).getByText('已过期', { exact: true }).isVisible(), true, '流程导航应直接显示匹配过期');
     assert.equal(await guideStep(3).getByText('已过期', { exact: true }).isVisible(), true, '流程导航应直接显示建议过期');
     assert.equal(await page.locator('.workflow-guide-next-copy b').innerText(), '刷新岗位匹配');
@@ -428,11 +428,11 @@ async function assertNoLegacyProfileControls() {
     await tab('我的能力');
     await manualMode();
     const delayedProfile = await delayRoute('/api/student/profile');
-    await button('生成个人分析报告').click();
+    await button('生成个人报告').click();
     await delayedProfile.started;
     await label('专业').fill('请求期间的新专业');
     await delayedProfile.release();
-    await until(() => button('生成个人分析报告').isEnabled(), 'profile request never finished');
+    await until(() => button('生成个人报告').isEnabled(), 'profile request never finished');
     assert.equal(await label('专业').inputValue(), '请求期间的新专业');
     assert.equal(await page.locator('.profile-analysis-list').count(), 0, 'stale profile response must not create analysis');
 
@@ -600,7 +600,7 @@ async function assertNoLegacyProfileControls() {
     await resumeMode();
     await label('简历姓名').fill('会话测试姓名');
     const profileRequest = page.waitForRequest(r => r.url().endsWith('/api/student/profile') && r.method() === 'POST');
-    const generatedProfile = await responseAfter('/api/student/profile', () => button('生成个人分析报告').click());
+    const generatedProfile = await responseAfter('/api/student/profile', () => button('生成个人报告').click());
     assert.equal(JSON.stringify((await profileRequest).postDataJSON()).includes('会话测试姓名'), false);
     assert.equal(generatedProfile.profile.confirmed, false);
     const rec = await loadRecommendations();
@@ -651,7 +651,7 @@ async function assertNoLegacyProfileControls() {
     });
     await page.route('**/api/student/profile', handler);
     try {
-      await button('生成个人分析报告').click();
+      await button('生成个人报告').click();
       await until(async () => (await page.getByRole('alert').allTextContents()).some(text => text.includes('模拟上游繁忙')), 'missing model error');
       assert.equal(await label('专业').inputValue(), '错误期间仍保留的专业');
     } finally {
@@ -705,7 +705,7 @@ async function assertNoLegacyProfileControls() {
       await tab('匹配与建议');
       await until(() => reportButton().isDisabled(), 'old algorithm result should be stale');
       await assertUnavailable(button('复制报告'), 'copy report after version change');
-      assert.match(await page.locator('.stale-banner').first().innerText(), /服务端算法或岗位数据版本已更新/);
+      assert.match(await page.locator('.stale-banner').first().innerText(), /岗位数据或算法已更新，请刷新匹配/);
     } finally {
       await page.unroute('**/api/health', handler);
     }

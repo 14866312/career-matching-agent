@@ -107,7 +107,7 @@ describe('App integration', () => {
     expect(await screen.findByText('当前资料已覆盖岗位的核心要求。')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: /简历与个人报告/ }));
-    await user.click(within(profilePanel!).getByRole('tab', { name: '手动录入资料' }));
+    await user.click(within(profilePanel!).getByRole('tab', { name: '手动填写' }));
     await user.clear(within(profilePanel!).getByLabelText('专业'));
     await user.type(within(profilePanel!).getByLabelText('专业'), '软件工程');
 
@@ -128,7 +128,7 @@ describe('App integration', () => {
 
     await user.click(screen.getByRole('button', { name: '设置' }));
     const settings = await screen.findByRole('dialog', { name: '本机数据设置' });
-    await user.click(within(settings).getByRole('button', { name: '清除本机草稿并重置流程' }));
+    await user.click(within(settings).getByRole('button', { name: '清除草稿并重置' }));
     await waitFor(() => expect(pages).toHaveAttribute('data-active-page', 'jobs'));
     expect(document.querySelectorAll('.workflow-guide [aria-current="step"]')).toHaveLength(0);
 

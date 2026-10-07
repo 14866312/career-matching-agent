@@ -9,7 +9,8 @@ from backend.app.resume import MAX_BYTES
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch, tmp_path):
+    monkeypatch.setattr(main, 'ROOT', tmp_path)
     return TestClient(main.app, base_url='http://127.0.0.1')
 
 
@@ -101,6 +102,7 @@ def test_health_jobs_sources(client):
 
 
 def test_llm_config_api_never_returns_api_key(client, monkeypatch):
+    monkeypatch.delenv('LLM_ADAPTER', raising=False)
     monkeypatch.setenv('LLM_BASE_URL', '')
     monkeypatch.setenv('LLM_MODEL', '')
     monkeypatch.setenv('LLM_API_KEY', '')

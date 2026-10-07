@@ -236,7 +236,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await page.getByRole('dialog', { name: '新手教程与本机保存设置', exact: true }).waitFor({ state: 'detached' });
 
     await page.getByRole('tab', { name: '简历与个人报告', exact: true }).click();
-    await page.getByRole('tab', { name: '手动录入资料', exact: true }).click();
+    await page.getByRole('tab', { name: '手动填写', exact: true }).click();
     console.log('资料页诊断:', JSON.stringify({
       url: page.url(),
       targetSelectorCount: await page.locator('.profile-target-select').count(),
@@ -256,9 +256,9 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await page.setViewportSize({ width: 390, height: 844 });
     await assertTouchTargets(targetJob, '手机目标岗位选择');
     await assertTouchTargets(page.getByRole('tablist', { name: '资料录入方式', exact: true }).getByRole('tab'), '资料来源切换');
-    const skill = page.getByLabel('新增技能标签', { exact: true });
+    const skill = page.getByLabel('新增技能', { exact: true });
     await skill.fill('Java');
-    await page.getByRole('button', { name: '确认添加技能标签', exact: true }).click();
+    await page.getByRole('button', { name: '确认添加技能', exact: true }).click();
     await assertTouchTargets(page.getByRole('button', { name: /^(修改|删除) Java$/ }), '标签编辑操作');
     await page.getByRole('button', { name: '修改 Java', exact: true }).click();
     await assertTouchTargets(page.locator('.tag-row-edit').getByRole('button'), '标签修改确认');
@@ -314,7 +314,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await page.getByRole('tab', { name: '成长路径', exact: true }).click();
     await page.locator('.path-overview').waitFor();
     const plan = page.getByRole('region', { name: '当前成长计划', exact: true });
-    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '未选择时不应自动指定路线');
+    assert.equal(await plan.getByRole('heading', { name: '选择路线', exact: true }).isVisible(), true, '未选择时不应自动指定路线');
     for (const disclosure of await page.locator('.path-disclosure').all()) {
       assert.equal(await disclosure.getAttribute('open'), null, '其他阶段与活动默认折叠');
     }
@@ -329,10 +329,10 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     const firstActivity = await firstRoute.locator('small').innerText();
     await firstRoute.click();
     await assertSelectedPlan(page, plan, firstActivity);
-    await plan.getByRole('button', { name: '保存当前路径', exact: true }).click();
-    await plan.getByRole('button', { name: '更新已保存路径', exact: true }).waitFor();
-    await plan.getByRole('button', { name: '清除已保存路径', exact: true }).click();
-    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '清除后应回到未选路线');
+    await plan.getByRole('button', { name: '保存路线', exact: true }).click();
+    await plan.getByRole('button', { name: '更新路线', exact: true }).waitFor();
+    await plan.getByRole('button', { name: '清除路线', exact: true }).click();
+    assert.equal(await plan.getByRole('heading', { name: '选择路线', exact: true }).isVisible(), true, '清除后应回到未选路线');
     assert.equal(await plan.locator('.path-selected-detail').count(), 0, '清除后不能继续展示旧路线');
     await firstRoute.click();
     await assertSelectedPlan(page, plan, firstActivity);
@@ -351,7 +351,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await assertActionsAboveNavigation(page, page.locator('.path-action-hub'), '路径保存操作');
     await page.getByRole('combobox', { name: /^聚焦岗位/ }).selectOption('testing');
     assert.equal(await plan.locator('.path-selected-detail').count(), 0, '更换聚焦岗位应清除旧路线');
-    assert.equal(await plan.getByRole('heading', { name: '选择一条成长路线', exact: true }).isVisible(), true, '更换岗位不应默认选择路线');
+    assert.equal(await plan.getByRole('heading', { name: '选择路线', exact: true }).isVisible(), true, '更换岗位不应默认选择路线');
     await page.getByRole('combobox', { name: /^聚焦岗位/ }).selectOption('java');
     for (const width of [320, 901, 1024, 1440]) {
       await page.setViewportSize({ width, height: 1000 });

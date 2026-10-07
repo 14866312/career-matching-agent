@@ -114,6 +114,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
       });
       setHasKey(config.has_api_key);
       setSavedBaseUrl(config.base_url || baseUrl);
+      setApiKey('');
       setConfigured(config.configured);
       setDirty(false);
       setConnectionTested(false);
@@ -151,7 +152,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
         <button className="ai-config-close" type="button" aria-label="关闭 AI 模型配置" onClick={onClose} disabled={busy}>×</button>
         <p className="ai-config-kicker">MODEL CONNECTION</p>
         <h2 id="ai-config-title">AI 模型配置</h2>
-        <p className="ai-config-lead">配置用于简历解析、个人分析报告和岗位建议的模型接口。可选择 Chat Completions 或 Responses 协议；测试连接只发送一条不含个人资料的短请求，密钥只发送到本机后端，不会回显。</p>
+        <p className="ai-config-lead">用于简历解析和 AI 建议。测试不含个人资料；密钥仅发至本机后端，不回显。</p>
 
         <div className="ai-provider-grid" aria-label="模型服务预设">
           {(Object.keys(PRESETS) as Provider[]).map(key => (
@@ -170,7 +171,7 @@ export default function AIConfigPanel({ onClose, onSaved }: { onClose: () => voi
             <option value="chat-completions">chat-completions</option>
           </select>
         </label>
-        <label>API 密钥{hasKey && <span className="ai-config-label-note">已配置，留空表示保留现有密钥</span>}<input type="password" value={apiKey} maxLength={1000} placeholder={hasKey ? '留空以保留现有密钥' : '请输入 API 密钥'} autoComplete="new-password" onChange={event => { setApiKey(event.target.value); markDirty(); }} disabled={busy} /></label>
+        <label>API 密钥{hasKey && <span className="ai-config-label-note">已保存，无需重填</span>}<input type="password" value={apiKey} maxLength={1000} placeholder={hasKey ? '已保存，留空保留' : '请输入 API 密钥'} autoComplete="new-password" onChange={event => { setApiKey(event.target.value); markDirty(); }} disabled={busy} /></label>
 
         <p className={'ai-config-state' + (connectionTested ? ' ready' : '')} role="status"><i />{loading ? '正在读取当前配置…' : connectionTested ? '模型连接验证成功' : dirty ? '配置有未保存修改，请先保存后测试连接' : configured ? '配置已保存，连接尚未验证' : '模型配置不完整，请填写并保存后测试连接'}</p>
         {error && <p className="ai-config-error" role="alert">{error}</p>}
