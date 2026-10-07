@@ -342,6 +342,29 @@ async def test_profile_duplicate_strengths_preserve_original_input(fake_http):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('bad', [
+    {'tag_id': 'java', 'evidence': '熟悉Java并发编程'},
+    {'tag_id': 'not-in-dictionary', 'evidence': '了解Java'},
+    {'tag_id': 'teamwork', 'evidence': '了解Java'},
+])
+async def test_resume_keeps_verified_items_when_another_item_is_unverifiable(fake_http, bad, caplog):
+    fake_http([{'major': '', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': '了解Java'}, bad], 'certificates': [], 'qualities': []}])
+    with caplog.at_level('WARNING', logger='backend.app.llm'):
+        result = await llm.extract_resume('技能：了解Java，课程项目中编写了单元测试。')
+    assert [a['tag_id'] for a in result['profile']['skills']] == ['java']
+    assert '另有 1 条模型结果因无法在原文中逐字核对而未采用' in result['notice']
+    assert 'dropped 1 of 2' in caplog.text
+    assert '了解Java' not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_resume_without_dropped_items_has_no_dropped_notice(fake_http):
+    fake_http([{'major': '', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': '了解Java'}], 'certificates': [], 'qualities': []}])
+    result = await llm.extract_resume('技能：了解Java')
+    assert '未采用' not in result['notice']
+
+
+@pytest.mark.asyncio
 async def test_resume_unsupported_capability_is_blocked(fake_http):
     fake_http([{'major': '', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': '使用JavaScript开发网页'}], 'certificates': [], 'qualities': []}])
     with pytest.raises(llm.AIError) as e:
@@ -492,6 +515,42 @@ async def test_resume_wrong_structure_errors(fake_http):
     with pytest.raises(llm.AIError) as e:
         await llm.extract_resume('软件工程 Java')
     assert e.value.code == 'LLM_INVALID_OUTPUT'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('output', [
+    {'major': '软件工程', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': 'Java课程项目'}]},
+    {'name': None, 'major': None, 'experiences': None, 'skills': [{'tag_id': 'java', 'evidence': 'Java课程项目'}], 'certificates': None, 'qualities': None},
+    {'major': '', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': 'Java课程项目', 'level': 2, 'dimension': 'skills'}], 'certificates': [], 'qualities': [], 'confidence': 0.9},
+])
+async def test_resume_tolerates_omitted_null_and_extra_fields(fake_http, output):
+    fake_http([output])
+    result = await llm.extract_resume('软件工程 Java课程项目')
+    assert [a['tag_id'] for a in result['profile']['skills']] == ['java']
+    assert result['profile']['skills'][0]['level'] == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('output', [
+    {'major': '', 'experiences': '', 'skills': [{'tag_id': 'java'}], 'certificates': [], 'qualities': []},
+    {'major': '', 'experiences': '', 'skills': ['java'], 'certificates': [], 'qualities': []},
+    {'major': '', 'experiences': ['Java课程项目'], 'skills': [], 'certificates': [], 'qualities': []},
+])
+async def test_resume_normalization_still_rejects_wrong_types_and_missing_evidence(fake_http, output):
+    fake_http([output])
+    with pytest.raises(llm.AIError) as e:
+        await llm.extract_resume('软件工程 Java课程项目')
+    assert e.value.code == 'LLM_INVALID_OUTPUT'
+
+
+@pytest.mark.asyncio
+async def test_invalid_output_log_has_field_paths_but_no_resume_text(fake_http, caplog):
+    fake_http([{'major': '', 'experiences': '', 'skills': [{'tag_id': 'java', 'evidence': ''}], 'certificates': [], 'qualities': []}])
+    with caplog.at_level('WARNING', logger='backend.app.llm'):
+        with pytest.raises(llm.AIError):
+            await llm.extract_resume('秘密简历正文 Java课程项目')
+    assert 'skills.0.evidence' in caplog.text
+    assert '秘密简历正文' not in caplog.text
 
 
 @pytest.mark.asyncio

@@ -54,7 +54,7 @@
 
 ## 模型输出 Schema 与业务输出
 
-Pydantic Output 的配置为 extra='forbid'、strict=True、str_strip_whitespace=True；所有列出的字段必填，不接受未知字段或隐式类型转换。ShortText 为去除首尾空白后长度1—500的字符串。
+Pydantic Output 的配置为 extra='forbid'、strict=True、str_strip_whitespace=True；所有列出的字段必填，不接受未知字段或隐式类型转换。例外：简历抽取在校验前会先做无损归一化（extract_resume 的 _normalize_resume_output）：name/major/experiences 的 null 视为空字符串，缺失或 null 的 skills/certificates/qualities 视为空列表，并丢弃顶层及能力条目里的多余字段（如 level、dimension、confidence）。类型错误、缺少 evidence 或 tag_id 仍然失败，所有能力仍须通过字典 ID、维度与原文证据校验。校验失败时服务端日志只记录字段路径和错误类型，不记录模型输出或简历文本。ShortText 为去除首尾空白后长度1—500的字符串。
 
 | 模型 Schema | 字段与限制 |
 |---|---|
@@ -86,7 +86,7 @@ main.py 的报告接口负责重新计算 match，把确定性分数、资料已
 
 引用必须大小写一致地逐字存在。服务端检查引用的每次出现，并扩展到句子或空行分隔的段落；单换行不截断上下文，避免“未掌握技能:\nJava”被截成肯定项。每次出现均检查 ASCII 边界，JavaScript 中的 Java 或 MySQLProxy 中的 MySQL 不构成有效引用。
 
-任何一次匹配上下文命中否定、意向或指令规则，或超过3000字符，条目即排除并计入 notice；返回证据保留完整安全上下文（姓名会先移除）。重复短引用同时出现在正负描述时保守排除，可用更长的唯一肯定原文消歧。无效 ID/维度/引用导致整个输出失败。重复 ID 按维度去重。其余条目预填 level=1、confirmed=false、source='resume'，证据为通过校验的原文窗口；按 ADR 0002，这些条目直接计入匹配，confirmed 仅为兼容旧草稿保留，等级1也不代表模型已经证实熟练度。返回 name、profile、notice、mode='live'。
+任何一次匹配上下文命中否定、意向或指令规则，或超过3000字符，条目即排除并计入 notice；返回证据保留完整安全上下文（姓名会先移除）。重复短引用同时出现在正负描述时保守排除，可用更长的唯一肯定原文消歧。无效 ID、错误维度或无法逐字核对的引用，只丢弃该条目，不影响已通过校验的条目；notice 会说明丢弃条数，服务端日志只记录条数。只有模型返回了条目但全部无效时，才返回 LLM_EVIDENCE。重复 ID 按维度去重。其余条目预填 level=1、confirmed=false、source='resume'，证据为通过校验的原文窗口；按 ADR 0002，这些条目直接计入匹配，confirmed 仅为兼容旧草稿保留，等级1也不代表模型已经证实熟练度。返回 name、profile、notice、mode='live'。
 
 ## 异常边界
 

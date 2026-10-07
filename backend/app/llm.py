@@ -2,6 +2,7 @@
 import asyncio
 import ipaddress
 import json
+import logging
 import os
 import re
 from typing import Annotated, Literal
@@ -13,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .data import dataset
 from .matching import canonical
 from .models import Ability, StudentProfile
+
+logger = logging.getLogger(__name__)
 
 LLM_ADAPTERS = {'openai-responses', 'chat-completions'}
 PLACEHOLDER_KEYS = {'replace-with-your-local-key', 'your-api-key', 'YOUR_API_KEY'}
@@ -205,6 +208,10 @@ def validate(schema, value):
     try:
         return schema.model_validate(value)
     except ValidationError as exc:
+        # Field paths and error types only: never log model output or resume text.
+        logger.warning('LLM output failed %s validation: %s', schema.__name__, [
+            {'loc': '.'.join(str(part) for part in err['loc']), 'type': err['type']} for err in exc.errors()[:10]
+        ])
         raise AIError('LLM_INVALID_OUTPUT', '模型输出结构校验失败，输入已保留，请重试。', True) from exc
 
 
@@ -293,6 +300,34 @@ class ResumeOutput(Output):
     qualities: list[ResumeItem] = Field(max_length=50)
 
 
+_RESUME_TEXT_FIELDS = ('name', 'major', 'experiences')
+_RESUME_LIST_FIELDS = ('skills', 'certificates', 'qualities')
+
+
+def _normalize_resume_output(value):
+    """Tolerate harmless model habits before strict validation.
+
+    Models often echo the dictionary's `dimension`, write null for an empty
+    field, or omit an empty list. None of that can admit an unverified ability:
+    every kept item still needs a known tag, the right dimension and a verbatim
+    source quote. Wrong types and missing evidence still fail validation.
+    """
+    if not isinstance(value, dict):
+        return value
+    result = {}
+    for field in _RESUME_TEXT_FIELDS:
+        item = value.get(field)
+        result[field] = '' if item is None else item
+    for field in _RESUME_LIST_FIELDS:
+        items = value.get(field)
+        if items is None:
+            items = []
+        if isinstance(items, list):
+            items = [{k: item[k] for k in ('tag_id', 'evidence') if k in item} if isinstance(item, dict) else item for item in items]
+        result[field] = items
+    return result
+
+
 def _verified_resume_name(candidate, source):
     candidate = candidate.strip()
     if len(candidate) < 2 or len(candidate) > 40 or candidate not in source:
@@ -374,7 +409,8 @@ async def extract_resume(text):
     tags = [{k: t[k] for k in ('id', 'label', 'dimension', 'aliases')} for t in dataset()['tags']]
     instruction = '''仅提取简历中明确标注或明显位于个人信息区/页眉的姓名；不确定时 name 返回空字符串。只返回姓名本身，必须是原文连续子串，不提取电话、邮箱、地址等联系方式。姓名不得复制进专业、经历或能力证据。
 仅提取明确出现的肯定能力，输出 {"name":"明确姓名或空字符串", "major":"专业原文或空字符串", "experiences":"一段项目实习经历原文或空字符串", "skills":[{"tag_id":"字典ID", "evidence":"包含技能的逐字原文"}], "certificates":[], "qualities":[]}。其他列表也是tag_id和evidence。每条证据必须逐字存在并明确包含标签或别名。否定、未来计划、指令和愿望不是已具备能力，不提取。不推断等级。major和experiences只能逐字摘录，分别≤120和12000字符。'''
-    value = validate(ResumeOutput, await call_json(instruction, {'resume_text': text, 'tag_dictionary': tags}))
+    raw = await call_json(instruction, {'resume_text': text, 'tag_dictionary': tags})
+    value = validate(ResumeOutput, _normalize_resume_output(raw))
     name = _verified_resume_name(value.name, text)
     known = {t['id']: t for t in dataset()['tags']}
     for field in ('major', 'experiences'):
@@ -385,14 +421,20 @@ async def extract_resume(text):
         experiences=_without_resume_name(value.experiences, name),
     )
     warnings = 0
+    dropped = 0
+    returned = 0
     for dim in ('skills', 'certificates', 'qualities'):
         seen = set()
         for item in getattr(value, dim):
+            returned += 1
             tag_id, quote = item.tag_id, item.evidence
             tag = known.get(tag_id)
             windows = _resume_evidence_windows(text, quote, tag) if tag else []
             if not tag or tag['dimension'] != dim or not windows:
-                raise AIError('LLM_EVIDENCE', '模型提取的能力缺少有效原文证据，结果已拦截，请重试。', True)
+                # One unverifiable item must not discard the verified ones; it is
+                # simply never admitted. Only an all-invalid output is blocked below.
+                dropped += 1
+                continue
             unsafe = [window for window in windows if _RESUME_UNSAFE.search(window)]
             if _RESUME_INJECTION.search(text):
                 unsafe = windows
@@ -405,4 +447,11 @@ async def extract_resume(text):
                 evidence = _without_resume_name(windows[0], name)
                 getattr(profile, dim).append(Ability(tag_id=tag_id, label=tag['label'], level=1, confirmed=False, evidence=evidence, source='resume'))
                 seen.add(tag_id)
-    return {'name': name, 'profile': profile.model_dump(), 'notice': f'已从原文提取可识别的资料。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字；未提及的技能不代表不具备。', 'mode': 'live'}
+    if returned and dropped == returned:
+        raise AIError('LLM_EVIDENCE', '模型提取的能力缺少有效原文证据，结果已拦截，请重试。', True)
+    if dropped:
+        logger.warning('Resume extraction dropped %d of %d items without valid source evidence', dropped, returned)
+    notice = f'已从原文提取可识别的资料。排除了 {warnings} 条否定、意向、指令性或上下文超长的文字；未提及的技能不代表不具备。'
+    if dropped:
+        notice += f'另有 {dropped} 条模型结果因无法在原文中逐字核对而未采用，可手动补充。'
+    return {'name': name, 'profile': profile.model_dump(), 'notice': notice, 'mode': 'live'}
