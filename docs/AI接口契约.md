@@ -38,7 +38,7 @@
 画像 instruction：
 
 ~~~text
-根据学生当前资料整理个人分析。输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}。优势只能从known_tags选择，不新增任何技能，不据经历推断熟练度。improvements最多4项，写未来活动，不陈述既有能力，不打分。
+根据学生当前资料整理个人分析。只输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}，不要添加其他字段。strength_tag_ids最多12项且不重复，只能从known_tags选择；improvements最多4项，每项为1到500字符的字符串。没有内容时返回空数组，不返回null。不新增任何技能，不据经历推断熟练度。建议只写未来活动，不陈述既有能力，不打分。
 ~~~
 
 职业建议 instruction：
@@ -61,7 +61,7 @@ Pydantic Output 的配置为 extra='forbid'、strict=True、str_strip_whitespace
 
 | 模型 Schema | 字段与限制 |
 |---|---|
-| ProfileAnalysis | strength_tag_ids: list[str]，最多12项；improvements: list[ShortText]，最多4项。两列表均可为空。 |
+| ProfileAnalysis | strength_tag_ids: list[str]，输入校验最多200项；improvements: list[ShortText]，输入校验最多20项。两列表均可为空；全部校验后去重并展示最多12个重点、4条建议。 |
 | AdvicePlan | focus 只能为“补充证据”“加强实践”“持续深化”；activities: list[Activity]，1—5项。 |
 | Activity | tag_id: str，1—80字符；steps: list[ShortText]，1—2项。 |
 | ResumeOutput | name: str，可缺省为空，最多80字符；major: str，最多120字符；experiences: str，最多12000字符；skills: list[ResumeItem]，最多100项；certificates、qualities: list[ResumeItem]，各最多50项。字符串及列表可为空。 |
@@ -73,7 +73,9 @@ Pydantic Output 的配置为 extra='forbid'、strict=True、str_strip_whitespace
 
 输入为 StudentProfile。发给模型的 student 去掉旧 advantages、improvements，known_tags 为资料中等级大于0的规范标签 ID（matching-2.2 起不要求条目确认或证据，见 docs/adr/0002-mentioned-skills-without-confirmation-gate.md）。
 
-模型的优势 ID 必须属于 known_tags，否则返回 LLM_EVIDENCE；重复优势去重。优势文字、summary 和 evidence_quotes（仅取非空证据）均由程序从原始条目生成。模型不能改变专业、经历、能力、意向或证据；返回深复制的 profile、analysis、mode='live'，原输入对象保持不变。分析中的内容来自用户资料，不表示外部认证。
+个人分析在严格校验前只保留strength_tag_ids和improvements；至少出现其中一个字段才视为分析结果，另一字段缺失或null视为空数组。额外说明、分数、学生字段直接忽略，不写入画像；字符串/对象冒充列表或条目类型错误仍拒绝。Prompt要求最多12个重点和4条建议；供应商返回较多条目时，在200/20项输入上限内先全部校验，再去重选择前12/4项，不能用展示裁剪绕过来源或建议规则。
+
+模型的所有优势 ID 必须属于 known_tags，否则返回 LLM_EVIDENCE；所有建议（包括展示额度以外的条目）均检查禁止的既有能力、评分或保证性表述。优势文字、summary 和 evidence_quotes（仅取非空证据）均由程序从原始条目生成。模型不能改变专业、经历、能力、意向或证据；返回深复制的 profile、analysis、mode='live'，原输入对象保持不变。分析中的内容来自用户资料，不表示外部认证。
 
 ### 建议 generate_advice
 

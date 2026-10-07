@@ -395,11 +395,14 @@ async def test_profile_uses_positive_skills_without_confirmation_or_evidence(fak
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('output', [
-    {}, {'strength_tag_ids': [], 'improvements': [], 'skills': ['java']},
+    {}, {'summary': 'not a profile analysis'},
     {'strength_tag_ids': [42], 'improvements': []},
+    {'strength_tag_ids': 'java', 'improvements': []},
     {'strength_tag_ids': [], 'improvements': [True]},
+    {'strength_tag_ids': [], 'improvements': '建议'},
     {'strength_tag_ids': [], 'improvements': ['   ']},
-    {'strength_tag_ids': [], 'improvements': ['x'] * 5},
+    {'strength_tag_ids': ['java'] * 201, 'improvements': []},
+    {'strength_tag_ids': [], 'improvements': ['x'] * 21},
     {'strength_tag_ids': [], 'improvements': ['x' * 501]},
 ])
 async def test_profile_strict_schema_never_automatically_retries(fake_http, output):
@@ -408,6 +411,57 @@ async def test_profile_strict_schema_never_automatically_retries(fake_http, outp
         await llm.generate_profile(profile())
     assert exc.value.code == 'LLM_INVALID_OUTPUT'
     assert exc.value.retryable and len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('output', [
+    {'strength_tag_ids': ['java'], 'improvements': None, 'skills': ['linux'], 'score': 100},
+    {'strength_tag_ids': ['java']},
+    {'strength_tag_ids': None, 'improvements': ['整理接口测试计划']},
+    {'improvements': []},
+])
+async def test_profile_accepts_empty_fields_and_discards_echoed_facts(fake_http, output):
+    student = profile()
+    original = student.model_dump()
+    calls = fake_http([output])
+    result = await llm.generate_profile(student)
+    assert result['profile']['skills'] == original['skills']
+    assert student.model_dump() == original
+    assert len(calls) == 1
+    assert 'score' not in result and 'score' not in result['profile']
+    assert 'linux' not in json.dumps(result)
+
+
+@pytest.mark.asyncio
+async def test_profile_with_many_known_tags_keeps_all_facts_and_limits_highlights(fake_http):
+    tags = llm.dataset()['tags'][:13]
+    student = StudentProfile()
+    for tag in tags:
+        getattr(student, tag['dimension']).append(Ability(
+            tag_id=tag['id'], label=tag['label'], level=1,
+        ))
+    original = student.model_dump()
+    advice = [f'整理第{i}项课程实践计划' for i in range(6)]
+    calls = fake_http([{'strength_tag_ids': [t['id'] for t in tags], 'improvements': advice}])
+    result = await llm.generate_profile(student)
+    assert len(result['profile']['advantages']) == 12
+    assert result['profile']['improvements'] == advice[:4]
+    for dimension in ('skills', 'certificates', 'qualities'):
+        assert result['profile'][dimension] == original[dimension]
+    assert student.model_dump() == original and len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('output', [
+    {'strength_tag_ids': ['java'] * 12 + ['linux'], 'improvements': []},
+    {'strength_tag_ids': ['java'],
+     'improvements': ['整理课程实践计划'] * 4 + ['你已掌握Linux']},
+])
+async def test_profile_checks_candidates_beyond_display_limit(fake_http, output):
+    calls = fake_http([output])
+    with pytest.raises(llm.AIError) as exc:
+        await llm.generate_profile(profile())
+    assert exc.value.code == 'LLM_EVIDENCE' and len(calls) == 1
 
 
 @pytest.mark.asyncio
