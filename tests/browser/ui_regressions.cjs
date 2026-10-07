@@ -159,6 +159,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await draftSettingsButton.click();
     const draftDialog = page.getByRole('dialog', { name: '本机数据设置', exact: true });
     await draftDialog.waitFor();
+    await page.waitForFunction(() => document.querySelector('.local-draft-settings-panel')?.contains(document.activeElement));
     assert.equal(await draftDialog.evaluate(dialog => dialog.contains(document.activeElement)), true, 'opening settings should move focus into the modal');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await draftDialog.getByRole('button', { name: '完成', exact: true }).evaluate(button => button === document.activeElement), true, 'Shift+Tab from the first control should wrap to the final control');
