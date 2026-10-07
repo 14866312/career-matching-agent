@@ -9,7 +9,7 @@ import uvicorn
 from backend.app import llm
 from backend.app.main import app
 
-async def fake_json(instruction, payload):
+async def fake_json(instruction, payload, **_options):
     if 'known_tags' in payload:
         return {'strength_tag_ids':payload['known_tags'][:3], 'improvements':['通过一个课程练习记录学习过程和成果。']}
     if 'candidate_tags' in payload:

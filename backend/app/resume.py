@@ -3,11 +3,33 @@ from pathlib import Path
 from zipfile import ZipFile
 from docx import Document
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from pypdf import PdfReader
 from .llm import AIError
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_CHARS = 30000
+
+
+def _docx_paragraphs(root):
+    paragraphs = []
+    for paragraph in root.iter(qn('w:p')):
+        chunks = []
+        for node in paragraph.iter():
+            # Text boxes contain their own paragraphs inside an outer paragraph.
+            # Read each text node only in its nearest paragraph, avoiding duplicates.
+            if next(node.iterancestors(qn('w:p')), None) is not paragraph:
+                continue
+            if node.tag == qn('w:t'):
+                chunks.append(node.text or '')
+            elif node.tag == qn('w:tab'):
+                chunks.append(' ')
+            elif node.tag in (qn('w:br'), qn('w:cr')):
+                chunks.append('\n')
+        text = ''.join(chunks).strip()
+        if text:
+            paragraphs.append(text)
+    return paragraphs
 
 
 def extract_text(filename, content):
@@ -48,8 +70,20 @@ def extract_text(filename, content):
                     raise ValueError('unsupported xml')
             document = Document(BytesIO(content))
             paragraphs = []
-            for p in document.element.body.iter(qn('w:p')):
-                paragraphs.append(''.join((node.text or '') if node.tag == qn('w:t') else (' ' if node.tag == qn('w:tab') else '\n' if node.tag == qn('w:br') else '') for node in p.iter()))
+            seen = set()
+            # Follow existing relationships without creating empty header/footer parts.
+            for kind in (RT.HEADER, None, RT.FOOTER):
+                if kind is None:
+                    paragraphs.extend(_docx_paragraphs(document.element.body))
+                    continue
+                for rel in document.part.rels.values():
+                    if rel.reltype != kind or rel.is_external:
+                        continue
+                    part = rel.target_part
+                    if part.partname in seen:
+                        continue
+                    seen.add(part.partname)
+                    paragraphs.extend(_docx_paragraphs(part.element))
             text = '\n'.join(paragraphs)
     except AIError:
         raise

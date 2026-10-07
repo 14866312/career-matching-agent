@@ -3,6 +3,8 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 import pytest
 from docx import Document
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
 from pypdf import PdfWriter
 from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
 
@@ -44,6 +46,43 @@ def test_docx_with_table():
 
 def test_text_pdf():
     assert 'Java SQL coursework' in extract_text('resume.pdf', pdf_bytes('Java SQL coursework'))
+
+
+def test_docx_header_footer_and_linked_sections():
+    doc = Document()
+    doc.sections[0].header.paragraphs[0].text = '姓名：虚构同学，专业：软件工程'
+    doc.sections[0].footer.paragraphs[0].text = '取得大学英语四级证书'
+    doc.add_paragraph('使用Java完成课程项目')
+    doc.add_section()
+    output = BytesIO()
+    doc.save(output)
+    text = extract_text('resume.docx', output.getvalue())
+    assert text.count('姓名：虚构同学，专业：软件工程') == 1
+    assert text.count('取得大学英语四级证书') == 1
+    assert '使用Java完成课程项目' in text
+
+
+def test_docx_text_boxes_are_not_duplicated_or_merged():
+    doc = Document()
+    paragraph = doc.add_paragraph('技能清单')
+    paragraph._p.append(parse_xml(
+        '<w:r ' + nsdecls('w') + '><w:pict><w:txbxContent>'
+        '<w:p><w:r><w:t>Java课程项目实践</w:t></w:r></w:p>'
+        '<w:p><w:r><w:t>MySQL数据库实践</w:t></w:r></w:p>'
+        '</w:txbxContent></w:pict></w:r>'
+    ))
+    output = BytesIO()
+    doc.save(output)
+    text = extract_text('resume.docx', output.getvalue())
+    assert text == '技能清单\nJava课程项目实践\nMySQL数据库实践'
+
+
+def test_docx_header_only_resume_is_readable():
+    doc = Document()
+    doc.sections[0].header.paragraphs[0].text = '软件工程专业，使用Java完成课程项目'
+    output = BytesIO()
+    doc.save(output)
+    assert extract_text('resume.docx', output.getvalue()) == '软件工程专业，使用Java完成课程项目'
 
 
 @pytest.mark.parametrize('filename,content,code', [
