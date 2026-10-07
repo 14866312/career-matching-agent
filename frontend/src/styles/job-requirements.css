@@ -1,38 +1,18 @@
-/* Keep expanded evidence in one row without stretching neighbouring skills. */
-.jobs-stitch .job-detail-layout { grid-template-columns: minmax(0, 1fr) 240px; gap: 28px; }
+/* Plain-language skill descriptions, with no nested disclosures. */
+.jobs-stitch .job-detail-layout { grid-template-columns: minmax(0, 1fr); }
 .jobs-stitch .job-detail-items { grid-template-columns: 1fr; gap: 8px; }
 .jobs-stitch .job-detail-head { margin-bottom: 20px; }
 .jobs-stitch .job-detail .eyebrow { margin: 0 0 8px; font-size: 12px; }
-.jobs-stitch .detail-meta { margin: 6px 0; font-size: 13px; }
 .jobs-stitch .detail-summary { margin: 8px 0 0; font-size: 14px; line-height: 1.6; }
 .jobs-stitch .job-detail-group { margin-top: 20px; }
 .jobs-stitch .job-detail-group h4 { font: 600 14px/1.5 system-ui, sans-serif; letter-spacing: 0; margin-bottom: 10px; }
-.jobs-stitch .job-detail-items .req-item > summary { min-height: 48px; padding: 12px 14px; align-items: center; flex-wrap: nowrap; font-size: 14px !important; }
-.jobs-stitch .req-item > summary b { min-width: 0; overflow-wrap: anywhere; }
-.jobs-stitch .req-level { display: flex; align-items: center; gap: 12px; flex-shrink: 0; font-size: 12px; font-weight: 400; }
-.jobs-stitch .req-chevron { display: inline-block; transition: transform .15s; }
-.jobs-stitch .req-item[open] > summary .req-chevron { transform: rotate(180deg); }
-.jobs-stitch .req-content { padding: 0 14px 12px; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
-.jobs-stitch .req-content .req-quote { margin: 0 0 10px; padding: 8px 12px; font-size: 13px; line-height: 1.65; }
-.jobs-stitch .req-content .req-quote cite { font-size: 12px; }
-.jobs-stitch .req-content .req-basis { margin: 8px 0; font-size: 12px; line-height: 1.65; }
-.jobs-stitch .req-method > summary,
-.jobs-stitch .job-detail-note > summary,
-.jobs-stitch .job-detail-samples > summary { min-height: 44px; cursor: pointer; font-size: 12px; line-height: 1.5; padding: 12px 0; }
-.jobs-stitch .req-item .req-method > summary { display: list-item; font-size: 12px !important; padding: 10px 0; }
-.jobs-stitch .job-detail-samples > summary { font-size: 14px; font-weight: 600; }
-.jobs-stitch .job-detail-samples .soft-note,
-.jobs-stitch .job-detail-group .soft-note { font-size: 12px; line-height: 1.6; }
+.jobs-stitch .job-detail-items .req-item { padding: 14px 16px; }
+.jobs-stitch .req-item h5 { margin: 0; font: 600 15px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
+.jobs-stitch .req-description,
+.jobs-stitch .preferred-description { margin: 4px 0 0; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .jobs-stitch .detail-actions .primary-button { width: auto; margin-top: 0; min-height: 44px; }
-
-@media (max-width: 900px) {
-  .jobs-stitch .job-detail-layout { grid-template-columns: 1fr; gap: 20px; }
-  .jobs-stitch .job-detail-aside { padding: 16px 0 0; }
-}
-
 @media (max-width: 600px) {
   .jobs-stitch .job-detail-head { margin-bottom: 16px; }
-  .jobs-stitch .job-detail-items .req-item > summary { padding: 12px; }
-  .jobs-stitch .req-level { gap: 8px; }
+  .jobs-stitch .job-detail-items .req-item { padding: 12px; }
   .jobs-stitch .detail-actions .primary-button { width: 100%; }
 }
