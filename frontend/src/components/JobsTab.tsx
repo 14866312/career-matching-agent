@@ -10,11 +10,10 @@ const DIM_GROUPS: Array<{ key: 'skills' | 'certificates' | 'qualities'; label: s
 ];
 
 function levelSummary(r: Requirement): string {
-  if (r.level_source === 'binary_requirement') return '二元要求 · 具备即可';
-  if (r.required_level == null) return '要求等级未标注';
-  if (r.level_source === 'level_rule') return '要求等级 ' + r.required_level + ' · 样本原文措辞';
-  if (r.level_source === 'default_baseline') return '要求等级 ' + r.required_level + ' · 画像整理默认';
-  return '要求等级 ' + r.required_level;
+  if (r.level_source === 'binary_requirement') return '具备即可';
+  if (r.required_level == null) return '等级未标注';
+  const label = ['未标注', '了解', '熟悉', '熟练'][r.required_level] ?? '等级 ' + r.required_level;
+  return label + (r.level_source === 'default_baseline' ? ' · 默认基线' : '');
 }
 
 function RequirementItem({ r }: { r: Requirement }) {
@@ -22,20 +21,27 @@ function RequirementItem({ r }: { r: Requirement }) {
     <details className="req-item">
       <summary>
         <b>{r.label}</b>
-        <span className="mono">{levelSummary(r)}</span>
+        <span className="req-level">{levelSummary(r)}<span className="req-chevron" aria-hidden="true">⌄</span></span>
       </summary>
-      {r.level_basis && <p className="req-basis">{r.level_basis}</p>}
-      {r.selection_basis && <p className="req-basis">{r.selection_basis}</p>}
-      {r.evidence && r.evidence.length > 0 && (
-        <>
-          {r.evidence.slice(0, 2).map((q, i) => (
-            <blockquote key={i} className="req-quote">
-              「{q.quote}」<cite>样本 {q.source_id}</cite>
-            </blockquote>
-          ))}
-          {r.evidence.length > 2 && <p className="req-basis">其余 {r.evidence.length - 2} 条证据从略。</p>}
-        </>
-      )}
+      <div className="req-content">
+        {r.evidence && r.evidence.length > 0 && (
+          <>
+            {r.evidence.slice(0, 2).map((q, i) => (
+              <blockquote key={i} className="req-quote">
+                「{q.quote}」<cite>样本 {q.source_id}</cite>
+              </blockquote>
+            ))}
+            {r.evidence.length > 2 && <p className="req-basis">其余 {r.evidence.length - 2} 条证据从略。</p>}
+          </>
+        )}
+        {(r.level_basis || r.selection_basis) && (
+          <details className="req-method">
+            <summary>查看整理依据</summary>
+            {r.level_basis && <p className="req-basis">{r.level_basis}</p>}
+            {r.selection_basis && <p className="req-basis">{r.selection_basis}</p>}
+          </details>
+        )}
+      </div>
     </details>
   );
 }
@@ -45,9 +51,9 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
   return (
     <div className="job-detail">
       <header className="job-detail-head">
-        <p className="eyebrow">岗位画像</p>
+        <p className="eyebrow">职业需要的技能</p>
         <h3>{job.name}</h3>
-        <p className="mono detail-meta">{job.family} · {job.level} · 数据版本 {job.version}</p>
+        <p className="detail-meta">{job.level}</p>
         <p className="detail-summary">{job.summary}</p>
       </header>
       <div className="job-detail-layout">
@@ -61,9 +67,14 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
                 <div className="job-detail-items">
                   {items.length > 0
                     ? items.map(r => <RequirementItem key={r.tag_id} r={r} />)
-                    : <div className="item pending">样本中未提及该维度要求（未提及不等于无要求）</div>}
+                    : <p className="soft-note">样本未提及证书要求，不代表无要求。</p>}
                 </div>
-                {g.key === 'certificates' && job.certificate_note && <p className="soft-note">{job.certificate_note}</p>}
+                {g.key === 'certificates' && job.certificate_note && (
+                  <details className="job-detail-note">
+                    <summary>证书要求说明</summary>
+                    <p className="soft-note">{job.certificate_note}</p>
+                  </details>
+                )}
               </div>
             );
           })}
@@ -77,9 +88,9 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
               ))}
             </div>
           )}
-          <div className="item-block job-detail-samples">
-            <h4>来源样本 · 共 {samples.length} 条<span>显示前 3 条</span></h4>
-            <p className="soft-note">以下为历史招聘样本，仅用于能力基线整理与条件筛选。</p>
+          <details className="item-block job-detail-samples">
+            <summary>来源样本 · {samples.length} 条</summary>
+            <p className="soft-note">历史招聘样本，仅用于整理能力基线；以下展示前 3 条。数据版本 {job.version}。</p>
             {samples.slice(0, 3).map(s => (
               <div className="sample-row" key={s.id}>
                 <b>{s.company}</b>
@@ -87,7 +98,7 @@ function JobDetailBody({ job, onSetTarget }: { job: JobDetail; onSetTarget: (id:
                 <span className="mono">{s.updated_raw ?? ''}</span>
               </div>
             ))}
-          </div>
+          </details>
         </aside>
       </div>
       <div className="detail-actions">
