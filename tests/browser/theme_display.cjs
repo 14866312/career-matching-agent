@@ -88,6 +88,7 @@ async function evidence(page, name) {
     await page.getByRole('button', { name: /AI 模型配置/ }).click();
     const config = page.getByRole('dialog', { name: 'AI 模型配置', exact: true });
     await config.waitFor();
+    await config.getByRole('status').filter({ hasText: '模型配置不完整' }).waitFor();
     assert.equal((await colors(config.locator('.ai-provider-grid button.active'))).surface, 'rgb(226, 230, 218)', '供应商选中态应清晰可见');
     await primaryContrast(page);
     await evidence(page, 'config');
