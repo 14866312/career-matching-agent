@@ -20,7 +20,8 @@ async function assertTouchTargets(locator, label) {
     if (!await control.isVisible()) continue;
     visible += 1;
     const rect = await control.boundingBox();
-    assert.ok(rect.width >= 44 && rect.height >= 44, `${label}触控区域至少为 44px：${JSON.stringify(rect)}`);
+    // Transformed ancestors can introduce subpixel rounding in boundingClientRect.
+    assert.ok(rect.width >= 44 - 0.01 && rect.height >= 44 - 0.01, `${label}触控区域至少为 44px：${JSON.stringify(rect)}`);
   }
   assert.ok(visible > 0, `${label}必须存在可见控件`);
 }
