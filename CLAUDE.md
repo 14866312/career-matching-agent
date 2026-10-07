@@ -25,7 +25,7 @@ npm.cmd --prefix frontend run build                                          # t
 
 # 浏览器 E2E：先起测试专用服务器（:8011，模型 JSON 为替身），再在另一终端运行
 .venv/Scripts/python.exe tests/e2e_server.py
-npm.cmd --prefix tests/browser test              # run.cjs；test:ui 跑 ui_regressions.cjs；默认用本机 Edge，PW_CHANNEL=chromium 可切换，E2E_URL 改地址
+npm.cmd --prefix tests/browser test              # run.cjs；test:ui 跑 ui_regressions.cjs，test:a11y 跑 a11y.cjs（axe）；默认用本机 Edge，PW_CHANNEL=chromium 可切换，E2E_URL 改地址
 
 .venv/Scripts/python.exe scripts/smoke_live.py   # 生产服务启动后真实调用已配置的模型供应商
 .venv/Scripts/python.exe -m ruff check backend scripts tests  # Python 静态检查
@@ -33,6 +33,13 @@ npm.cmd --prefix frontend run lint                         # TypeScript/React �
 ```
 
 修改前端后必须重新 run build 并重启服务，start.ps1 不会重复安装或构建。Ruff 和 ESLint 只做检查，不自动改写文件。
+
+CI（`.github/workflows/ci.yml`）依次跑 ruff、pytest、前端 lint / test / build 与浏览器 E2E，提交前本地按同样顺序自检。
+
+## 代码风格与提交
+
+- Python：4 空格、`snake_case`，Ruff 目标 py312、行宽 100（E501 已忽略，只启用 E4/E7/E9/F）。前端：TypeScript strict，单引号加分号，组件 `PascalCase`，函数变量 `camelCase`；后端测试 `test_*.py`，前端测试 `*.test.ts`。
+- 提交信息用 Conventional Commits，如 `fix(frontend): ...`、`docs(acceptance): ...`；PR 需写明用户可见变化、领域/隐私影响、验证命令，UI 改动附截图。
 
 ## 架构
 
