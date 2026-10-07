@@ -255,22 +255,34 @@ def check_future_text(value):
 
 
 class ProfileAnalysis(Output):
-    strength_tag_ids: list[str] = Field(max_length=12)
-    improvements: list[ShortText] = Field(max_length=4)
+    # Validate all candidates before selecting the brief report. A model may
+    # return more than the requested 12/4 entries; none may bypass fact checks.
+    strength_tag_ids: list[str] = Field(max_length=200)
+    improvements: list[ShortText] = Field(max_length=20)
+
+
+def _normalize_profile_output(value):
+    fields = ('strength_tag_ids', 'improvements')
+    if not isinstance(value, dict) or not any(field in value for field in fields):
+        return value
+    # Only these fields can contribute to the report. Ignore echoed summaries,
+    # scores or student fields; never copy them back into the student's facts.
+    return {field: [] if value.get(field) is None else value[field] for field in fields}
 
 
 async def generate_profile(student: StudentProfile):
     verified = {canonical(a.tag_id): a for a in student.skills + student.certificates + student.qualities if a.level > 0}
-    instruction = '''根据学生当前资料整理个人分析。输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}。优势只能从known_tags选择，不新增任何技能，不据经历推断熟练度。improvements最多4项，写未来活动，不陈述既有能力，不打分。'''
-    response = validate(ProfileAnalysis, await call_json(instruction, {'student': student.model_dump(exclude={'advantages', 'improvements'}), 'known_tags': list(verified)}))
+    instruction = '''根据学生当前资料整理个人分析。只输出 {"strength_tag_ids":["known_tags中的ID"],"improvements":["下一步的学习建议"]}，不要添加其他字段。strength_tag_ids最多12项且不重复，只能从known_tags选择；improvements最多4项，每项为1到500字符的字符串。没有内容时返回空数组，不返回null。不新增任何技能，不据经历推断熟练度。建议只写未来活动，不陈述既有能力，不打分。'''
+    raw = await call_json(instruction, {'student': student.model_dump(exclude={'advantages', 'improvements'}), 'known_tags': list(verified)})
+    response = validate(ProfileAnalysis, _normalize_profile_output(raw))
     if any(tag_id not in verified for tag_id in response.strength_tag_ids):
         raise AIError('LLM_EVIDENCE', '模型新增了资料中没有的能力，结果已拦截，请重试。', True)
     for line in response.improvements:
         check_future_text(line)
     output = student.model_copy(deep=True)
-    ids = list(dict.fromkeys(response.strength_tag_ids))
+    ids = list(dict.fromkeys(response.strength_tag_ids))[:12]
     output.advantages = ['可作为展示重点：' + verified[tag].label for tag in ids]
-    output.improvements = response.improvements
+    output.improvements = list(dict.fromkeys(response.improvements))[:4]
     summary = []
     if student.major.strip():
         summary.append('所学专业：' + student.major.strip())
