@@ -1,5 +1,7 @@
 """HTTP contract and privacy regression tests. AI functions are explicitly stubbed."""
 import pytest
+from io import BytesIO
+from docx import Document
 from fastapi.testclient import TestClient
 from backend.app import main
 from backend.app.models import StudentProfile
@@ -13,6 +15,34 @@ def client():
 
 def student():
     return {'major': '软件工程', 'confirmed': True, 'skills': [{'tag_id': 'java', 'label': 'Java', 'confirmed': True, 'level': 2, 'evidence': 'Java课程项目'}], 'intention': {'target_job_id': 'java', 'city': '北京'}}
+
+
+def test_docx_upload_passes_header_text_to_resume_model(client, monkeypatch):
+    from backend.app import llm
+
+    doc = Document()
+    doc.sections[0].header.paragraphs[0].text = '姓名：虚构同学。专业：软件工程。'
+    doc.add_paragraph('使用Java完成课程项目。')
+    output = BytesIO()
+    doc.save(output)
+
+    async def model(_instruction, payload):
+        assert '姓名：虚构同学。专业：软件工程。' in payload['resume_text']
+        return {'name': '虚构同学', 'major': '软件工程',
+                'experiences': '使用Java完成课程项目。',
+                'skills': [{'tag_id': 'java', 'evidence': '使用Java完成课程项目'}]}
+
+    monkeypatch.setattr(llm, 'call_json', model)
+    response = client.post('/api/resume/parse', files={
+        'file': ('resume.docx', output.getvalue(),
+                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    })
+    assert response.status_code == 200
+    result = response.json()
+    assert result['name'] == '虚构同学'
+    assert result['profile']['major'] == '软件工程'
+    assert result['profile']['skills'][0]['tag_id'] == 'java'
+    assert '虚构同学' not in str(result['profile'])
 
 
 @pytest.mark.parametrize('route', ['/api/matches', '/api/recommendations', '/api/reports'])
