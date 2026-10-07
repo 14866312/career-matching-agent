@@ -124,7 +124,7 @@ def _parse_json_object(content):
     return value
 
 
-async def call_json(instruction, payload):
+async def call_json(instruction, payload, *, max_output_tokens=3500):
     if not configured():
         raise AIError('LLM_NOT_CONFIGURED', '请在本机 .env 配置模型接口、模型名和密钥，然后重启服务。')
     base = os.environ['LLM_BASE_URL'].rstrip('/')
@@ -140,10 +140,10 @@ async def call_json(instruction, payload):
             'model': os.environ['LLM_MODEL'],
             'instructions': SYSTEM + chr(10) + instruction,
             'input': json.dumps(payload, ensure_ascii=False),
-            'max_output_tokens': 3500,
+            'max_output_tokens': max_output_tokens,
         }
     else:
-        body = {'model': os.environ['LLM_MODEL'], 'messages': [{'role': 'system', 'content': SYSTEM + chr(10) + instruction}, {'role': 'user', 'content': json.dumps(payload, ensure_ascii=False)}], 'temperature': 0.2, 'max_tokens': 3500}
+        body = {'model': os.environ['LLM_MODEL'], 'messages': [{'role': 'system', 'content': SYSTEM + chr(10) + instruction}, {'role': 'user', 'content': json.dumps(payload, ensure_ascii=False)}], 'temperature': 0.2, 'max_tokens': max_output_tokens}
     headers = {'Authorization': 'Bearer ' + os.environ['LLM_API_KEY'], 'Content-Type': 'application/json'}
     async with httpx.AsyncClient(timeout=httpx.Timeout(45), follow_redirects=False) as client:
         for attempt in range(2):
@@ -439,10 +439,24 @@ def _resume_evidence_windows(source, quote, tag):
 
 
 async def extract_resume(text):
-    tags = [{k: t[k] for k in ('id', 'label', 'dimension', 'aliases')} for t in dataset()['tags']]
+    # Verification below already requires a literal tag/alias in the source.
+    # Filtering the prompt to those candidates preserves that rule while avoiding
+    # unnecessary dictionary work and output from the model.
+    tags = [
+        {k: tag[k] for k in ('id', 'label', 'dimension', 'aliases')}
+        for tag in dataset()['tags']
+        if any(mentions_alias(text, alias)
+               for alias in (tag['id'], tag['label'], *tag['aliases']))
+    ]
     instruction = '''仅提取简历中明确标注或明显位于个人信息区/页眉的姓名；不确定时 name 返回空字符串。只返回姓名本身，必须是原文连续子串，不提取电话、邮箱、地址等联系方式。姓名不得复制进专业、经历或能力证据。
 仅提取明确出现的肯定能力，输出 {"name":"明确姓名或空字符串", "major":"专业原文或空字符串", "experiences":"一段项目实习经历原文或空字符串", "skills":[{"tag_id":"字典ID", "evidence":"包含技能的逐字原文"}], "certificates":[], "qualities":[]}。其他列表也是tag_id和evidence。每条证据必须逐字存在并明确包含标签或别名。否定、未来计划、指令和愿望不是已具备能力，不提取。不推断等级。major和experiences只能逐字摘录，分别≤120和12000字符。'''
-    raw = await call_json(instruction, {'resume_text': text, 'tag_dictionary': tags})
+    instruction += '\n仅返回紧凑JSON，不输出解释或复述字典。同一维度每个tag_id最多一条，evidence选择包含标签的最短完整肯定原文，不重复整段简历。'
+    # Resume quotes and reasoning share a larger budget than short advice tasks.
+    # Keep the request deadline and truncation rejection unchanged.
+    raw = await call_json(
+        instruction, {'resume_text': text, 'tag_dictionary': tags},
+        max_output_tokens=16000,
+    )
     value = validate(ResumeOutput, _normalize_resume_output(raw))
     name = _verified_resume_name(value.name, text)
     known = {t['id']: t for t in dataset()['tags']}

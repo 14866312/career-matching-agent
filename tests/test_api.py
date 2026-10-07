@@ -26,7 +26,7 @@ def test_docx_upload_passes_header_text_to_resume_model(client, monkeypatch):
     output = BytesIO()
     doc.save(output)
 
-    async def model(_instruction, payload):
+    async def model(_instruction, payload, **_options):
         assert '姓名：虚构同学。专业：软件工程。' in payload['resume_text']
         return {'name': '虚构同学', 'major': '软件工程',
                 'experiences': '使用Java完成课程项目。',
