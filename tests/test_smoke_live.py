@@ -15,7 +15,7 @@ spec.loader.exec_module(smoke)
 MATCH_FACT_FIELDS = ('input_version', 'basic', 'enhanced', 'basic_display', 'enhanced_display')
 
 
-async def fake_json(instruction, payload):
+async def fake_json(instruction, payload, **_options):
     if 'known_tags' in payload:
         return {'strength_tag_ids': payload['known_tags'][:2], 'improvements': ['完成一次课程练习并记录结果。']}
     if 'candidate_tags' in payload:
@@ -98,7 +98,7 @@ def test_missing_match_facts_in_both_responses_fail_with_exit_1(monkeypatch):
     assert_report_facts_fail(monkeypatch)
 
 
-async def missed_name(instruction, payload):
+async def missed_name(instruction, payload, **_options):
     value = await fake_json(instruction, payload)
     if 'resume_text' in payload:
         value['name'] = ''
@@ -119,7 +119,7 @@ def test_missed_name_fails_with_exit_1(monkeypatch):
 
 
 def test_upstream_error_code_is_reported_without_details(monkeypatch):
-    async def broken(instruction, payload):
+    async def broken(instruction, payload, **_options):
         raise llm.AIError('LLM_UPSTREAM', '上游错误：secret-detail', True)
     code, output = run_smoke(monkeypatch, model=broken)
     assert code == 1 and 'LLM_UPSTREAM' in output and 'secret-detail' not in output

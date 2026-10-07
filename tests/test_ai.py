@@ -61,6 +61,52 @@ async def test_chat_completions_adapter_uses_chat_endpoint(fake_http):
     assert await llm.call_json('test', {'value': 1}) == {'ok': True}
     assert calls[0]['model'] == 'test-model'
     assert calls[0]['url'].endswith('/v1/chat/completions')
+    assert calls[0]['max_tokens'] == 3500
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter, budget_field', [
+    ('chat-completions', 'max_tokens'),
+    ('openai-responses', 'max_output_tokens'),
+])
+async def test_resume_uses_larger_budget_and_only_literal_candidates(
+    fake_http, monkeypatch, adapter, budget_field,
+):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+    output = {'major': '', 'experiences': '',
+              'skills': [{'tag_id': 'java', 'evidence': '使用Java完成课程项目'}]}
+    event = (httpx.Response(200, json={'output_text': json.dumps(output)})
+             if adapter == 'openai-responses' else output)
+    calls = fake_http([event])
+    result = await llm.extract_resume('使用Java完成课程项目。')
+    assert result['profile']['skills'][0]['tag_id'] == 'java'
+    assert calls[0][budget_field] == 16000
+    payload = json.loads(calls[0]['input'] if adapter == 'openai-responses'
+                         else calls[0]['messages'][1]['content'])
+    candidates = {tag['id'] for tag in payload['tag_dictionary']}
+    assert 'java' in candidates
+    assert 'javascript' not in candidates and 'linux' not in candidates
+
+
+@pytest.mark.asyncio
+async def test_resume_candidates_preserve_aliases_and_negation_context(fake_http):
+    calls = fake_http([{'skills': [{'tag_id': 'java', 'evidence': '未掌握Java'}]}])
+    result = await llm.extract_resume('未掌握Java。掌握Javascript。')
+    payload = json.loads(calls[0]['messages'][1]['content'])
+    candidates = {tag['id'] for tag in payload['tag_dictionary']}
+    assert {'java', 'javascript'} <= candidates
+    assert result['profile']['skills'] == []
+
+
+@pytest.mark.asyncio
+async def test_resume_still_rejects_truncation_without_retry(fake_http):
+    calls = fake_http([httpx.Response(200, json={
+        'choices': [{'finish_reason': 'length', 'message': {'content': '{"skills":['}}],
+    })])
+    with pytest.raises(llm.AIError) as exc:
+        await llm.extract_resume('使用Java完成课程项目。')
+    assert exc.value.code == 'LLM_INVALID_OUTPUT'
+    assert len(calls) == 1 and calls[0]['max_tokens'] == 16000
 
 
 @pytest.mark.asyncio
