@@ -40,10 +40,10 @@ export const CAREER_TABS: Array<{ id: CareerTab; label: string; code: string }> 
   { id: 'paths', label: '成长路径', code: '04' }
 ];
 
-function workflowStepForTab(tab: CareerTab, reportFreshness?: ReportFreshness): WorkflowStep {
-  if (tab === 'jobs' || tab === 'profile') return 0;
-  if (tab === 'matches') return reportFreshness === 'current' || reportFreshness === 'stale' ? 3 : 2;
-  return 3;
+function workflowStepForTab(tab: CareerTab): WorkflowStep | null {
+  if (tab === 'profile') return 0;
+  if (tab === 'matches') return 2;
+  return null;
 }
 
 function tabFromLocation(): CareerTab {
@@ -289,7 +289,7 @@ export function useCareerSession(showToast: (message: string, kind?: ToastKind) 
     setMatchFreshness('not_run');
     setReportFreshness('not_generated');
     setWorkflowAnchor(null);
-    setWorkflowFocus(0);
+    setWorkflowFocus(null);
     setPathFocusRequest(null);
     setSessionResetKey(value => value + 1);
     tabRef.current = 'jobs';
@@ -361,9 +361,9 @@ export function useCareerSession(showToast: (message: string, kind?: ToastKind) 
     { label: '岗位匹配', state: workflow.match === 'current' ? '最新' : workflow.match === 'stale' ? '已过期' : workflow.match === 'not_run' ? '待计算' : '待填写资料' },
     { label: '行动建议', state: workflow.report === 'current' ? '已生成' : workflow.report === 'stale' ? '已过期' : workflow.report === 'not_generated' ? '可生成' : '等待最新匹配' }
   ];
-  const activeWorkflowStep = workflowFocus ?? workflowStepForTab(tab, reportFreshness);
+  const activeWorkflowStep = workflowFocus;
   const nextWorkflowStep: WorkflowStep = workflow.profile === 'empty' ? 0
-    : !analysis && activeWorkflowStep === 0 ? 1
+    : !analysis && (activeWorkflowStep === null || activeWorkflowStep === 0) ? 1
       : workflow.match !== 'current' ? 2 : 3;
   const continueLabel = nextWorkflowStep === 0 ? '导入简历或填写资料'
     : nextWorkflowStep === 1 ? '查看个人报告'

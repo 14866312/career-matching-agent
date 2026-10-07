@@ -26,6 +26,9 @@
 .onboarding-trigger:hover { color: #ffffff; border-color: rgba(235, 235, 235, .55); background: rgba(235, 235, 235, .08); }
 
 .workflow-guide {
+  position: sticky;
+  top: var(--workflow-top, 64px);
+  z-index: 14;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
   align-items: stretch;
@@ -36,6 +39,14 @@
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 16px;
   background: #101010;
+}
+
+.workflow-guide.is-compact { margin-top: 8px; padding: 6px; gap: 8px; border-radius: 12px; }
+.workflow-guide.is-compact :is(.workflow-guide-step, .workflow-guide-next) { min-height: 48px; padding: 6px 8px; gap: 8px; }
+.workflow-guide.is-compact :is(.workflow-guide-step-copy, .workflow-guide-next-copy) { gap: 2px; }
+
+.exploration-pages :is([id], [tabindex], input, textarea, select, button, summary, a) {
+  scroll-margin-top: var(--workflow-scroll-offset, 180px);
 }
 
 .workflow-guide ol {
@@ -363,6 +374,9 @@
 .onboarding-wizard-footer-final .onboarding-skip-button { white-space: nowrap; }
 
 @media (max-width: 900px) {
+  /* Let the mobile header leave the screen; the guide and bottom tabs stay available. */
+  .exploration-header { position: static; }
+  .workflow-guide { top: 0; }
   .onboarding-trigger,
   .settings-trigger,
   .model-config-trigger { min-height: 44px; padding-inline: 10px; font-size: 14px; }

@@ -3,6 +3,7 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { checkWorkflowGuide } = require('./workflow_guide.cjs');
 
 const base = process.env.E2E_URL || 'http://127.0.0.1:8011';
 
@@ -72,7 +73,7 @@ async function assertSelectedPlan(page, plan, activity) {
   const position = await plan.locator('header').evaluate(header => ({
     top: header.getBoundingClientRect().top,
     bottom: header.getBoundingClientRect().bottom,
-    headerBottom: document.querySelector('.exploration-header').getBoundingClientRect().bottom
+    headerBottom: Math.max(document.querySelector('.exploration-header').getBoundingClientRect().bottom, document.querySelector('.workflow-guide').getBoundingClientRect().bottom)
   }));
   assert.ok(position.top >= position.headerBottom && position.bottom < 700, '选择后计划标题必须出现在顶栏下方：' + JSON.stringify(position));
 }
@@ -96,6 +97,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     headless: true
   });
   try {
+    await checkWorkflowGuide(browser, base);
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     let configPosts = 0;
     await page.route('**/api/llm/config', route => {
@@ -158,6 +160,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await draftSettingsButton.click();
     const draftDialog = page.getByRole('dialog', { name: '本机数据设置', exact: true });
     await draftDialog.waitFor();
+    await page.waitForFunction(() => document.querySelector('.local-draft-settings-panel')?.contains(document.activeElement));
     assert.equal(await draftDialog.evaluate(dialog => dialog.contains(document.activeElement)), true, 'opening settings should move focus into the modal');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await draftDialog.getByRole('button', { name: '完成', exact: true }).evaluate(button => button === document.activeElement), true, 'Shift+Tab from the first control should wrap to the final control');
@@ -187,12 +190,14 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     }
     assert.equal(await guide.getByText('导入简历或填写资料', { exact: true }).isVisible(), true, '下一步必须显示具体动作');
     assert.equal(await guide.locator('[aria-current="step"]').getAttribute('aria-label'), '1. 导入或填写资料：待填写');
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForFunction(() => !document.querySelector('.workflow-guide').classList.contains('is-compact'));
     const flowLayout = await guide.evaluate(element => ({
       position: getComputedStyle(element).position,
       bottom: element.getBoundingClientRect().bottom,
       contentTop: document.querySelector('.exploration-pages').getBoundingClientRect().top
     }));
-    assert.equal(['fixed', 'absolute', 'sticky'].includes(flowLayout.position), false, '流程导航应在文档内容流内');
+    assert.equal(flowLayout.position, 'sticky', '流程导航应吸顶并在页顶保留布局空间');
     assert.ok(flowLayout.bottom <= flowLayout.contentTop + 1, '流程导航不能覆盖主内容');
     assert.match(await guide.locator('.workflow-guide-next').getAttribute('aria-label'), /下一步：/);
 
