@@ -19,6 +19,53 @@ REAL_SLEEP = asyncio.sleep
     ('chat-completions', 'max_tokens'),
     ('openai-responses', 'max_output_tokens'),
 ])
+async def test_advice_reserves_reasoning_budget_and_explicit_focus(fake_http, monkeypatch, adapter, budget_field):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+
+    async def provider(request):
+        body = json.loads(request.content)
+        assert body[budget_field] == 16000
+        instruction = body.get('instructions') or body['messages'][0]['content']
+        assert 'focus必须且只能是' in instruction
+        output = {'focus': '加强实践', 'activities': [{'tag_id': 'sql', 'steps': ['练习SQL联表查询']}]}
+        return httpx.Response(200, json=(
+            {'output_text': json.dumps(output)} if adapter == 'openai-responses'
+            else {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(output)}}]}
+        ))
+
+    calls = fake_http([provider])
+    student = profile()
+    job = get_job('java')
+    result = await llm.generate_advice(student, job, match_student(student, job))
+    assert result['learning_directions'] == ['SQL']
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize('content', [
+    '<think>检查示例 {invalid}，不作为最终答案</think>\n{"ok": true}',
+    '结果如下：{"ok": true}\n说明：结束符为 }。',
+])
+def test_json_parser_uses_final_object_outside_reasoning(content):
+    assert llm._parse_json_object(content) == {'ok': True}
+
+
+@pytest.mark.parametrize('content', [
+    '<think>{"ok": true}',
+    '<think>{"ok": true}</think>',
+    '<think>{"ok": true}</think>{"ok":',
+    '{"ok": true} {"ok": false}',
+    '{"ok": true,}',
+])
+def test_json_parser_rejects_unfinished_or_ambiguous_answers(content):
+    with pytest.raises(ValueError):
+        llm._parse_json_object(content)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter, budget_field', [
+    ('chat-completions', 'max_tokens'),
+    ('openai-responses', 'max_output_tokens'),
+])
 async def test_profile_reserves_reasoning_budget(fake_http, monkeypatch, adapter, budget_field):
     monkeypatch.setenv('LLM_ADAPTER', adapter)
 

@@ -1,6 +1,6 @@
 # AI 调用与校验契约
 
-本文记录 backend/app/llm.py 的实际行为；公共输入模型仍由 backend/app/models.py 定义。模型与供应商由本机服务端配置，不由本模块选择。测试均使用模拟传输，不能作为真实 API 验收证据。适配器下列3500为默认输出额度，简历与个人报告任务的16000额度见“请求、总时限与重试”。
+本文记录 backend/app/llm.py 的实际行为；公共输入模型仍由 backend/app/models.py 定义。模型与供应商由本机服务端配置，不由本模块选择。测试均使用模拟传输，不能作为真实 API 验收证据。适配器下列3500为默认输出额度，简历、个人报告与岗位建议任务的16000额度见“请求、总时限与重试”。
 
 ## 模型适配器
 
@@ -13,7 +13,7 @@
 
 ## 请求、总时限与重试
 
-- 输出额度按任务设置：连接测试和岗位建议使用3500 token；简历抽取与个人报告使用16000 token（推理与最终JSON共享额度），对应 Chat Completions 的 max_tokens 或 Responses 的 max_output_tokens。简历原文完整保留，只发送原文中按现有ASCII边界规则出现的标签ID、名称或别名所对应的候选字典；要求紧凑JSON、同维度标签去重及简短逐字证据。截断输出仍拒绝，不追加自动重试，不延长45秒时限。
+- 输出额度按任务设置：连接测试使用3500 token；简历抽取、个人报告与岗位建议使用16000 token（推理与最终JSON共享额度），对应 Chat Completions 的 max_tokens 或 Responses 的 max_output_tokens。简历原文完整保留，只发送原文中按现有ASCII边界规则出现的标签ID、名称或别名所对应的候选字典；要求紧凑JSON、同维度标签去重及简短逐字证据。截断输出仍拒绝，不追加自动重试，不延长45秒时限。
 
 - 必需环境变量：LLM_BASE_URL、LLM_MODEL、LLM_API_KEY。空值或已知示例密钥返回 LLM_NOT_CONFIGURED；不读取额外的 LLM_TIMEOUT 配置，时限固定为45秒。
 - 地址使用 HTTPS，或带端口的 localhost/127.0.0.1 HTTP。末尾不是当前适配器对应的接口路径时追加该路径；不跟随重定向。
@@ -44,7 +44,7 @@
 职业建议 instruction：
 
 ~~~text
-根据确定性匹配事实选择学习重点并给具体活动。输出 {"focus":"补充证据或加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。只给未来建议，不陈述既有能力，不输出分数或就业保证。未提及项先建议核实实际经历，不能推断用户不具备；相关基础不能描述为已掌握。充分匹配时建议进阶实践。
+根据确定性匹配事实选择学习主题并给具体学习活动。只输出一个JSON对象，结构示例 {"focus":"加强实践", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来学习活动"]}]}。focus必须且只能是“加强实践”或“持续深化”中的一个字符串，不能把两个选项连成一句话。activities必须是1到5项的数组，每项包含tag_id和steps；steps必须是1到2个字符串的数组，每个字符串1到500字符，不重复tag_id，不添加其他字段，不返回null。直接给出要学习的知识、课程练习或项目任务，不要求核实既有经历、补充资料或证据。只给未来建议，不陈述既有能力，不输出分数或就业保证。资料未提及不代表用户不具备，相关基础不能描述为已掌握。充分匹配时建议进阶实践。
 ~~~
 
 简历抽取 instruction：
@@ -81,7 +81,7 @@ Pydantic Output 的配置为 extra='forbid'、strict=True、str_strip_whitespace
 
 输入为 student、job、服务端确定性 match。模型收到意向、专业、岗位名称、candidate_tags，以及每项的 tag_id、label、status、contribution、related_only。模型当前不接收总分，只接收逐项匹配事实。
 
-candidate_tags 优先取非 satisfied 或 contribution<1 的要求；没有此类要求时取全部要求。activities 中的 ID 必须属于候选集且不可重复。程序按状态生成方向前缀（pending 为“核实是否有相关经历并补充资料”，其他为“提升独立实践能力”），并根据原 match 生成“资料提及数/必需总数”和“尚未在资料中提及（不代表不具备）”的数量；返回 fit_evaluation、learning_directions、learning_steps。函数不改写 match，也不计算或接受模型给出的分数。
+candidate_tags 优先取非 satisfied 或 contribution<1 的要求；没有此类要求时取全部要求。activities 中的 ID 必须属于候选集且不可重复。程序直接以有效岗位要求名称生成学习方向（旧focus“补充证据”展示为“加强实践”），并根据原 match 生成“资料提及数/必需总数”和“尚未在资料中提及（不代表不具备）”的数量；返回 fit_evaluation、learning_directions、learning_steps。函数不改写 match，也不计算或接受模型给出的分数。
 
 main.py 的报告接口负责重新计算 match，把确定性分数、资料已提及项、资料未提及项（不代表不具备）、版本及 AI 建议组合为报告与 export_text。前端复制/导出直接使用该服务端文本，显示分数使用同一四舍五入字段。
 
@@ -112,6 +112,8 @@ main.py 的报告接口负责重新计算 match，把确定性分数、资料已
 AIError 对外只提供固定中文消息、code、retryable；不在消息中拼接原请求、简历、密钥或上游正文。main.py 另加 request_id，当前将 retryable=true 映射为 HTTP503，false 映射为 HTTP400。
 
 ## 已知限制与已确认的后续验收范围
+
+- 解析器接受完整前置 <think>...</think> 思考块，但只读取其后的最终JSON对象；未闭合思考块、只有思考没有答案、损坏JSON或多个对象仍拒绝。不修补JSON语法，不从推理内容恢复结果。
 
 - check_future_text 是有限正则规则，拦截常见百分比、已具备能力、保证录用、忽略指令等表述，不是完整的事实或提示注入检测器。
 - 学习方向直接展示模型选择的岗位要求名称；Prompt 要求直接给出知识、课程练习或项目任务，不要求核实经历、补充资料或证据。focus 保留旧枚举“补充证据”以兼容既有模型输出，展示时映射为“加强实践”；steps 不执行完整语义判断，不能保证任意模型活动文字完全遵循 Prompt。资料未提及仍不代表不具备，建议不改变匹配事实与分数。
