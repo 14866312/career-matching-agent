@@ -4,9 +4,6 @@ import type { CareerPaths, CareerEdge, PathNode } from '../types';
 import { EmptyState, ErrorBox, Loading } from './ui';
 import type { PathSelection } from '../lib/localDraft';
 
-const STAGE_LABELS = ['当前阶段', '中期目标', '最终目标'];
-const PHASE_LABELS = ['阶段 01 · 基础能力建立', '阶段 02 · 核心能力进阶', '阶段 03 · 资深能力纵深'];
-
 export default function PathsTab({ active, jobs, showToast, targetJobId, focusRequest, savedSelection, onSelectionChange, onClearSelection, onSaveSelection }: {
   active: boolean;
   jobs: Array<{ id: string; name: string }>;
@@ -116,7 +113,6 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
     }
   }
 
-  const jobName = useMemo(() => new Map(jobs.map(j => [j.id, j.name])), [jobs]);
   const focusJobId = selectedJobId || jobs[0]?.id || data?.nodes[0]?.job_id || '';
   const focusNodes = useMemo(() => (data?.nodes ?? []).filter(n => n.job_id === focusJobId).sort((a, b) => a.stage - b.stage), [data, focusJobId]);
   const nodeById = useMemo(() => new Map((data?.nodes ?? []).map(n => [n.id, n])), [data]);
@@ -124,7 +120,7 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
   const transitions = useMemo(() => (data?.edges ?? []).filter(e => e.type === 'transition' && (nodeById.get(e.source)?.job_id === focusJobId || nodeById.get(e.target)?.job_id === focusJobId)), [data, nodeById, focusJobId]);
   const actionEdges = useMemo(() => (data?.edges ?? []).filter(edge =>
     edge.activity && (nodeById.get(edge.source)?.job_id === focusJobId || nodeById.get(edge.target)?.job_id === focusJobId)
-  ).slice(0, 6), [data, nodeById, focusJobId]);
+  ), [data, nodeById, focusJobId]);
   const promotionOptions = focusNodes.flatMap(node => {
     const edge = promotionBySource.get(node.id);
     return edge ? [edge] : [];
@@ -168,34 +164,78 @@ export default function PathsTab({ active, jobs, showToast, targetJobId, focusRe
       <section className="paths-hero">
         <h2>成长路径</h2>
         <label className="path-job-select">聚焦岗位<select value={focusJobId} onChange={e => selectJob(e.target.value)}>{jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select></label>
-        <div className="path-overview"><div><small>{STAGE_LABELS[0]}</small><b>{focusNodes[0]?.label || jobName.get(focusJobId) || '起步岗位'}</b></div><span>→</span><div><small>{STAGE_LABELS[1]}</small><b>{focusNodes[1]?.label || '能力进阶'}</b></div><span>→</span><div><small>{STAGE_LABELS[2]}</small><b>{focusNodes[2]?.label || '资深岗位'}</b></div><em>↗</em></div>
+        <ol className="path-overview path-overview-stages" aria-label="岗位成长阶段">
+          {focusNodes.map((node, index) => <li key={node.id}>
+            <small>阶段 {String(index + 1).padStart(2, '0')}</small>
+            <b>{node.stage_label}</b>
+            <p>{node.goal}</p>
+          </li>)}
+        </ol>
       </section>
 
       <div className="path-flow">
         <section ref={currentPlanRef} className="path-current-plan" tabIndex={-1} aria-label="当前成长计划">
           <header><p>当前成长计划</p><h2>{selectedEdge ? '已选路线' : '选择路线'}</h2></header>
           {selectedEdge ? <EdgeDetail edge={selectedEdge} nodeById={nodeById} /> : <>
-            <p className="path-plan-intro">选择成长阶段，查看行动建议。</p>
-            <div className="path-route-options">{promotionOptions.map(edge => <button type="button" key={edge.id} onClick={() => selectEdge(edge.id)}>{nodeById.get(edge.source)?.label} → {nodeById.get(edge.target)?.label}<span aria-hidden="true">↗</span></button>)}</div>
+            <p className="path-plan-intro">选择下一步，查看实践任务与进阶条件。</p>
+            <div className="path-route-options">{promotionOptions.map(edge => <button type="button" key={edge.id} onClick={() => selectEdge(edge.id)}>
+              <span className="path-route-copy"><b>{nodeById.get(edge.source)?.stage_label} → {nodeById.get(edge.target)?.stage_label}</b><small>{nodeById.get(edge.target)?.goal}</small></span>
+              <span aria-hidden="true">↗</span>
+            </button>)}</div>
             {promotionOptions.length === 0 && <p className="path-plan-intro">暂无晋升路线，可查看转岗和活动。</p>}
           </>}
           <div className="path-action-hub"><div><h3>保存当前规划</h3><p>{selectionSaved ? '已保存于 ' + new Date(savedSelection!.savedAt!).toLocaleString() : '保存岗位与路线；本机留存需开启自动保存。'}</p></div><div className="path-save-actions"><button type="button" className="ghost-button" onClick={() => { onSaveSelection({ jobId: focusJobId, edgeId: selectedEdge?.id ?? null, savedAt: null }); showToast('当前岗位与成长路线已保存到本机草稿'); }}>{selectionSaved ? '更新路线' : '保存路线'}</button>{savedSelection && <button type="button" className="ghost-button" onClick={clearSavedPath}>清除路线</button>}</div></div>
         </section>
 
-        <details className="path-disclosure path-ladder"><summary><span><strong>成长阶段</strong><small>查看各阶段能力要求</small></span><b>{focusNodes.length} 个阶段</b></summary><div className="path-disclosure-body"><div className="path-timeline">{focusNodes.map((node, index) => <TimelineStage key={node.id} node={node} index={index} edge={promotionBySource.get(node.id)} selected={promotionBySource.get(node.id)?.id === selectedEdgeId} onSelect={selectEdge} />)}</div></div></details>
+        <details className="path-disclosure path-ladder">
+          <summary><span><strong>成长阶段</strong><small>查看目标、标准与进阶条件</small></span><b>{focusNodes.length} 个阶段</b></summary>
+          <div className="path-disclosure-body">
+            <p className="path-guidance-note">{data.note}</p>
+            <div className="path-timeline">{focusNodes.map((node, index) => <TimelineStage key={node.id} node={node} index={index} edge={promotionBySource.get(node.id)} selected={promotionBySource.get(node.id)?.id === selectedEdgeId} onSelect={selectEdge} />)}</div>
+          </div>
+        </details>
 
         <details className="path-disclosure path-branches"><summary><span><strong>转岗路线</strong><small>查看其他职业方向</small></span><b>{transitions.length} 条路线</b></summary><div className="path-disclosure-body path-branch-grid">{transitions.length === 0 ? <EmptyState symbol="◌" title="暂无横向路径"><p>当前数据集中没有与该岗位相连的转岗边。</p></EmptyState> : transitions.map((edge, index) => { const a=nodeById.get(edge.source); const b=nodeById.get(edge.target); const target=a?.job_id===focusJobId?b:a; return <button type="button" key={edge.id} className={edge.id===selectedEdgeId?'active':''} aria-pressed={edge.id===selectedEdgeId} onClick={() => selectEdge(edge.id)}><span>方向 {String(index + 1).padStart(2, '0')}</span><h3>{target?.label || '相邻岗位'}</h3><p>{edge.activity || '通过可迁移能力完成岗位切换。'}</p><small>可迁移：{edge.transferable.slice(0,3).join('、') || '待分析'}</small><em aria-hidden="true">↗</em></button>; })}</div></details>
 
-        <details className="path-disclosure path-sprints"><summary><span><strong>实践活动</strong><small>查看学习和实践任务</small></span><b>{actionEdges.length} 项活动</b></summary><div className="path-disclosure-body sprint-list">{actionEdges.length === 0 ? <EmptyState symbol="◌" title="暂无实战任务"><p>当前岗位的路径数据中还没有可执行活动。</p></EmptyState> : actionEdges.map((edge,index) => <button type="button" key={edge.id} aria-pressed={edge.id === selectedEdgeId} onClick={() => selectEdge(edge.id)}><b>{String(index+1).padStart(2,'0')}</b><span><strong>{edge.activity}</strong><small>{edge.type === 'promotion' ? '纵向晋升活动' : '横向转岗活动'} · 待积累：{edge.gaps.join('、') || '综合能力'}</small></span><em>{edge.id === selectedEdgeId ? '已选路线' : '查看路线'}</em></button>)}</div></details>
+        <details className="path-disclosure path-sprints"><summary><span><strong>实践活动</strong><small>查看学习和实践任务</small></span><b>{actionEdges.length} 项活动</b></summary><div className="path-disclosure-body sprint-list">{actionEdges.length === 0 ? <EmptyState symbol="◌" title="暂无实战任务"><p>当前岗位的路径数据中还没有可执行活动。</p></EmptyState> : actionEdges.map((edge,index) => <button type="button" key={edge.id} aria-pressed={edge.id === selectedEdgeId} onClick={() => selectEdge(edge.id)}><b>{String(index+1).padStart(2,'0')}</b><span><strong>{edge.activity}</strong><small>{edge.type === 'promotion' ? '阶段实践 · ' + nodeById.get(edge.target)?.stage_label : '转岗实践 · ' + (nodeById.get(edge.source)?.job_id === focusJobId ? nodeById.get(edge.target)?.label : nodeById.get(edge.source)?.label)}</small></span><em>{edge.id === selectedEdgeId ? '已选路线' : '查看路线'}</em></button>)}</div></details>
       </div>
     </div>
   );
 }
 
 function TimelineStage({ node, index, edge, selected, onSelect }: { node: PathNode; index: number; edge?: CareerEdge; selected: boolean; onSelect: (id: string) => void }) {
-  return <article className={'timeline-stage ' + (index % 2 ? 'reverse' : '')}><div className="timeline-copy"><span>{PHASE_LABELS[index] || '阶段 ' + String(index + 1).padStart(2, '0')}</span><h3>{node.label}</h3><p>{index === 0 ? '夯实岗位基础能力，建立可验证的项目与实践证据。' : index === 1 ? '提升独立交付、复杂问题诊断与跨模块协作能力。' : '形成系统设计、技术决策和团队影响力。'}</p></div><button type="button" className={'timeline-node ' + (selected ? 'active' : '')} disabled={!edge} aria-label={'选择 ' + node.label + ' 的下一阶段路线'} aria-pressed={selected} onClick={() => edge && onSelect(edge.id)}>{String(index + 1).padStart(2, '0')}</button><button type="button" className={'timeline-card ' + (selected ? 'active' : '')} disabled={!edge} aria-pressed={selected} onClick={() => edge && onSelect(edge.id)}><span>{index === 0 ? '基础能力' : index === 1 ? '进阶要求' : '长期成长'}</span>{edge ? <><p><b>可迁移能力</b>{edge.transferable.join('、') || '按当前阶段积累'}</p><p><b>待积累能力</b>{edge.gaps.join('、') || '暂无明确项'}</p><small>{edge.activity || '继续积累真实项目证据'}</small></> : <p>已到路线终点，可探索转岗。</p>}</button></article>;
+  const number = String(index + 1).padStart(2, '0');
+  return <article className={'timeline-stage ' + (index % 2 ? 'reverse' : '')}>
+    <div className="timeline-copy"><span>阶段 {number}</span><h3>{node.stage_label}</h3><p>{node.goal}</p><p className="timeline-practice"><b>实践：</b>{node.activity}</p></div>
+    {edge ? <button type="button" className={'timeline-node ' + (selected ? 'active' : '')} aria-label={'选择 ' + node.stage_label + ' 的下一阶段路线'} aria-pressed={selected} onClick={() => onSelect(edge.id)}>{number}</button> : <span className="timeline-node">{number}</span>}
+    <div className={'timeline-card ' + (selected ? 'active' : '')}>
+      <GuidanceList label="能力标准" items={node.standards} />
+      <GuidanceList label={edge ? '进阶条件' : '阶段验收'} items={node.criteria} />
+      {edge ? <button type="button" className="timeline-next-step" aria-label={'从' + node.stage_label + '规划下一步'} aria-pressed={selected} onClick={() => onSelect(edge.id)}>规划下一步 ↗</button> : <small>持续实践，深化专业影响</small>}
+    </div>
+  </article>;
 }
 
 function EdgeDetail({ edge, nodeById }: { edge: CareerEdge; nodeById: Map<string, PathNode> }) {
-  return <div className="path-selected-detail"><span>{edge.type === 'promotion' ? '纵向晋升路径' : '横向转岗路径'}</span><h3>{nodeById.get(edge.source)?.label || edge.source} → {nodeById.get(edge.target)?.label || edge.target}</h3><div className="path-next-task"><b>对应建议活动</b><p>{edge.activity || '当前路线尚未提供具体活动。'}</p></div><p><b>可迁移能力：</b>{edge.transferable.join('、') || '暂无明确项'}</p><p><b>待积累能力：</b>{edge.gaps.join('、') || '暂无明确项'}</p><small>路线建议不代表个人能力判断。</small></div>;
+  const source = nodeById.get(edge.source);
+  const target = nodeById.get(edge.target);
+  const promotion = edge.type === 'promotion';
+  return <div className="path-selected-detail">
+    <span>{promotion ? '阶段进阶路线' : '横向转岗路线'}</span>
+    <h3>{(promotion ? source?.stage_label : source?.label) || edge.source} → {(promotion ? target?.stage_label : target?.label) || edge.target}</h3>
+    {promotion && target && <p className="path-target-goal"><b>核心目标：</b>{target.goal}</p>}
+    <div className="path-next-task"><b>下一步实践</b><p>{edge.activity || '当前路线尚未提供具体活动。'}</p></div>
+    {promotion && source && target ? <div className="path-plan-standards">
+      <GuidanceList label={target.stage_label + ' · 能力标准'} items={target.standards} />
+      <GuidanceList label={'进阶条件 · 完成' + source.stage_label} items={source.criteria} />
+    </div> : <>
+      <p><b>可迁移能力：</b>{edge.transferable.join('、') || '暂无明确项'}</p>
+      <p><b>建议积累：</b>{edge.gaps.join('、') || '暂无明确项'}</p>
+    </>}
+    <small>路线建议不代表个人能力判断或晋升承诺。</small>
+  </div>;
+}
+
+function GuidanceList({ label, items }: { label: string; items: string[] }) {
+  return <div className="path-guidance-list"><b>{label}</b><ul>{items.map(item => <li key={item}>{item}</li>)}</ul></div>;
 }

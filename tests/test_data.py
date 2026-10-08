@@ -673,6 +673,51 @@ def test_paths_contract(data):
     assert len(edges) >= 18
 
 
+def test_all_roles_have_five_actionable_stages(data):
+    nodes = data['paths']['nodes']
+    assert data['paths']['guidance_version'] == 'paths-2.0'
+    for job in data['jobs']:
+        stages = sorted((n for n in nodes if n['job_id'] == job['id']),
+                        key=lambda n: n['stage'])
+        assert [n['stage'] for n in stages] == list(range(5))
+        assert [n['stage_label'] for n in stages] == [
+            '基础入门', '任务实践', '独立交付', '复杂项目', '专业引领',
+        ]
+        assert len({n['goal'] for n in stages}) == 5
+        for node in stages:
+            assert node['goal'] and node['activity']
+            for field in ('standards', 'criteria'):
+                assert len(node[field]) == 2
+                assert all(isinstance(item, str) and item.strip() for item in node[field])
+        assert stages[-1]['criteria'], '末阶段仍须有可核对的验收条件'
+    testing = [n for n in nodes if n['job_id'] == 'testing']
+    frontend = [n for n in nodes if n['job_id'] == 'frontend']
+    assert '测试用例' in testing[0]['goal']
+    assert '静态页面' in frontend[0]['goal']
+    assert any('自动化' in item for item in testing[3]['standards'])
+    assert any('渲染' in item for item in frontend[3]['standards'])
+
+
+def test_promotion_tasks_and_legacy_goals_stay_consistent(data):
+    paths = data['paths']
+    nodes = {n['id']: n for n in paths['nodes']}
+    edges = {e['id']: e for e in paths['edges']}
+    for job in data['jobs']:
+        promotions = [e for e in paths['edges'] if e['type'] == 'promotion'
+                      and nodes[e['source']]['job_id'] == job['id']]
+        assert len(promotions) == 4
+        for edge in promotions:
+            source, target = nodes[edge['source']], nodes[edge['target']]
+            assert target['stage'] == source['stage'] + 1
+            assert edge['activity'] == target['activity']
+            assert edge['gaps'] == target['standards']
+        for suffix, expected_stage in (('-promotion-0', 2), ('-promotion-1', 4)):
+            edge = edges[job['id'] + suffix]
+            assert nodes[edge['target']]['stage'] == expected_stage
+            assert edge['target'] == job['id'] + ('-1' if expected_stage == 2 else '-2')
+        assert job['id'] in nodes, '既有转岗与起步节点 ID 不变'
+
+
 def test_rule_versions_and_disclaimers(data):
     rules = data['rule_versions']
     assert rules['profile'] == bd.VERSION

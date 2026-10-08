@@ -51,6 +51,15 @@ from pathlib import Path
 
 import pandas as pd
 
+if __package__:
+    from .career_path_guidance import (
+        GUIDANCE, GUIDANCE_VERSION, NODE_SUFFIXES, PROMOTION_SUFFIXES, STAGES,
+    )
+else:
+    from career_path_guidance import (
+        GUIDANCE, GUIDANCE_VERSION, NODE_SUFFIXES, PROMOTION_SUFFIXES, STAGES,
+    )
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'competition' / '岗位样例数据.xls'
 TARGET = ROOT / 'backend' / 'data' / 'career-data.json'
@@ -70,7 +79,6 @@ HASH_CHARS = 16
 
 DIMENSION_LABELS = {'skills': '专业技能', 'certificates': '证书要求', 'qualities': '通用素质'}
 DIMENSION_ORDER = ('skills', 'certificates', 'qualities')
-STAGES = ['初级', '中级', '高级']
 
 # 0-3 proficiency scale, shared with the student profile model (Ability.level).
 LEVELS = [
@@ -937,25 +945,27 @@ def build_jobs(records, meta, claimed, audit_state):
 def build_paths(jobs):
     nodes, edges = [], []
     for job in jobs:
+        guidance = GUIDANCE[job['id']]
         for index, stage in enumerate(STAGES):
             nodes.append({
-                'id': job['id'] if index == 0 else job['id'] + '-' + str(index),
+                'id': job['id'] + NODE_SUFFIXES[index],
                 'job_id': job['id'],
-                'label': job['name'] if index == 0 else stage + job['name'],
+                'label': job['name'] if index == 0 else job['name'] + ' · ' + stage,
                 'stage': index,
                 'stage_label': stage,
                 'track': 'promotion',
+                **guidance[index],
             })
         for index in range(len(STAGES) - 1):
             edges.append({
-                'id': job['id'] + '-promotion-' + str(index),
-                'source': job['id'] if index == 0 else job['id'] + '-' + str(index),
-                'target': job['id'] + '-' + str(index + 1),
+                'id': job['id'] + PROMOTION_SUFFIXES[index],
+                'source': job['id'] + NODE_SUFFIXES[index],
+                'target': job['id'] + NODE_SUFFIXES[index + 1],
                 'type': 'promotion',
                 'plan_required': True,
-                'transferable': ['延续本岗位核心技能与项目经验'],
-                'gaps': ['独立承担复杂模块'] if index == 0 else ['系统设计、技术指导与跨团队协作'],
-                'activity': '用可展示的项目成果和复盘记录验证下一阶段能力',
+                'transferable': guidance[index]['standards'],
+                'gaps': guidance[index + 1]['standards'],
+                'activity': guidance[index + 1]['activity'],
                 'source_type': '人工整理建议；非招聘样本证实的晋升承诺',
                 'relation_version': RELATION_VERSION,
             })
@@ -981,7 +991,8 @@ def build_paths(jobs):
         'stages': {job['id']: STAGES for job in jobs},
         'transition_index': index,
         'relation_version': RELATION_VERSION,
-        'note': '晋升关系为同岗位族内的能力阶段说明；换岗关系为条件性建议，不承诺可直接转岗。阶段节点不作为独立推荐岗位。',
+        'guidance_version': GUIDANCE_VERSION,
+        'note': '阶段标准用于成长规划，不代表个人能力判定或晋升承诺。',
     }
 
 

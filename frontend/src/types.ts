@@ -95,6 +95,11 @@ export interface PathNode {
   job_id: string;
   label: string;
   stage: number;
+  stage_label: string;
+  goal: string;
+  standards: string[];
+  criteria: string[];
+  activity: string;
 }
 
 export interface CareerEdge {
@@ -111,6 +116,7 @@ export interface CareerEdge {
 export interface CareerPaths {
   nodes: PathNode[];
   edges: CareerEdge[];
+  note: string;
 }
 
 export interface MatchItem extends Requirement {

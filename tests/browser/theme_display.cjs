@@ -92,7 +92,7 @@ async function evidence(page, name) {
     await page.getByRole('tab', { name: '成长路径', exact: true }).click();
     await page.locator('.path-overview').waitFor();
     await page.locator('.path-ladder > summary').click();
-    await page.locator('.timeline-card:enabled').first().click();
+    await page.locator('.timeline-next-step').first().click();
     assert.equal((await colors(page.locator('.timeline-card.active'))).surface, 'rgb(226, 230, 218)', '路线选中态应清晰可见');
     assert.equal((await colors(page.locator('.timeline-node:not(.active)').first())).surface, 'rgb(255, 254, 251)', '时间轴节点不应残留黑底');
     await primaryContrast(page);
