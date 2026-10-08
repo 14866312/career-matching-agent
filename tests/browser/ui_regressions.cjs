@@ -323,10 +323,12 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     assert.notEqual(await page.locator('.path-ladder').getAttribute('open'), null, '路径应支持键盘展开');
     await assertTouchTargets(page.getByRole('combobox', { name: /^聚焦岗位/ }), '手机路径岗位选择');
     await assertTouchTargets(page.locator('.path-flow').getByRole('button'), '手机路径操作');
-    await assertTextScale(page.locator('.path-overview b, .timeline-copy p, .timeline-card p, .path-branch-grid p, .sprint-list strong, .path-action-hub p'), 14, '手机路径正文');
+    await assertTextScale(page.locator('.path-overview b, .timeline-copy p, .path-guidance-list li, .path-branch-grid p, .sprint-list strong, .path-action-hub p'), 14, '手机路径正文');
     await assertTextScale(page.locator('.path-overview small, .timeline-card small, .path-branch-grid small, .sprint-list small'), 12, '手机路径说明');
-    const firstRoute = page.locator('.timeline-card:enabled').first();
-    const firstActivity = await firstRoute.locator('small').innerText();
+    const firstRoute = page.locator('.timeline-next-step').first();
+    const pathData = await (await page.request.get(base + '/api/career-paths')).json();
+    const activePathJob = await page.locator('.path-job-select select').inputValue();
+    const firstActivity = pathData.edges.find(edge => edge.type === 'promotion' && edge.source === activePathJob).activity;
     await firstRoute.click();
     await assertSelectedPlan(page, plan, firstActivity);
     await plan.getByRole('button', { name: '保存路线', exact: true }).click();

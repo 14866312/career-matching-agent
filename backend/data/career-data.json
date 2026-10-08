@@ -14842,336 +14842,972 @@
         "job_id": "frontend",
         "label": "前端开发工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "做出适配手机与桌面的静态页面",
+        "standards": [
+          "用 HTML/CSS 组织结构与布局",
+          "用 JavaScript 完成基础交互"
+        ],
+        "criteria": [
+          "一页作品在手机与桌面正常显示",
+          "能解释布局并修复一个交互问题"
+        ],
+        "activity": "复刻一页响应式界面，加入表单校验"
+      },
+      {
+        "id": "frontend-practice",
+        "job_id": "frontend",
+        "label": "前端开发工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "完成可用的接口联动页面",
+        "standards": [
+          "用 Vue 拆分组件与管理状态",
+          "处理接口加载、空数据与失败状态"
+        ],
+        "criteria": [
+          "一个页面走通查询或提交流程",
+          "联调问题已修复，关键交互可复测"
+        ],
+        "activity": "制作连接接口的列表页，补齐加载与错误提示"
       },
       {
         "id": "frontend-1",
         "job_id": "frontend",
-        "label": "中级前端开发工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "前端开发工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立交付一个完整业务模块",
+        "standards": [
+          "拆解需求并设计组件与数据流",
+          "完成模块测试、构建与部署"
+        ],
+        "criteria": [
+          "模块主要流程与异常场景验收通过",
+          "可运行版本和使用说明齐备"
+        ],
+        "activity": "独立完成带查询、编辑与校验的管理模块"
+      },
+      {
+        "id": "frontend-project",
+        "job_id": "frontend",
+        "label": "前端开发工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "解决跨模块协作与性能问题",
+        "standards": [
+          "约定共享状态与跨模块接口",
+          "用测量结果定位渲染或加载瓶颈"
+        ],
+        "criteria": [
+          "跨模块流程联调与回归通过",
+          "优化前后指标可对比，未破坏原功能"
+        ],
+        "activity": "为多页面项目优化一个性能瓶颈并完成回归"
       },
       {
         "id": "frontend-2",
         "job_id": "frontend",
-        "label": "高级前端开发工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "前端开发工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "形成可复用的前端方案与规范",
+        "standards": [
+          "比较技术方案与维护成本",
+          "沉淀组件规范并指导代码评审"
+        ],
+        "criteria": [
+          "组件或规范在另一模块复用",
+          "评审改进落地，质量或效率变化可复盘"
+        ],
+        "activity": "提炼组件库，为另一模块完成接入与评审"
       },
       {
         "id": "java",
         "job_id": "java",
         "label": "Java 开发工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "跑通 Java 程序与数据读写",
+        "standards": [
+          "用 Java 组织对象与处理异常",
+          "用 SQL 完成基础查询与更新"
+        ],
+        "criteria": [
+          "小程序可运行并保存查询数据",
+          "正常输入和错误输入均有处理"
+        ],
+        "activity": "编写连接数据库的记录管理程序"
+      },
+      {
+        "id": "java-practice",
+        "job_id": "java",
+        "label": "Java 开发工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "完成可联调的业务接口",
+        "standards": [
+          "用 Spring Boot 实现请求与响应",
+          "设计 MySQL 表并校验接口参数"
+        ],
+        "criteria": [
+          "一组增删改查接口可联调",
+          "非法参数返回明确错误，测试可重复"
+        ],
+        "activity": "实现一组业务接口，补齐参数校验与接口测试"
       },
       {
         "id": "java-1",
         "job_id": "java",
-        "label": "中级Java 开发工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "Java 开发工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立交付可靠的服务模块",
+        "standards": [
+          "划分模块职责并处理事务边界",
+          "补齐测试、日志与部署配置"
+        ],
+        "criteria": [
+          "核心业务与异常回滚测试通过",
+          "服务可部署，接口和排障说明齐备"
+        ],
+        "activity": "完成带事务处理的业务模块并部署验证"
+      },
+      {
+        "id": "java-project",
+        "job_id": "java",
+        "label": "Java 开发工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "解决并发与跨服务可靠性问题",
+        "standards": [
+          "识别重复请求与并发更新风险",
+          "用压测与日志定位服务瓶颈"
+        ],
+        "criteria": [
+          "并发与重试场景验证通过",
+          "性能改进有前后指标和回滚方案"
+        ],
+        "activity": "压测业务服务，修复一个并发或性能问题"
       },
       {
         "id": "java-2",
         "job_id": "java",
-        "label": "高级Java 开发工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "Java 开发工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "制定可演进的后端设计方案",
+        "standards": [
+          "权衡服务边界、数据一致性与成本",
+          "通过评审与监控持续改善质量"
+        ],
+        "criteria": [
+          "设计方案经评审并在项目落地",
+          "故障或性能指标变化可复盘"
+        ],
+        "activity": "为现有服务写出改造方案，试点实施并复盘"
       },
       {
         "id": "cpp",
         "job_id": "cpp",
         "label": "C/C++ 开发工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "写出可运行的 C/C++ 小程序",
+        "standards": [
+          "正确使用指针、对象与内存",
+          "用数据结构组织输入与结果"
+        ],
+        "criteria": [
+          "程序处理正常与边界输入",
+          "能解释资源释放并定位一次程序错误"
+        ],
+        "activity": "实现文件读取与检索程序，验证边界输入"
+      },
+      {
+        "id": "cpp-practice",
+        "job_id": "cpp",
+        "label": "C/C++ 开发工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "完成可调试的小型功能模块",
+        "standards": [
+          "在 Linux 环境编译与调试",
+          "拆分接口并处理资源生命周期"
+        ],
+        "criteria": [
+          "功能模块可编译且测试通过",
+          "调试记录能说明问题原因与修复"
+        ],
+        "activity": "实现命令行工具，为核心函数补齐边界测试"
       },
       {
         "id": "cpp-1",
         "job_id": "cpp",
-        "label": "中级C/C++ 开发工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "C/C++ 开发工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立交付稳定的系统模块",
+        "standards": [
+          "设计模块接口与错误处理",
+          "验证内存、异常与集成行为"
+        ],
+        "criteria": [
+          "模块集成与异常场景测试通过",
+          "检查未发现已知泄漏，接口文档齐备"
+        ],
+        "activity": "完成文件处理模块，检查内存与异常恢复"
+      },
+      {
+        "id": "cpp-project",
+        "job_id": "cpp",
+        "label": "C/C++ 开发工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "解决并发与系统性能瓶颈",
+        "standards": [
+          "分析线程同步与资源竞争",
+          "用性能分析定位热点与开销"
+        ],
+        "criteria": [
+          "并发压力场景下结果正确",
+          "性能变化可测量，原功能回归通过"
+        ],
+        "activity": "为现有模块加入并发处理，测量并优化热点"
       },
       {
         "id": "cpp-2",
         "job_id": "cpp",
-        "label": "高级C/C++ 开发工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "C/C++ 开发工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "形成可靠的系统设计与工程规范",
+        "standards": [
+          "比较架构取舍与运行成本",
+          "制定接口、资源与评审规范"
+        ],
+        "criteria": [
+          "设计或规范在另一模块落地",
+          "稳定性或维护效率改善可复盘"
+        ],
+        "activity": "重构模块边界并组织一次设计与代码评审"
       },
       {
         "id": "testing",
         "job_id": "testing",
         "label": "软件测试工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "把需求转成可执行的测试用例",
+        "standards": [
+          "区分正常、异常与边界场景",
+          "写清操作步骤与预期结果"
+        ],
+        "criteria": [
+          "用例覆盖一个功能的关键场景",
+          "他人可按步骤执行并得到明确结论"
+        ],
+        "activity": "为登录功能编写正常、异常与边界用例"
+      },
+      {
+        "id": "testing-practice",
+        "job_id": "testing",
+        "label": "软件测试工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "完成一轮功能与接口验证",
+        "standards": [
+          "执行功能测试与接口断言",
+          "复现缺陷并跟踪修复结果"
+        ],
+        "criteria": [
+          "一轮测试有结果与可复现缺陷记录",
+          "修复问题已复测，关键流程已回归"
+        ],
+        "activity": "测试一个 Web 模块及其接口，跟踪缺陷到复测"
       },
       {
         "id": "testing-1",
         "job_id": "testing",
-        "label": "中级软件测试工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "软件测试工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立负责一个模块的测试闭环",
+        "standards": [
+          "按风险制定测试范围与计划",
+          "用 SQL 核对数据并维护回归用例"
+        ],
+        "criteria": [
+          "模块关键风险与异常场景覆盖齐备",
+          "测试报告写清结果与未解决风险"
+        ],
+        "activity": "为业务模块制定计划，完成测试与验收报告"
+      },
+      {
+        "id": "testing-project",
+        "job_id": "testing",
+        "label": "软件测试工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "建立可重复的质量验证流程",
+        "standards": [
+          "将高频回归用例自动化",
+          "设计性能或跨模块质量验证"
+        ],
+        "criteria": [
+          "关键回归脚本可重复运行",
+          "性能或集成风险有定位与验证结论"
+        ],
+        "activity": "自动化一组回归用例，并完成一次性能验证"
       },
       {
         "id": "testing-2",
         "job_id": "testing",
-        "label": "高级软件测试工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "软件测试工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "推动团队形成持续质量改进",
+        "standards": [
+          "制定质量准入与发布检查标准",
+          "用缺陷趋势指导改进与评审"
+        ],
+        "criteria": [
+          "质量标准在一次迭代中执行",
+          "缺陷遗漏或回归效率变化可复盘"
+        ],
+        "activity": "制定一份发布检查清单，跟踪一轮迭代效果"
       },
       {
         "id": "implementation",
         "job_id": "implementation",
         "label": "软件实施工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "在练习环境完成系统安装",
+        "standards": [
+          "理解安装依赖与配置步骤",
+          "用 SQL 查询并核对基础数据"
+        ],
+        "criteria": [
+          "系统可启动并走通基本业务",
+          "安装步骤与配置项记录完整"
+        ],
+        "activity": "部署一个练习系统，编写安装与启动说明"
+      },
+      {
+        "id": "implementation-practice",
+        "job_id": "implementation",
+        "label": "软件实施工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "完成部署、培训与验收演练",
+        "standards": [
+          "按业务流程配置系统",
+          "讲解操作并记录客户问题"
+        ],
+        "criteria": [
+          "一条业务流程按验收清单走通",
+          "操作手册可用，培训问题已处理"
+        ],
+        "activity": "模拟一次客户部署、操作培训与业务验收"
       },
       {
         "id": "implementation-1",
         "job_id": "implementation",
-        "label": "中级软件实施工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "软件实施工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立交付一个小型实施项目",
+        "standards": [
+          "确认需求范围并安排交付节点",
+          "完成数据迁移、核对与回退准备"
+        ],
+        "criteria": [
+          "交付清单逐项通过验收",
+          "迁移数据已核对，回退步骤可执行"
+        ],
+        "activity": "完成小型系统迁移、培训和交付验收"
+      },
+      {
+        "id": "implementation-project",
+        "job_id": "implementation",
+        "label": "软件实施工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "协调多系统上线与交付风险",
+        "standards": [
+          "对齐跨系统接口与业务依赖",
+          "安排上线窗口、异常处置与回退"
+        ],
+        "criteria": [
+          "跨系统业务联调通过",
+          "上线与回退演练完成，责任人明确"
+        ],
+        "activity": "制定两个系统的联调与上线计划，演练回退"
       },
       {
         "id": "implementation-2",
         "job_id": "implementation",
-        "label": "高级软件实施工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "软件实施工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "沉淀可复用的实施方法",
+        "standards": [
+          "提炼交付模板与风险检查清单",
+          "指导实施并改进项目协作"
+        ],
+        "criteria": [
+          "模板在另一个实施项目复用",
+          "交付周期或返工变化可复盘"
+        ],
+        "activity": "整理实施模板，在另一个项目试用并复盘"
       },
       {
         "id": "support",
         "job_id": "support",
         "label": "技术支持工程师",
         "stage": 0,
-        "stage_label": "初级",
-        "track": "promotion"
+        "stage_label": "基础入门",
+        "track": "promotion",
+        "goal": "复现问题并收集排查信息",
+        "standards": [
+          "检查 Linux 日志与网络连通性",
+          "说清现象、环境与复现步骤"
+        ],
+        "criteria": [
+          "一个问题可按记录复现",
+          "日志与环境信息足以支持排查"
+        ],
+        "activity": "复现一次服务访问失败，记录日志与网络检查"
+      },
+      {
+        "id": "support-practice",
+        "job_id": "support",
+        "label": "技术支持工程师 · 任务实践",
+        "stage": 1,
+        "stage_label": "任务实践",
+        "track": "promotion",
+        "goal": "处理并关闭常见技术问题",
+        "standards": [
+          "按步骤定位配置或网络问题",
+          "向用户说明处理与验证结果"
+        ],
+        "criteria": [
+          "问题恢复后完成复测",
+          "处理记录含原因、步骤与用户反馈"
+        ],
+        "activity": "模拟一个支持工单，从沟通排查到恢复复测"
       },
       {
         "id": "support-1",
         "job_id": "support",
-        "label": "中级技术支持工程师",
-        "stage": 1,
-        "stage_label": "中级",
-        "track": "promotion"
+        "label": "技术支持工程师 · 独立交付",
+        "stage": 2,
+        "stage_label": "独立交付",
+        "track": "promotion",
+        "goal": "独立完成复杂工单的处理闭环",
+        "standards": [
+          "分析日志并缩小根因范围",
+          "明确升级条件并协调相关团队"
+        ],
+        "criteria": [
+          "工单有定位结论与解决或升级记录",
+          "用户已获反馈，知识库记录可复用"
+        ],
+        "activity": "处理一项跨配置与网络的故障，形成排障记录"
+      },
+      {
+        "id": "support-project",
+        "job_id": "support",
+        "label": "技术支持工程师 · 复杂项目",
+        "stage": 3,
+        "stage_label": "复杂项目",
+        "track": "promotion",
+        "goal": "协调重大故障恢复与预防",
+        "standards": [
+          "评估影响并安排恢复优先级",
+          "用监控与根因分析制定预防措施"
+        ],
+        "criteria": [
+          "恢复演练完成，响应分工明确",
+          "预防措施经验证且有跟踪指标"
+        ],
+        "activity": "演练一次服务中断，完成恢复与根因复盘"
       },
       {
         "id": "support-2",
         "job_id": "support",
-        "label": "高级技术支持工程师",
-        "stage": 2,
-        "stage_label": "高级",
-        "track": "promotion"
+        "label": "技术支持工程师 · 专业引领",
+        "stage": 4,
+        "stage_label": "专业引领",
+        "track": "promotion",
+        "goal": "建立团队可复用的支持体系",
+        "standards": [
+          "制定知识库与响应升级规范",
+          "用工单趋势改进工具与培训"
+        ],
+        "criteria": [
+          "排障流程由另一成员独立执行",
+          "响应时长或重复问题变化可复盘"
+        ],
+        "activity": "完善排障手册与升级流程，跟踪一轮使用效果"
       }
     ],
     "edges": [
       {
-        "id": "frontend-promotion-0",
+        "id": "frontend-promotion-foundation",
         "source": "frontend",
+        "target": "frontend-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "用 HTML/CSS 组织结构与布局",
+          "用 JavaScript 完成基础交互"
+        ],
+        "gaps": [
+          "用 Vue 拆分组件与管理状态",
+          "处理接口加载、空数据与失败状态"
+        ],
+        "activity": "制作连接接口的列表页，补齐加载与错误提示",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "frontend-promotion-0",
+        "source": "frontend-practice",
         "target": "frontend-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "用 Vue 拆分组件与管理状态",
+          "处理接口加载、空数据与失败状态"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "拆解需求并设计组件与数据流",
+          "完成模块测试、构建与部署"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "独立完成带查询、编辑与校验的管理模块",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "frontend-promotion-project",
+        "source": "frontend-1",
+        "target": "frontend-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "拆解需求并设计组件与数据流",
+          "完成模块测试、构建与部署"
+        ],
+        "gaps": [
+          "约定共享状态与跨模块接口",
+          "用测量结果定位渲染或加载瓶颈"
+        ],
+        "activity": "为多页面项目优化一个性能瓶颈并完成回归",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "frontend-promotion-1",
-        "source": "frontend-1",
+        "source": "frontend-project",
         "target": "frontend-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "约定共享状态与跨模块接口",
+          "用测量结果定位渲染或加载瓶颈"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "比较技术方案与维护成本",
+          "沉淀组件规范并指导代码评审"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "提炼组件库，为另一模块完成接入与评审",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "java-promotion-foundation",
+        "source": "java",
+        "target": "java-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "用 Java 组织对象与处理异常",
+          "用 SQL 完成基础查询与更新"
+        ],
+        "gaps": [
+          "用 Spring Boot 实现请求与响应",
+          "设计 MySQL 表并校验接口参数"
+        ],
+        "activity": "实现一组业务接口，补齐参数校验与接口测试",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "java-promotion-0",
-        "source": "java",
+        "source": "java-practice",
         "target": "java-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "用 Spring Boot 实现请求与响应",
+          "设计 MySQL 表并校验接口参数"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "划分模块职责并处理事务边界",
+          "补齐测试、日志与部署配置"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "完成带事务处理的业务模块并部署验证",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "java-promotion-project",
+        "source": "java-1",
+        "target": "java-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "划分模块职责并处理事务边界",
+          "补齐测试、日志与部署配置"
+        ],
+        "gaps": [
+          "识别重复请求与并发更新风险",
+          "用压测与日志定位服务瓶颈"
+        ],
+        "activity": "压测业务服务，修复一个并发或性能问题",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "java-promotion-1",
-        "source": "java-1",
+        "source": "java-project",
         "target": "java-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "识别重复请求与并发更新风险",
+          "用压测与日志定位服务瓶颈"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "权衡服务边界、数据一致性与成本",
+          "通过评审与监控持续改善质量"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "为现有服务写出改造方案，试点实施并复盘",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "cpp-promotion-foundation",
+        "source": "cpp",
+        "target": "cpp-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "正确使用指针、对象与内存",
+          "用数据结构组织输入与结果"
+        ],
+        "gaps": [
+          "在 Linux 环境编译与调试",
+          "拆分接口并处理资源生命周期"
+        ],
+        "activity": "实现命令行工具，为核心函数补齐边界测试",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "cpp-promotion-0",
-        "source": "cpp",
+        "source": "cpp-practice",
         "target": "cpp-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "在 Linux 环境编译与调试",
+          "拆分接口并处理资源生命周期"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "设计模块接口与错误处理",
+          "验证内存、异常与集成行为"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "完成文件处理模块，检查内存与异常恢复",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "cpp-promotion-project",
+        "source": "cpp-1",
+        "target": "cpp-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "设计模块接口与错误处理",
+          "验证内存、异常与集成行为"
+        ],
+        "gaps": [
+          "分析线程同步与资源竞争",
+          "用性能分析定位热点与开销"
+        ],
+        "activity": "为现有模块加入并发处理，测量并优化热点",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "cpp-promotion-1",
-        "source": "cpp-1",
+        "source": "cpp-project",
         "target": "cpp-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "分析线程同步与资源竞争",
+          "用性能分析定位热点与开销"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "比较架构取舍与运行成本",
+          "制定接口、资源与评审规范"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "重构模块边界并组织一次设计与代码评审",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "testing-promotion-foundation",
+        "source": "testing",
+        "target": "testing-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "区分正常、异常与边界场景",
+          "写清操作步骤与预期结果"
+        ],
+        "gaps": [
+          "执行功能测试与接口断言",
+          "复现缺陷并跟踪修复结果"
+        ],
+        "activity": "测试一个 Web 模块及其接口，跟踪缺陷到复测",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "testing-promotion-0",
-        "source": "testing",
+        "source": "testing-practice",
         "target": "testing-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "执行功能测试与接口断言",
+          "复现缺陷并跟踪修复结果"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "按风险制定测试范围与计划",
+          "用 SQL 核对数据并维护回归用例"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "为业务模块制定计划，完成测试与验收报告",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "testing-promotion-project",
+        "source": "testing-1",
+        "target": "testing-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "按风险制定测试范围与计划",
+          "用 SQL 核对数据并维护回归用例"
+        ],
+        "gaps": [
+          "将高频回归用例自动化",
+          "设计性能或跨模块质量验证"
+        ],
+        "activity": "自动化一组回归用例，并完成一次性能验证",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "testing-promotion-1",
-        "source": "testing-1",
+        "source": "testing-project",
         "target": "testing-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "将高频回归用例自动化",
+          "设计性能或跨模块质量验证"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "制定质量准入与发布检查标准",
+          "用缺陷趋势指导改进与评审"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "制定一份发布检查清单，跟踪一轮迭代效果",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "implementation-promotion-foundation",
+        "source": "implementation",
+        "target": "implementation-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "理解安装依赖与配置步骤",
+          "用 SQL 查询并核对基础数据"
+        ],
+        "gaps": [
+          "按业务流程配置系统",
+          "讲解操作并记录客户问题"
+        ],
+        "activity": "模拟一次客户部署、操作培训与业务验收",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "implementation-promotion-0",
-        "source": "implementation",
+        "source": "implementation-practice",
         "target": "implementation-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "按业务流程配置系统",
+          "讲解操作并记录客户问题"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "确认需求范围并安排交付节点",
+          "完成数据迁移、核对与回退准备"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "完成小型系统迁移、培训和交付验收",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "implementation-promotion-project",
+        "source": "implementation-1",
+        "target": "implementation-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "确认需求范围并安排交付节点",
+          "完成数据迁移、核对与回退准备"
+        ],
+        "gaps": [
+          "对齐跨系统接口与业务依赖",
+          "安排上线窗口、异常处置与回退"
+        ],
+        "activity": "制定两个系统的联调与上线计划，演练回退",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "implementation-promotion-1",
-        "source": "implementation-1",
+        "source": "implementation-project",
         "target": "implementation-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "对齐跨系统接口与业务依赖",
+          "安排上线窗口、异常处置与回退"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "提炼交付模板与风险检查清单",
+          "指导实施并改进项目协作"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "整理实施模板，在另一个项目试用并复盘",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "support-promotion-foundation",
+        "source": "support",
+        "target": "support-practice",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "检查 Linux 日志与网络连通性",
+          "说清现象、环境与复现步骤"
+        ],
+        "gaps": [
+          "按步骤定位配置或网络问题",
+          "向用户说明处理与验证结果"
+        ],
+        "activity": "模拟一个支持工单，从沟通排查到恢复复测",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "support-promotion-0",
-        "source": "support",
+        "source": "support-practice",
         "target": "support-1",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "按步骤定位配置或网络问题",
+          "向用户说明处理与验证结果"
         ],
         "gaps": [
-          "独立承担复杂模块"
+          "分析日志并缩小根因范围",
+          "明确升级条件并协调相关团队"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "处理一项跨配置与网络的故障，形成排障记录",
+        "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
+        "relation_version": "relations-1.0"
+      },
+      {
+        "id": "support-promotion-project",
+        "source": "support-1",
+        "target": "support-project",
+        "type": "promotion",
+        "plan_required": true,
+        "transferable": [
+          "分析日志并缩小根因范围",
+          "明确升级条件并协调相关团队"
+        ],
+        "gaps": [
+          "评估影响并安排恢复优先级",
+          "用监控与根因分析制定预防措施"
+        ],
+        "activity": "演练一次服务中断，完成恢复与根因复盘",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
       {
         "id": "support-promotion-1",
-        "source": "support-1",
+        "source": "support-project",
         "target": "support-2",
         "type": "promotion",
         "plan_required": true,
         "transferable": [
-          "延续本岗位核心技能与项目经验"
+          "评估影响并安排恢复优先级",
+          "用监控与根因分析制定预防措施"
         ],
         "gaps": [
-          "系统设计、技术指导与跨团队协作"
+          "制定知识库与响应升级规范",
+          "用工单趋势改进工具与培训"
         ],
-        "activity": "用可展示的项目成果和复盘记录验证下一阶段能力",
+        "activity": "完善排障手册与升级流程，跟踪一轮使用效果",
         "source_type": "人工整理建议；非招聘样本证实的晋升承诺",
         "relation_version": "relations-1.0"
       },
@@ -15408,34 +16044,46 @@
     ],
     "stages": {
       "frontend": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ],
       "java": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ],
       "cpp": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ],
       "testing": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ],
       "implementation": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ],
       "support": [
-        "初级",
-        "中级",
-        "高级"
+        "基础入门",
+        "任务实践",
+        "独立交付",
+        "复杂项目",
+        "专业引领"
       ]
     },
     "transition_index": {
@@ -15465,7 +16113,8 @@
       ]
     },
     "relation_version": "relations-1.0",
-    "note": "晋升关系为同岗位族内的能力阶段说明；换岗关系为条件性建议，不承诺可直接转岗。阶段节点不作为独立推荐岗位。"
+    "guidance_version": "paths-2.0",
+    "note": "阶段标准用于成长规划，不代表个人能力判定或晋升承诺。"
   },
   "sources": {
     "row-4226": {

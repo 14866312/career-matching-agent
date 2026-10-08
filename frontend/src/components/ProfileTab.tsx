@@ -123,8 +123,11 @@ export default function ProfileTab({ student, resumeName, setResumeName, updateS
       const target = sourceModeRequest.mode === 'resume'
         ? document.querySelector<HTMLElement>('.profile-upload-card')
         : document.querySelector<HTMLElement>('.profile-basic-grid input');
-      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      target?.focus();
+      // A modal opened during the delayed onboarding request must keep focus.
+      if (!document.querySelector('[role="dialog"][aria-modal="true"]')) {
+        target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target?.focus();
+      }
       onSourceModeRequestHandled();
     }, 40);
     return () => window.clearTimeout(timer);

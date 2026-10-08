@@ -15,7 +15,10 @@ vi.mock('../api', async importOriginal => {
   return { ...actual, apiGet: vi.fn(), apiPostForm: vi.fn() };
 });
 
-function ProfileHarness() {
+function ProfileHarness({ sourceModeRequest = null, onSourceModeRequestHandled = vi.fn() }: {
+  sourceModeRequest?: { mode: 'resume' | 'manual'; token: number } | null;
+  onSourceModeRequestHandled?: () => void;
+} = {}) {
   const [profile, setProfile] = useState<StudentProfile>(student);
   const [resumeName, setResumeName] = useState('');
   const revRef = useRef(0);
@@ -43,8 +46,8 @@ function ProfileHarness() {
       showToast={vi.fn()}
       onGoMatches={vi.fn()}
       onSetTargetJob={vi.fn()}
-      sourceModeRequest={null}
-      onSourceModeRequestHandled={vi.fn()}
+      sourceModeRequest={sourceModeRequest}
+      onSourceModeRequestHandled={onSourceModeRequestHandled}
       focusTarget={null}
       onFocusHandled={vi.fn()}
     />
@@ -58,6 +61,21 @@ afterEach(() => {
 });
 
 describe('ProfileTab integration', () => {
+  it('keeps focus inside a modal opened before the onboarding focus request completes', async () => {
+    vi.mocked(apiGet).mockResolvedValue({ items: [] });
+    const handled = vi.fn();
+    render(<>
+      <ProfileHarness sourceModeRequest={{ mode: 'manual', token: 1 }} onSourceModeRequestHandled={handled} />
+      <section role="dialog" aria-modal="true" aria-label="设置"><button autoFocus>关闭设置</button></section>
+    </>);
+    const scroll = vi.fn();
+    screen.getByLabelText('专业').scrollIntoView = scroll;
+
+    await waitFor(() => expect(handled).toHaveBeenCalledOnce());
+    expect(screen.getByRole('button', { name: '关闭设置' })).toHaveFocus();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
   it('keeps a parsed resume name in the session while profile and local draft stay name-free', async () => {
     vi.mocked(apiGet).mockResolvedValue({ items: [] });
     vi.mocked(apiPostForm).mockResolvedValue(resumeResponse);
