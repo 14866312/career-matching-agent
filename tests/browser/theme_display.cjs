@@ -62,7 +62,10 @@ async function evidence(page, name) {
     await primaryContrast(page);
     await evidence(page, 'matches');
     const advice = page.locator('#report-advice');
-    const generateAdvice = advice.getByRole('button', { name: 'AI 生成建议', exact: true });
+    await advice.getByRole('button', { name: 'AI 生成建议', exact: true }).click();
+    await advice.locator('.report .item').first().waitFor();
+    assert.doesNotMatch(await advice.locator('.report').innerText(), /核实是否有相关经历|补充证据/);
+    const generateAdvice = advice.getByRole('button', { name: '重新生成建议', exact: true });
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const theme of ['light', 'dark']) {
@@ -74,6 +77,9 @@ async function evidence(page, name) {
         assert.equal(await generateAdvice.isEnabled(), true);
         const rect = await generateAdvice.boundingBox();
         assert.ok(rect.width >= 44 && rect.height >= 44);
+        for (const item of await advice.locator('.report .item').all()) {
+          assert.equal((await colors(item)).text, theme === 'light' ? 'rgb(41, 43, 37)' : 'rgb(185, 185, 185)', '生成后的学习方向和建议应使用当前主题的清晰正文色');
+        }
         await evidence(page, `advice-${theme}-${width}`);
         if (process.env.E2E_OUTPUT_DIR) {
           await advice.screenshot({ path: path.join(process.env.E2E_OUTPUT_DIR, `advice-${theme}-${width}.png`), animations: 'disabled' });

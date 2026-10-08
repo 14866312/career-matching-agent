@@ -337,7 +337,7 @@ async def generate_advice(student, job, match):
     needs = [x for x in match['items'] if x['status'] != 'satisfied' or x['contribution'] < 1]
     candidates = needs or match['items']
     allowed = {x['tag_id']: x for x in candidates}
-    instruction = '''根据确定性匹配事实选择学习重点并给具体活动。输出 {"focus":"补充证据或加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。只给未来建议，不陈述既有能力，不输出分数或就业保证。未提及项先建议核实实际经历，不能推断用户不具备；相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
+    instruction = '''根据确定性匹配事实选择学习主题并给具体学习活动。输出 {"focus":"加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来学习活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。直接给出要学习的知识、课程练习或项目任务，不要求核实既有经历、补充资料或证据。只给未来建议，不陈述既有能力，不输出分数或就业保证。资料未提及不代表用户不具备，相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
     plan = validate(AdvicePlan, await call_json(instruction, {'intention': student.intention.model_dump(), 'major': student.major, 'job': job['name'], 'candidate_tags': list(allowed), 'facts': [{k: x[k] for k in ('tag_id', 'label', 'status', 'contribution', 'related_only')} for x in match['items']]}))
     seen = set()
     directions, steps = [], []
@@ -347,12 +347,12 @@ async def generate_advice(student, job, match):
         seen.add(activity.tag_id)
         row = allowed[activity.tag_id]
         label = row['label']
-        direction = '核实是否有相关经历并补充资料' if row['status'] == 'pending' else '提升独立实践能力'
-        directions.append(label + '：' + direction)
+        directions.append(label)
         for step in activity.steps:
             check_future_text(step)
             steps.append(label + '：' + step)
-    fit = f'当前资料提及 {match["satisfied"]}/{match["required"]} 项必需要求；{len(match["pending_items"])} 项尚未在资料中提及，不代表不具备。AI建议重点：{plan.focus}。'
+    focus = '加强实践' if plan.focus == '补充证据' else plan.focus
+    fit = f'当前资料提及 {match["satisfied"]}/{match["required"]} 项必需要求；{len(match["pending_items"])} 项尚未在资料中提及，不代表不具备。AI建议重点：{focus}。'
     return {'fit_evaluation': fit, 'learning_directions': directions, 'learning_steps': steps}
 
 
