@@ -144,6 +144,7 @@
 .path-overview.path-overview-stages {
   width: 100%;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
   gap: 24px;
   padding: 20px 24px;
   margin-bottom: 0;
