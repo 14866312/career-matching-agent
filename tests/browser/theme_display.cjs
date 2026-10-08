@@ -61,6 +61,27 @@ async function evidence(page, name) {
     assert.equal(await page.locator('.match-coverage').evaluate(element => getComputedStyle(element).accentColor), 'rgb(82, 89, 74)', '覆盖条提及部分应使用深色');
     await primaryContrast(page);
     await evidence(page, 'matches');
+    const advice = page.locator('#report-advice');
+    const generateAdvice = advice.getByRole('button', { name: 'AI 生成建议', exact: true });
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      for (const theme of ['light', 'dark']) {
+        if (await page.locator('.exploration-shell').getAttribute('data-theme') !== theme) {
+          await page.locator('.theme-toggle').click();
+        }
+        await generateAdvice.scrollIntoViewIfNeeded();
+        assert.equal(await generateAdvice.isVisible(), true);
+        assert.equal(await generateAdvice.isEnabled(), true);
+        const rect = await generateAdvice.boundingBox();
+        assert.ok(rect.width >= 44 && rect.height >= 44);
+        await evidence(page, `advice-${theme}-${width}`);
+        if (process.env.E2E_OUTPUT_DIR) {
+          await advice.screenshot({ path: path.join(process.env.E2E_OUTPUT_DIR, `advice-${theme}-${width}.png`), animations: 'disabled' });
+        }
+      }
+    }
+    await page.locator('.theme-toggle').click();
+    await page.setViewportSize({ width: 1440, height: 1000 });
 
     await page.getByRole('tab', { name: '成长路径', exact: true }).click();
     await page.locator('.path-overview').waitFor();

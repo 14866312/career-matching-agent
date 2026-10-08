@@ -87,7 +87,11 @@ async function choose(name) {
   }).click();
 }
 
-async function report() { return responseAfter('/api/reports', () => reportButton().click()); }
+async function report() {
+  const action = page.locator('#report-advice').getByRole('button', { name: /^(AI 生成建议|重新生成建议)$/ });
+  await action.scrollIntoViewIfNeeded();
+  return responseAfter('/api/reports', () => action.click());
+}
 
 async function toastIncludes(text) {
   await until(async () => (await page.locator('.toast').count()) > 0 &&

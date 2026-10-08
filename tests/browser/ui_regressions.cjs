@@ -292,7 +292,7 @@ async function assertPageTitleBelowGuide(page, selector, label) {
     await assertNarrowLayout(page, '手机匹配报告');
     await assertPageTitleBelowGuide(page, '.matches-overview h2', '手机匹配概览');
     await saveUiEvidence(page, 'matches-mobile');
-    await assertTouchTargets(page.locator('.matches-hero-actions, .alternative-grid, .matrix-list').getByRole('button'), '匹配操作');
+    await assertTouchTargets(page.locator('.matches-hero-actions, .advice-actions, .alternative-grid, .matrix-list').getByRole('button'), '匹配操作');
     await assertTouchTargets(contents.getByRole('link'), '匹配报告目录');
     await assertTextScale(page.locator('.match-overview-stats p, .capability-summary-grid p, .matrix-row strong, .alternative-grid p, .advice-placeholder p'), 14, '手机匹配正文');
     await assertTextScale(page.locator('.report-section > header span, .matrix-row small, .alternative-grid span'), 12, '手机匹配说明');
