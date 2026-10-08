@@ -135,14 +135,75 @@ def fake_http(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('task', ['connectivity', 'advice'])
+async def test_responses_tasks_when_gateway_ignores_instructions(fake_http, monkeypatch, task):
+    monkeypatch.setenv('LLM_ADAPTER', 'openai-responses')
+
+    async def instructions_ignoring_gateway(request):
+        # This gateway forwards only input, dropping instructions and system roles.
+        prompt = json.loads(request.content)['input']
+        if task == 'connectivity':
+            content = ('{"ok": true}' if '只返回 {"ok": true}' in prompt
+                       else 'Connectivity confirmed. Ready when you are.')
+        else:
+            content = (json.dumps({'focus': '加强实践', 'activities': [
+                {'tag_id': 'sql', 'steps': ['练习多表连接并完成查询项目']}
+            ]}) if '只输出一个JSON对象' in prompt else '建议学习SQL并完成查询项目。')
+        return httpx.Response(200, json={'status': 'completed', 'output': [
+            {'type': 'reasoning', 'summary': [{'type': 'summary_text', 'text': '{invalid}'}]},
+            {'type': 'message', 'role': 'assistant', 'content': [
+                {'type': 'output_text', 'text': content}
+            ]},
+        ]})
+
+    calls = fake_http([instructions_ignoring_gateway])
+    if task == 'connectivity':
+        result = await llm.call_json('只返回 {"ok": true}，不要附加其他内容。',
+                                     {'purpose': 'connectivity_test'})
+        assert result == {'ok': True}
+    else:
+        student = profile()
+        original = student.model_dump()
+        job = get_job('java')
+        match = match_student(student, job)
+        result = await llm.generate_advice(student, job, match)
+        assert result['learning_directions'] == ['SQL']
+        assert result['learning_steps'] == ['SQL：练习多表连接并完成查询项目']
+        assert student.model_dump() == original
+        assert match_student(student, job) == match
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('adapter, endpoint', [
+    ('chat-completions', '/chat/completions'), ('openai-responses', '/responses'),
+])
+async def test_html_model_endpoint_explains_api_path_without_leaking_body(
+    fake_http, monkeypatch, caplog, adapter, endpoint,
+):
+    monkeypatch.setenv('LLM_ADAPTER', adapter)
+    calls = fake_http([httpx.Response(200, text='<html>秘密正文</html>',
+                                    headers={'content-type': 'text/html'})])
+    with caplog.at_level('WARNING', logger='backend.app.llm'):
+        with pytest.raises(llm.AIError) as exc:
+            await llm.call_json('test', {})
+    assert exc.value.code == 'LLM_REQUEST'
+    assert endpoint in exc.value.message and '/v1' in exc.value.message
+    assert '网页' in exc.value.message
+    assert '秘密正文' not in exc.value.message + caplog.text
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
 async def test_responses_adapter_uses_responses_contract(fake_http, monkeypatch):
     monkeypatch.setenv('LLM_ADAPTER', 'openai-responses')
     calls = fake_http([httpx.Response(200, json={'output_text': '{"ok": true}'})])
     assert await llm.call_json('test', {'value': 1}) == {'ok': True}
     assert calls[0]['model'] == 'test-model'
     assert calls[0]['max_output_tokens'] == 3500
-    assert calls[0]['input'] == '{"value": 1}'
-    assert 'instructions' in calls[0]
+    assert calls[0]['input'].startswith(calls[0]['instructions'])
+    assert calls[0]['input'].startswith(llm.SYSTEM)
+    assert json.loads(calls[0]['input'].rsplit('\n', 1)[-1]) == {'value': 1}
     assert calls[0]['url'].endswith('/v1/responses')
 
 
@@ -172,7 +233,7 @@ async def test_resume_uses_larger_budget_and_only_literal_candidates(
     result = await llm.extract_resume('使用Java完成课程项目。')
     assert result['profile']['skills'][0]['tag_id'] == 'java'
     assert calls[0][budget_field] == 16000
-    payload = json.loads(calls[0]['input'] if adapter == 'openai-responses'
+    payload = json.loads(calls[0]['input'].rsplit('\n', 1)[-1] if adapter == 'openai-responses'
                          else calls[0]['messages'][1]['content'])
     candidates = {tag['id'] for tag in payload['tag_dictionary']}
     assert 'java' in candidates

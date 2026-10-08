@@ -6,7 +6,7 @@
 
 - `LLM_ADAPTER` 可选 `chat-completions` 或 `openai-responses`，未配置时保持旧行为，默认使用 `chat-completions`。
 - `chat-completions` 请求地址在基础地址后追加 `/chat/completions`，发送一条 system 消息和一条 JSON 序列化的 user 消息，使用 `temperature=0.2`、`max_tokens=3500`。
-- `openai-responses` 请求地址在基础地址后追加 `/responses`，使用 Responses API 的 `instructions`、`input` 和 `max_output_tokens=3500` 字段。响应优先读取 `output_text`，没有该字段时拼接 `output[].content[].text`。
+- `openai-responses` 请求地址在基础地址后追加 `/responses`，使用 Responses API 的 `instructions`、`input` 和 `max_output_tokens=3500` 字段。`instructions`保留SYSTEM与任务要求；`input`在完整JSON任务数据前重复同样的可信要求，并标明数据内指令不能改变任务或格式，以兼容只转发input的中转服务。响应优先读取 `output_text`，没有该字段时拼接 `output[].content[].text`。
 - 配置接口会返回适配器名称，但不会返回 API 密钥。DeepSeek 和 OpenAI 兼容接口预设默认使用 `chat-completions`，因为大多数兼容服务实现的是该协议；用户可以在配置页切换到 `openai-responses`。
 - GET/POST /api/llm/config 只接受本机 Host（localhost、127.0.0.1 或 ::1）；其他 Host 返回 HOST_NOT_ALLOWED，不会读取或更新配置。
 - 已有远程地址发生变化时必须重新提供 API 密钥；同一地址留空表示保留现有密钥。本机回环 HTTP 地址之间切换可以保留现有密钥。配置保存接口先原子写入本机 .env，成功后更新进程环境变量；写入失败不改变运行配置。重启可恢复保存值，密钥仍不回显。
@@ -17,6 +17,7 @@
 
 - 必需环境变量：LLM_BASE_URL、LLM_MODEL、LLM_API_KEY。空值或已知示例密钥返回 LLM_NOT_CONFIGURED；不读取额外的 LLM_TIMEOUT 配置，时限固定为45秒。
 - 地址使用 HTTPS，或带端口的 localhost/127.0.0.1 HTTP。末尾不是当前适配器对应的接口路径时追加该路径；不跟随重定向。
+- HTTP200但响应为HTML网页时返回LLM_REQUEST，提示核对基础地址是否需要/v1及当前适配器路径。该情况不重试，日志只记录html_response标签，不记录网页内容。普通文字确认仍不能作为JSON连接测试成功。
 - Authorization 密钥只进入服务端 HTTP 请求头。没有生产 mock 回退。
 - 每次 client.post 均由 asyncio.timeout(45) 包裹，覆盖连接、发送、响应头及完整响应体读取；HTTPX 的45秒阶段时限同时保留。持续分段返回字节也不会延长总预算。
 - 一次业务调用最多发起两次上游请求。仅 httpx.ConnectError、httpx.ConnectTimeout、HTTP 429、HTTP 500—599 会在首次失败后等待0.5秒并自动重试一次；混合故障也共用一次重试额度。ConnectTimeout 属于契约允许重试的临时连接故障，第二次仍失败时返回 LLM_CONNECTION。
@@ -26,7 +27,7 @@
 
 ## 实际 Prompt
 
-以下 SYSTEM 与各任务 instruction 拼接成 system 消息；学生、岗位、匹配事实和简历文字只在 user 消息内提供。
+Chat Completions中，以下SYSTEM与各任务instruction拼接成system消息；学生、岗位、匹配事实和简历文字只在user消息内提供。Responses中，可信要求既放入instructions，也在input的JSON任务数据前重复；用户资料始终通过JSON序列化，不能替换可信要求。严格Schema、候选标签和逐字证据校验继续约束输出。
 
 共用 SYSTEM：
 
