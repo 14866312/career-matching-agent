@@ -130,16 +130,25 @@ def _parse_json_object(content):
     rules, so accepting surrounding text does not admit unverified content.
     """
     text = content.strip()
+    # Completed reasoning blocks are not part of the final task output.
+    if text.startswith('<think>'):
+        _, separator, answer = text.partition('</think>')
+        if not separator:
+            raise ValueError()
+        text = answer.strip()
     fence = chr(96) * 3
     if text.startswith(fence) and text.endswith(fence):
         text = text[len(fence):-len(fence)].removeprefix('json').strip()
     try:
         value = json.loads(text)
     except ValueError:
-        start, end = text.find('{'), text.rfind('}')
-        if start < 0 or end <= start:
+        start = text.find('{')
+        if start < 0:
             raise
-        value = json.loads(text[start:end + 1])
+        value, end = json.JSONDecoder().raw_decode(text, start)
+        # Accept prose after one object, but reject ambiguous second objects.
+        if '{' in text[end:]:
+            raise ValueError()
     if not isinstance(value, dict):
         raise ValueError()
     return value
@@ -337,8 +346,8 @@ async def generate_advice(student, job, match):
     needs = [x for x in match['items'] if x['status'] != 'satisfied' or x['contribution'] < 1]
     candidates = needs or match['items']
     allowed = {x['tag_id']: x for x in candidates}
-    instruction = '''根据确定性匹配事实选择学习主题并给具体学习活动。输出 {"focus":"加强实践或持续深化", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来学习活动"]}]}。activities 1到5项、每项1到2个活动，不重复tag_id。直接给出要学习的知识、课程练习或项目任务，不要求核实既有经历、补充资料或证据。只给未来建议，不陈述既有能力，不输出分数或就业保证。资料未提及不代表用户不具备，相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
-    plan = validate(AdvicePlan, await call_json(instruction, {'intention': student.intention.model_dump(), 'major': student.major, 'job': job['name'], 'candidate_tags': list(allowed), 'facts': [{k: x[k] for k in ('tag_id', 'label', 'status', 'contribution', 'related_only')} for x in match['items']]}))
+    instruction = '''根据确定性匹配事实选择学习主题并给具体学习活动。只输出一个JSON对象，结构示例 {"focus":"加强实践", "activities":[{"tag_id":"candidate_tags中的ID", "steps":["具体可执行的未来学习活动"]}]}。focus必须且只能是“加强实践”或“持续深化”中的一个字符串，不能把两个选项连成一句话。activities必须是1到5项的数组，每项包含tag_id和steps；steps必须是1到2个字符串的数组，每个字符串1到500字符，不重复tag_id，不添加其他字段，不返回null。直接给出要学习的知识、课程练习或项目任务，不要求核实既有经历、补充资料或证据。只给未来建议，不陈述既有能力，不输出分数或就业保证。资料未提及不代表用户不具备，相关基础不能描述为已掌握。充分匹配时建议进阶实践。'''
+    plan = validate(AdvicePlan, await call_json(instruction, {'intention': student.intention.model_dump(), 'major': student.major, 'job': job['name'], 'candidate_tags': list(allowed), 'facts': [{k: x[k] for k in ('tag_id', 'label', 'status', 'contribution', 'related_only')} for x in match['items']]}, max_output_tokens=16000))
     seen = set()
     directions, steps = [], []
     for activity in plan.activities:
