@@ -46,6 +46,25 @@ afterEach(() => {
 });
 
 describe('MatchesTab integration', () => {
+  it('generates and regenerates advice directly from the advice section', async () => {
+    const response = deferred<typeof report>();
+    vi.mocked(apiPost)
+      .mockResolvedValueOnce(recommendationsFor())
+      .mockImplementationOnce(() => response.promise)
+      .mockResolvedValueOnce(report);
+    const user = userEvent.setup();
+    const { container } = renderMatches();
+    await screen.findByRole('heading', { name: 'AI 行动建议' });
+    const advice = within(container.querySelector('#report-advice')! as HTMLElement);
+    await user.click(advice.getByRole('button', { name: 'AI 生成建议' }));
+    expect(apiPost).toHaveBeenLastCalledWith('/api/reports', { student, job_id: 'frontend-engineer' });
+    expect(advice.getByRole('button', { name: '正在生成…' })).toBeDisabled();
+    await act(async () => { response.resolve(report); });
+    expect(await advice.findByText(report.advice.fit_evaluation)).toBeVisible();
+    await user.click(advice.getByRole('button', { name: '重新生成建议' }));
+    await waitFor(() => expect(apiPost).toHaveBeenCalledTimes(3));
+  });
+
   it.each([
     { label: 'exact mentions', satisfied: 1, required: 6, basic: 16.7, enhanced: 16.7 },
     { label: 'related-only enhancement', satisfied: 0, required: 6, basic: 0, enhanced: 4.2 }

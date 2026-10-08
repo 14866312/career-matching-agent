@@ -100,6 +100,8 @@
 .match-report-flow .report-section > header { margin-bottom: 22px; }
 .match-report-flow .report-section > header h2 { font-size: 26px; }
 .match-report-flow .report-section > header p { margin: 0 0 10px; }
+.advice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.advice-actions .primary-button { width: auto; min-height: 44px; margin: 0; padding: 0 20px; font-size: 14px; justify-content: center; }
 .match-report-flow .report-alternatives { padding-top: 18px; }
 .report-alternatives .alternative-grid button { min-height: 148px; }
 .report-alternatives .alternative-grid h3 { margin-top: 20px; }
