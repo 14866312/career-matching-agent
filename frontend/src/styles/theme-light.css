@@ -167,6 +167,10 @@
 .exploration-shell[data-theme='light'] .profile-stitch select { color-scheme: light; }
 .exploration-shell[data-theme='light'] .profile-stitch select option { color: #292b25; background: #fffefb; }
 
+.exploration-shell[data-theme='light'] .matches-stitch .report .item {
+  color: var(--stitch-text);
+}
+
 .exploration-shell[data-theme='light'] .profile-action-dock {
   background: rgba(255, 254, 251, .94);
   box-shadow: 0 18px 55px rgba(53, 52, 43, .16);

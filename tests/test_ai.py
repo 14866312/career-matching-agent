@@ -802,7 +802,11 @@ async def test_report_pending_directions_and_intention_use_supplied_facts(fake_h
     result = await llm.generate_advice(student, {'name': 'Java开发工程师'}, match)
     sent = json.loads(calls[0]['messages'][1]['content'])
     assert sent['intention'] == {'target_job_id': 'java', 'city': '南京'}
-    assert result['learning_directions'] == ['Java：核实是否有相关经历并补充资料']
+    assert result['learning_directions'] == ['Java']
+    assert 'AI建议重点：加强实践。' in result['fit_evaluation']
+    instruction = calls[0]['messages'][0]['content']
+    assert '直接给出要学习的知识、课程练习或项目任务' in instruction
+    assert '不要求核实既有经历、补充资料或证据' in instruction
     assert '0/1' in result['fit_evaluation'] and '1 项尚未在资料中提及' in result['fit_evaluation']
     assert json.dumps(match, sort_keys=True) == original
 
